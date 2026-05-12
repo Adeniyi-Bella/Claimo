@@ -25,16 +25,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * How it works:
  * - Each IP address gets a time window (e.g. 60 seconds) and a request counter.
  * - If the counter exceeds the configured limit within the window, the request
- *   is rejected with HTTP 429 Too Many Requests.
- * - Once the window expires, the counter resets automatically on the next request.
+ * is rejected with HTTP 429 Too Many Requests.
+ * - Once the window expires, the counter resets automatically on the next
+ * request.
  *
  * Limitation: state is stored in memory (ConcurrentHashMap). This means:
  * - Counters reset on app restart.
- * - Does not share state across multiple instances (not suitable for clustered deployments).
+ * - Does not share state across multiple instances (not suitable for clustered
+ * deployments).
  * - For production at scale, replace the map with Redis.
  *
  * This filter runs once per request (OncePerRequestFilter) and is registered
- * before Spring Security's BearerTokenAuthenticationFilter so that rate limiting
+ * before Spring Security's BearerTokenAuthenticationFilter so that rate
+ * limiting
  * happens before any authentication attempt.
  */
 @Component
@@ -42,17 +45,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RateLimit extends OncePerRequestFilter {
 
     // Standard rate limit headers returned to the client on every response
-    private static final String HEADER_LIMIT = "X-RateLimit-Limit";       // max requests allowed
+    private static final String HEADER_LIMIT = "X-RateLimit-Limit"; // max requests allowed
     private static final String HEADER_REMAINING = "X-RateLimit-Remaining"; // requests left in window
-    private static final String HEADER_RESET = "X-RateLimit-Reset";        // seconds until window resets
+    private static final String HEADER_RESET = "X-RateLimit-Reset"; // seconds until window resets
 
     /**
      * Holds the state for a single IP address within its current time window.
      *
-     * @param count       atomic counter — thread-safe increment without synchronisation
+     * @param count       atomic counter — thread-safe increment without
+     *                    synchronisation
      * @param windowStart the moment this window began, used to detect expiry
      */
-    private record RateLimitEntry(AtomicInteger count, Instant windowStart) {}
+    private record RateLimitEntry(AtomicInteger count, Instant windowStart) {
+    }
 
     /**
      * In-memory store mapping each IP address to its current rate limit entry.
@@ -96,27 +101,25 @@ public class RateLimit extends OncePerRequestFilter {
      * Core rate limiting logic. Called once per request that was not excluded.
      *
      * Steps:
-     * 1. If rate limiting is disabled in config, pass the request through immediately.
+     * 1. If rate limiting is disabled in config, pass the request through
+     * immediately.
      * 2. Extract the client IP address.
      * 3. Look up or create the rate limit entry for this IP.
-     *    - If no entry exists, create a new window starting now with count = 1.
-     *    - If the existing window has expired, start a fresh window with count = 1.
-     *    - Otherwise, increment the counter in the existing window.
-     * 4. Set rate limit headers on the response so clients know their current status.
-     * 5. If the counter exceeds the limit, reject with 429 and stop the filter chain.
-     * 6. Otherwise, pass the request down the filter chain to authentication and beyond.
+     * - If no entry exists, create a new window starting now with count = 1.
+     * - If the existing window has expired, start a fresh window with count = 1.
+     * - Otherwise, increment the counter in the existing window.
+     * 4. Set rate limit headers on the response so clients know their current
+     * status.
+     * 5. If the counter exceeds the limit, reject with 429 and stop the filter
+     * chain.
+     * 6. Otherwise, pass the request down the filter chain to authentication and
+     * beyond.
      */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-
-        // Step 1: bypass entirely if rate limiting is turned off
-        if (!properties.enabled()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
         // Step 2: get the client IP address
         // Note: ensure server.forward-headers-strategy=framework in properties

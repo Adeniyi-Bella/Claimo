@@ -21,11 +21,6 @@
       "description": "Whether to baseline on migrate              "
     },
     {
-      "name": "app.ratelimit.enabled",
-      "type": "java.lang.Boolean",
-      "description": "Whether rate limiting is enabled"
-    },
-    {
       "name": "app.ratelimit.window-seconds",
       "type": "java.lang.Integer",
       "description": "The length of the rate limit window in seconds"
@@ -39,6 +34,16 @@
       "name": "app.ratelimit.exclude-paths",
       "type": "java.util.List<java.lang.String>",
       "description": "List of paths to exclude from rate limiting"
+    },
+    {
+      "name": "app.security.issuer-uri",
+      "type": "java.lang.String",
+      "description": "The issuer URI for JWT validation"
+    },
+    {
+      "name": "app.security.public-endpoints",
+      "type": "java.util.List<java.lang.String>",
+      "description": "List of public endpoints that do not require authentication"
     }
   ]
 }
