@@ -17,6 +17,7 @@ import lombok.*;
 public class Company {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid")
     private UUID id;
 

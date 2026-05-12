@@ -20,6 +20,7 @@ import com.claimo.api.user.enums.UserRole;
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid")
     private UUID id;
 
