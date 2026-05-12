@@ -8,6 +8,6 @@ cd "$ROOT_DIR"
 # Start all services using local docker-compose config
 # --build forces Docker to rebuild the api image using Dockerfile.local
 # Gradle dependency caching inside Docker means subsequent builds are faster
-docker compose -f docker-compose.local.yml up --build
+docker compose -f docker-compose.local.yml up --build -d
 
-echo "DB started successfully."
+echo "Services started successfully (running in background)."

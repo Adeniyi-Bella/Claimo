@@ -2,11 +2,11 @@ package com.claimo.api.config;
 
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.exceptions.ErrorMessageResolver;
+import com.claimo.api.filter.RateLimit;
 // import com.claimo.api.redis.RedisService;
 // import com.claimo.api.security.JwtBlacklistValidator;
 import com.claimo.api.shared.config.properties.AppSecurityProperties;
 
-import org.apache.catalina.filters.RateLimitFilter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,14 +33,14 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
         private final AppSecurityProperties appSecurityProperties;
-        private final RateLimitFilter rateLimitFilter;
+        private final RateLimit rateLimitFilter;
         // private final RedisService redisService;
         private final HandlerExceptionResolver exceptionResolver;
         private final ErrorMessageResolver errorMessageResolver;
 
         public SecurityConfig(
                         AppSecurityProperties appSecurityProperties,
-                        RateLimitFilter rateLimitFilter,
+                        RateLimit rateLimitFilter,
                         // RedisService redisService,
                         @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver,
                         ErrorMessageResolver errorMessageResolver) {
@@ -143,15 +143,15 @@ public class SecurityConfig {
                 // checkoutConfig.setAllowedOrigins(appSecurityProperties.allowedOrigins());
                 // checkoutConfig.setAllowedMethods(List.of("POST"));
                 // checkoutConfig.setAllowedHeaders(List.of(
-                //                 "Authorization",
-                //                 "Content-Type",
-                //                 "X-Requested-With",
-                //                 "Idempotency-Key"));
+                // "Authorization",
+                // "Content-Type",
+                // "X-Requested-With",
+                // "Idempotency-Key"));
                 // checkoutConfig.setAllowCredentials(true);
                 // checkoutConfig.setExposedHeaders(List.of(
-                //                 "X-RateLimit-Limit",
-                //                 "X-RateLimit-Remaining",
-                //                 "X-RateLimit-Reset"));
+                // "X-RateLimit-Limit",
+                // "X-RateLimit-Remaining",
+                // "X-RateLimit-Reset"));
 
                 // Default config no Idempotency-Key
                 CorsConfiguration defaultConfig = new CorsConfiguration();

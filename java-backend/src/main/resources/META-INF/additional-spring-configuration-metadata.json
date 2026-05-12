@@ -1,12 +1,12 @@
 {
   "properties": [
     {
-      "name": "clerk.secret.key",
+      "name": "clerk.secret-key",
       "type": "java.lang.String",
       "description": "Clerk secret key"
     },
     {
-      "name": "clerk.webhook.secret",
+      "name": "clerk.webhook-secret",
       "type": "java.lang.String",
       "description": "Clerk webhook secret"
     },
