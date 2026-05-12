@@ -19,6 +19,26 @@
       "name": "spring.flyway.baseline-on-migrate",
       "type": "java.lang.Boolean",
       "description": "Whether to baseline on migrate              "
+    },
+    {
+      "name": "app.ratelimit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether rate limiting is enabled"
+    },
+    {
+      "name": "app.ratelimit.window-seconds",
+      "type": "java.lang.Integer",
+      "description": "The length of the rate limit window in seconds"
+    },
+    {
+      "name": "app.ratelimit.requests-per-minute",
+      "type": "java.lang.Integer",
+      "description": "The number of requests allowed per minute"
+    },
+    {
+      "name": "app.ratelimit.exclude-paths",
+      "type": "java.util.List<java.lang.String>",
+      "description": "List of paths to exclude from rate limiting"
     }
   ]
 }
