@@ -14,5 +14,7 @@ public interface UserService {
 
     boolean existsByClerkUserId(String clerkUserId);
 
+    boolean existsByEmail(String email);
+
     UserProfileResponse getProfile(Jwt jwt);
 }

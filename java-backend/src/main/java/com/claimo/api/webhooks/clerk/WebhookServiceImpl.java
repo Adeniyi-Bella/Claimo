@@ -33,6 +33,11 @@ public class WebhookServiceImpl implements WebhookService {
             String clerkUserId = requiredText(data, "id", "Clerk user id is missing from the webhook payload");
             String email = requiredEmail(data);
 
+            if (userService.existsByEmail(email)) {
+                log.warn("Email already exists, skipping email={}", email);
+                return; // same — 200, no retry
+            }
+
             if (userService.existsByClerkUserId(clerkUserId)) {
                 log.warn("User already exists for clerkUserId={}, skipping", clerkUserId);
                 return;
