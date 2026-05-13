@@ -24,6 +24,6 @@ public class ErrorMessageResolver {
     }
 
     private boolean isDev() {
-        return environment.matchesProfiles("dev");
+        return environment.matchesProfiles("local");
     }
 }

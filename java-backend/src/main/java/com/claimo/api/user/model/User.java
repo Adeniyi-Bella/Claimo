@@ -9,9 +9,6 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.claimo.api.company.model.Company;
-import com.claimo.api.user.enums.UserRole;
-
 @Entity
 @Table(name = "users")
 @Getter
@@ -27,13 +24,14 @@ public class User {
     @Column(nullable = false, unique = true)
     private String clerkUserId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(nullable = false, unique = true)
+    private String email;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private UserRole role;
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
 
     @CreationTimestamp
     @Column(updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")

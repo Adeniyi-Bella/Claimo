@@ -1,7 +1,8 @@
 package com.claimo.api.company.services;
 
-import com.claimo.api.company.dto.CompanyDto;
+import com.claimo.api.company.model.Company;
+import com.claimo.api.user.model.User;
 
 public interface CompanyService {
-    CompanyDto createCompany(String name);
+    Company createCompany(String name, User owner);
 }

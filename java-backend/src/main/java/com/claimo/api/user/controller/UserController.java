@@ -1,7 +1,7 @@
 package com.claimo.api.user.controller;
 
 import com.claimo.api.exceptions.CustomApiResponse;
-import com.claimo.api.user.dto.httpResponse.UserProfileResponse;
+import com.claimo.api.user.dto.UserProfileResponse;
 import com.claimo.api.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,7 +16,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @Tag(name = "Users", description = "User profile management")
 public class UserController {

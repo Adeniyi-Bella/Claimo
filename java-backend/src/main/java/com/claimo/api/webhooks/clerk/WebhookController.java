@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/webhooks")
+@RequestMapping("/api/v1/webhooks")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Webhooks", description = "Endpoints for receiving external webhook events")

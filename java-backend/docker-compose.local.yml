@@ -1,3 +1,5 @@
+name: claimo
+
 services:
   postgres:
     image: postgres:17

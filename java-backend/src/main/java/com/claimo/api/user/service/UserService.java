@@ -4,15 +4,13 @@ import java.util.Optional;
 
 import org.springframework.security.oauth2.jwt.Jwt;
 
-import com.claimo.api.company.dto.CompanyDto;
-import com.claimo.api.user.enums.UserRole;
-import com.claimo.api.user.dto.UserDto;
-import com.claimo.api.user.dto.httpResponse.UserProfileResponse;
+import com.claimo.api.user.model.User;
+import com.claimo.api.user.dto.UserProfileResponse;
 
 public interface UserService {
-    UserDto createUser(String clerkUserId, CompanyDto company, UserRole role);
+    User createUser(String clerkUserId, String email, String firstName, String lastName);
 
-    Optional<UserDto> findByClerkUserId(String clerkUserId);
+    Optional<User> findByClerkUserId(String clerkUserId);
 
     boolean existsByClerkUserId(String clerkUserId);
 

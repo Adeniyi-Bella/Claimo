@@ -5,9 +5,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 echo "Stopping compose stack and removing project resources..."
-docker compose down --volumes --remove-orphans || true
+docker compose -f docker-compose.local.yml down --volumes --remove-orphans || true
 
-echo "Removing all Docker containers/images/networks/volumes from this machine..."
+echo "Removing project volume..."
+docker volume rm -f claimo_claimo_pgdata 2>/dev/null || true
+
+echo "Removing all Docker containers/images/networks/volumes..."
 docker rm -f $(docker ps -aq) 2>/dev/null || true
 docker system prune -a --volumes -f
 

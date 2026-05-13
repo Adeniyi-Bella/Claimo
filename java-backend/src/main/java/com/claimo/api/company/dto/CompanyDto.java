@@ -8,6 +8,7 @@ import com.claimo.api.company.model.Company;
 public record CompanyDto(
         UUID id,
         String name,
+        UUID ownerId,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -15,6 +16,7 @@ public record CompanyDto(
         return new CompanyDto(
                 company.getId(),
                 company.getName(),
+                company.getOwner() == null ? null : company.getOwner().getId(),
                 company.getCreatedAt(),
                 company.getUpdatedAt());
     }

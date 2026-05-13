@@ -1,71 +1,77 @@
 package com.claimo.api.user.service;
 
-import com.claimo.api.company.CompanyRepository;
-import com.claimo.api.company.dto.CompanyDto;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
 
+import com.claimo.api.company.membership.CompanyMember;
+import com.claimo.api.company.membership.CompanyMemberService;
+import com.claimo.api.company.model.Company;
+import com.claimo.api.exceptions.AppExceptions.ResourceNotFoundException;
+import com.claimo.api.user.UserRepository;
+import com.claimo.api.user.dto.UserProfileResponse;
+import com.claimo.api.user.model.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.claimo.api.exceptions.AppExceptions;
-import com.claimo.api.exceptions.AppExceptions.ResourceNotFoundException;
-import com.claimo.api.user.UserRepository;
-import com.claimo.api.user.enums.UserRole;
-import com.claimo.api.user.dto.UserDto;
-import com.claimo.api.user.dto.httpResponse.UserProfileResponse;
-import com.claimo.api.user.model.User;
-
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final CompanyRepository companyRepository;
+    private final CompanyMemberService companyMemberService;
 
     @Override
     @Transactional
-    public UserDto createUser(String clerkUserId, CompanyDto company, UserRole role) {
-        UUID companyId = company.id();
-        if (companyId == null) {
-            throw new AppExceptions.BadRequestException("Company id is required to create a user");
-        }
-
+    public User createUser(String clerkUserId, String email, String firstName, String lastName) {
         User user = new User();
         user.setClerkUserId(clerkUserId);
-        user.setCompany(companyRepository.getReferenceById(companyId));
-        user.setRole(role);
-        return UserDto.fromEntity(userRepository.save(user));
+        user.setEmail(email);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        return userRepository.save(user);
     }
 
     @Override
     public UserProfileResponse getProfile(Jwt jwt) {
-        // Extract Clerk user ID from the JWT subject claim
         String clerkUserId = jwt.getSubject();
 
         User user = userRepository.findByClerkUserId(clerkUserId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found for clerkUserId: " + clerkUserId));
 
+        List<UserProfileResponse.CompanyMembershipResponse> companies = companyMemberService
+                .findByUserId(user.getId())
+                .stream()
+                .map(this::toCompanyMembershipResponse)
+                .toList();
+
         return new UserProfileResponse(
                 user.getId(),
                 user.getClerkUserId(),
-                user.getRole().name(),
-                user.getCompany().getId(),
-                user.getCompany().getName(),
-                user.getCreatedAt());
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getCreatedAt(),
+                companies);
     }
 
     @Override
-    public Optional<UserDto> findByClerkUserId(String clerkUserId) {
-        return userRepository.findByClerkUserId(clerkUserId).map(UserDto::fromEntity);
+    public Optional<User> findByClerkUserId(String clerkUserId) {
+        return userRepository.findByClerkUserId(clerkUserId);
     }
 
     @Override
     public boolean existsByClerkUserId(String clerkUserId) {
         return userRepository.existsByClerkUserId(clerkUserId);
+    }
+
+    private UserProfileResponse.CompanyMembershipResponse toCompanyMembershipResponse(CompanyMember member) {
+        Company company = member.getCompany();
+        return new UserProfileResponse.CompanyMembershipResponse(
+                company.getId(),
+                company.getName(),
+                member.getRole().name());
     }
 }

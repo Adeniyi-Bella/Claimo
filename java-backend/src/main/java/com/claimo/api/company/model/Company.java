@@ -6,6 +6,8 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.claimo.api.user.model.User;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,6 +25,10 @@ public class Company {
 
     @Column(nullable = false)
     private String name;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     @CreationTimestamp
     @Column(updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
