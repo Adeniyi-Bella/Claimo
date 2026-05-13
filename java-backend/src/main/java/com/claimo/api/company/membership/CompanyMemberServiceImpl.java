@@ -32,4 +32,9 @@ public class CompanyMemberServiceImpl implements CompanyMemberService {
     public List<CompanyMember> findByUserId(UUID userId) {
         return companyMemberRepository.findAllByUser_Id(userId);
     }
+
+    @Override
+    public boolean isMemberOfCompany(UUID userId, UUID companyId) {
+        return companyMemberRepository.existsByUser_IdAndCompany_Id(userId, companyId);
+    }
 }

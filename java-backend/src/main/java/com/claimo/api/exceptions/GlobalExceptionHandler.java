@@ -10,6 +10,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.claimo.api.exceptions.ResponseDtos.ErrorResponse;
 
@@ -196,6 +197,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         logClientError("BAD_REQUEST", request, "Required header missing: " + ex.getHeaderName());
         return buildError(HttpStatus.BAD_REQUEST, "Required header missing: " + ex.getHeaderName());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<CustomApiResponse<ErrorResponse>> handleNoResourceFound(
+            NoResourceFoundException ex,
+            HttpServletRequest request) {
+        logClientError("ROUTE_NOT_FOUND", request, "Route not found");
+        return buildError(HttpStatus.NOT_FOUND, "Route not found");
     }
 
     private ResponseEntity<CustomApiResponse<ErrorResponse>> buildError(

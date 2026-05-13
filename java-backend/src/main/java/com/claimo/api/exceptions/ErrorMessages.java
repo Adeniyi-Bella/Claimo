@@ -13,7 +13,7 @@ public final class ErrorMessages {
             case UNAUTHORIZED -> "Authentication failed";
             case PAYMENT_REQUIRED -> "Payment required";
             case FORBIDDEN -> "Access denied";
-            case NOT_FOUND -> "Resource not found";
+            case NOT_FOUND -> " Not found";
             case METHOD_NOT_ALLOWED -> "Method not allowed";
             case CONFLICT -> "Conflict occurred";
             case UNSUPPORTED_MEDIA_TYPE -> "Unsupported media type";
