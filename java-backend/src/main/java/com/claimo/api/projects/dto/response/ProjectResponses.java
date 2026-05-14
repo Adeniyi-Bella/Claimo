@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.claimo.api.projects.enums.ProjectRole;
+
 public class ProjectResponses {
 
     public record Project(
@@ -14,7 +16,17 @@ public class ProjectResponses {
             LocalDate startDate,
             UUID companyId,
             UUID createdBy,
+            ProjectRole role,
             Instant createdAt,
             Instant updatedAt) {
+    }
+
+    public record ProjectMember(
+            UUID userId,
+            String email,
+            String firstName,
+            String lastName,
+            ProjectRole role,
+            Instant createdAt) {
     }
 }

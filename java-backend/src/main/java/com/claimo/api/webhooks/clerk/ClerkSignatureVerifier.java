@@ -24,10 +24,11 @@ public class ClerkSignatureVerifier {
             String svixId,
             String svixTimestamp,
             String svixSignature,
-            String payload) {
+            String payload,
+            String webhookSecret) {
 
         try {
-            String secret = clerkProperties.webhookSecret().replace("whsec_", "");
+            String secret = webhookSecret.replace("whsec_", "");
             byte[] secretBytes = Base64.getDecoder().decode(secret);
             String signedContent = svixId + "." + svixTimestamp + "." + payload;
 
@@ -47,5 +48,21 @@ public class ClerkSignatureVerifier {
             log.error("Signature verification failed", e);
             return false;
         }
+    }
+
+    public boolean verifyUserCreated(String svixId, String svixTimestamp, String svixSignature, String payload) {
+        return verify(svixId, svixTimestamp, svixSignature, payload, clerkProperties.userCreatedWebhookSecret());
+    }
+
+    public boolean verifyInvitationCreated(String svixId, String svixTimestamp, String svixSignature, String payload) {
+        return verify(svixId, svixTimestamp, svixSignature, payload, clerkProperties.invitationCreatedWebhookSecret());
+    }
+
+    public boolean verifyInvitationAccepted(String svixId, String svixTimestamp, String svixSignature, String payload) {
+        return verify(svixId, svixTimestamp, svixSignature, payload, clerkProperties.invitationAcceptedWebhookSecret());
+    }
+
+    public boolean verifyInvitationRevoked(String svixId, String svixTimestamp, String svixSignature, String payload) {
+        return verify(svixId, svixTimestamp, svixSignature, payload, clerkProperties.invitationRevokedWebhookSecret());
     }
 }

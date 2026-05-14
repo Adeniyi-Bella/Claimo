@@ -4,9 +4,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import com.claimo.api.company.model.Company;
 import com.claimo.api.user.model.User;
 
@@ -45,11 +42,20 @@ public class Project {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
-    @CreationTimestamp
     @Column(updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private Instant createdAt;
 
-    @UpdateTimestamp
     @Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private Instant updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }
