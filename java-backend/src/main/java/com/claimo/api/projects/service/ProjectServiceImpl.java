@@ -2,6 +2,9 @@ package com.claimo.api.projects.service;
 
 import com.claimo.api.company.model.Company;
 import com.claimo.api.company.CompanyRepository;
+import com.claimo.api.company.enums.CompanyRole;
+import com.claimo.api.company.membership.CompanyMember;
+import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.ProjectResponses;
@@ -19,8 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +34,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final CompanyRepository companyRepository;
     private final UserService userService;
+    private final CompanyMemberService companyMemberService;
     private final ProjectMemberService projectMemberService;
     private final ProjectMemberRepository projectMemberRepository;
 
@@ -58,20 +63,26 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public List<ProjectResponses.Project> getProjects(Jwt jwt) {
         User user = getAuthenticatedUser(jwt);
-        List<ProjectMember> memberships = projectMemberRepository.findAllByUserId(user.getId());
-        if (memberships.isEmpty()) {
-            return List.of();
+        List<CompanyMember> companyMemberships = companyMemberService.findByUserId(user.getId());
+
+        Set<UUID> elevatedCompanyIds = companyMemberships.stream()
+                .filter(member -> member.getRole() == CompanyRole.ACCOUNT_OWNER || member.getRole() == CompanyRole.ADMIN)
+                .map(member -> member.getCompany().getId())
+                .collect(java.util.stream.Collectors.toSet());
+
+        LinkedHashMap<UUID, Project> visibleProjects = new LinkedHashMap<>();
+
+        if (!elevatedCompanyIds.isEmpty()) {
+            projectRepository.findAllByCompanyIdIn(List.copyOf(elevatedCompanyIds))
+                    .forEach(project -> visibleProjects.putIfAbsent(project.getId(), project));
         }
 
-        return memberships.stream()
-                .map(ProjectMember::getProject)
-                .collect(Collectors.toMap(
-                        Project::getId,
-                        project -> project,
-                        (first, second) -> first,
-                        java.util.LinkedHashMap::new))
-                .values()
+        projectMemberRepository.findAllByUserId(user.getId())
                 .stream()
+                .map(ProjectMember::getProject)
+                .forEach(project -> visibleProjects.putIfAbsent(project.getId(), project));
+
+        return visibleProjects.values().stream()
                 .map(project -> toResponse(project, user))
                 .toList();
     }
@@ -79,7 +90,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponses.Project getProjectById(Jwt jwt, UUID projectId) {
         User user = getAuthenticatedUser(jwt);
-        Project project = getProjectForUser(projectId, user);
+        Project project = getProjectForView(projectId, user);
         return toResponse(project, user);
     }
 
@@ -87,7 +98,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public ProjectResponses.Project updateProject(Jwt jwt, UUID projectId, ProjectRequests.UpdateProject request) {
         User user = getAuthenticatedUser(jwt);
-        Project project = getProjectForUser(projectId, user);
+        Project project = getProjectForProjectAdmin(projectId, user);
 
         if (request.name() != null) project.setName(request.name());
         if (request.description() != null) project.setDescription(request.description());
@@ -103,7 +114,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public void deleteProject(Jwt jwt, UUID projectId) {
         User user = getAuthenticatedUser(jwt);
-        Project project = getProjectForUser(projectId, user);
+        Project project = getProjectForProjectAdmin(projectId, user);
         projectRepository.delete(project);
         log.info("Project deleted projectId={}", projectId);
     }
@@ -122,7 +133,24 @@ public class ProjectServiceImpl implements ProjectService {
      * Fetches a project and validates the authenticated user is a project member.
      * Returns 404 if not found, 403 if the user is not in project_members.
      */
-    private Project getProjectForUser(UUID projectId, User user) {
+    private Project getProjectForView(UUID projectId, User user) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                        "Project not found: " + projectId));
+
+        if (projectMemberService.isMember(projectId, user.getId())) {
+            return project;
+        }
+
+        if (canViewAllProjectsInCompany(project.getCompany().getId(), user.getId())) {
+            return project;
+        }
+
+        throw new AppExceptions.ForbiddenException(
+                "Access denied to project: " + projectId);
+    }
+
+    private Project getProjectForProjectAdmin(UUID projectId, User user) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
                         "Project not found: " + projectId));
@@ -131,7 +159,17 @@ public class ProjectServiceImpl implements ProjectService {
             throw new AppExceptions.ForbiddenException(
                     "Access denied to project: " + projectId);
         }
+        ProjectRole role = projectMemberService.getRole(projectId, user.getId());
+        if (role != ProjectRole.ADMIN) {
+            throw new AppExceptions.ForbiddenException("Only project ADMINs can manage projects");
+        }
         return project;
+    }
+
+    private boolean canViewAllProjectsInCompany(UUID companyId, UUID userId) {
+        return companyMemberService.findByUserId(userId).stream()
+                .filter(member -> member.getCompany().getId().equals(companyId))
+                .anyMatch(member -> member.getRole() == CompanyRole.ACCOUNT_OWNER || member.getRole() == CompanyRole.ADMIN);
     }
 
     private Company getOwnedCompany(User user) {

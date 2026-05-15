@@ -34,7 +34,20 @@ public class CompanyMemberServiceImpl implements CompanyMemberService {
     }
 
     @Override
+    public List<CompanyMember> findByCompanyId(UUID companyId) {
+        return companyMemberRepository.findAllByCompany_Id(companyId);
+    }
+
+    @Override
     public boolean isMemberOfCompany(UUID userId, UUID companyId) {
         return companyMemberRepository.existsByUser_IdAndCompany_Id(userId, companyId);
+    }
+
+    @Override
+    public CompanyRole getRole(UUID companyId, UUID userId) {
+        return companyMemberRepository.findByCompany_IdAndUser_Id(companyId, userId)
+                .map(CompanyMember::getRole)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Company member not found for companyId=" + companyId + " userId=" + userId));
     }
 }

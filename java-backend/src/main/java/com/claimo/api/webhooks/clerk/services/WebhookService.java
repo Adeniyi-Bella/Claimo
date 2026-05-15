@@ -1,4 +1,4 @@
-package com.claimo.api.webhooks.clerk;
+package com.claimo.api.webhooks.clerk.services;
 
 public interface WebhookService {
     void handleUserCreated(String payload);

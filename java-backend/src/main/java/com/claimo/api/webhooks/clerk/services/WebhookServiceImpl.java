@@ -1,7 +1,10 @@
-package com.claimo.api.webhooks.clerk;
+package com.claimo.api.webhooks.clerk.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import com.claimo.api.webhooks.clerk.ClerkInvitationWebhookService;
+import com.claimo.api.webhooks.clerk.ClerkUserWebhookService;
 
 @Service
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package com.claimo.api.webhooks.clerk;
+package com.claimo.api.projects.invites;
 
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.membership.CompanyMemberService;
@@ -19,7 +19,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ClerkInviteService {
+public class ProjectInviteService {
 
     private final PendingInviteRepository pendingInviteRepository;
     private final CompanyMemberService companyMemberService;
@@ -34,11 +34,11 @@ public class ClerkInviteService {
                 pendingInvite.setStatus(PendingInviteStatus.PENDING);
                 pendingInviteRepository.save(pendingInvite);
             }
-            log.info("Processed invitation created event email={} invitationId={}", email, clerkInvitationId);
+            log.info("Processed project invitation created event email={} invitationId={}", email, clerkInvitationId);
             return;
         }
 
-        log.info("Received invitation created event with no local invite match email={} invitationId={}",
+        log.info("Received project invitation created event with no local invite match email={} invitationId={}",
                 email, clerkInvitationId);
     }
 
@@ -47,7 +47,7 @@ public class ClerkInviteService {
         List<PendingInvite> invites = findInvites(clerkInvitationId, email);
 
         if (invites.isEmpty()) {
-            log.warn("No pending invite found for accepted invitation email={} invitationId={}",
+            log.warn("No project invite found for accepted invitation email={} invitationId={}",
                     email, clerkInvitationId);
             return;
         }
@@ -56,7 +56,7 @@ public class ClerkInviteService {
             acceptInvite(invite);
         }
 
-        log.info("Processed invitation accepted event email={} invitationId={}", email, clerkInvitationId);
+        log.info("Processed project invitation accepted event email={} invitationId={}", email, clerkInvitationId);
     }
 
     @Transactional
@@ -64,7 +64,7 @@ public class ClerkInviteService {
         List<PendingInvite> invites = findInvites(clerkInvitationId, email);
 
         if (invites.isEmpty()) {
-            log.warn("No pending invite found while finalizing invitation email={} invitationId={}",
+            log.warn("No project invite found while finalizing invitation email={} invitationId={}",
                     email, clerkInvitationId);
             return;
         }
@@ -77,7 +77,9 @@ public class ClerkInviteService {
 
     @Transactional
     public void markUserCreatedInvitesAccepted(String email, User user) {
-        List<PendingInvite> invites = pendingInviteRepository.findAllByEmail(email);
+        List<PendingInvite> invites = pendingInviteRepository.findAllByEmail(email).stream()
+                .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
+                .toList();
         if (invites.isEmpty()) {
             return;
         }
@@ -90,16 +92,26 @@ public class ClerkInviteService {
 
     @Transactional
     public void logInvitationRevoked(String email, String clerkInvitationId) {
-        log.info("Processed invitation revoked event email={} invitationId={}", email, clerkInvitationId);
+        log.info("Processed project invitation revoked event email={} invitationId={}", email, clerkInvitationId);
+    }
+
+    public boolean hasPendingInvites(String email) {
+        return pendingInviteRepository.findAllByEmail(email).stream()
+                .anyMatch(invite -> invite.getStatus() != PendingInviteStatus.REVOKED);
     }
 
     public List<PendingInvite> findInvites(String clerkInvitationId, String email) {
         if (clerkInvitationId != null && !clerkInvitationId.isBlank()) {
             return pendingInviteRepository.findByClerkInvitationId(clerkInvitationId)
+                    .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
                     .map(List::of)
-                    .orElseGet(() -> pendingInviteRepository.findAllByEmail(email));
+                    .orElseGet(() -> pendingInviteRepository.findAllByEmail(email).stream()
+                            .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
+                            .toList());
         }
-        return pendingInviteRepository.findAllByEmail(email);
+        return pendingInviteRepository.findAllByEmail(email).stream()
+                .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
+                .toList();
     }
 
     private void acceptInvite(PendingInvite invite) {

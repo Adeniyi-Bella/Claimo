@@ -4,8 +4,10 @@ import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.services.CompanyService;
 import com.claimo.api.exceptions.AppExceptions;
+import com.claimo.api.projects.invites.ProjectInviteService;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
+import com.claimo.api.company.invites.CompanyInviteService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +22,9 @@ public class ClerkUserWebhookService {
     private final UserService userService;
     private final CompanyService companyService;
     private final CompanyMemberService companyMemberService;
+    private final CompanyInviteService companyInviteService;
     private final ClerkWebhookPayloadService payloadService;
-    private final ClerkInviteService clerkInviteService;
+    private final ProjectInviteService projectInviteService;
 
     @Transactional
     public void handleUserCreated(String payload) {
@@ -41,26 +44,34 @@ public class ClerkUserWebhookService {
         String lastName = data.path("last_name").asText("");
         String fullName = (firstName + " " + lastName).trim();
 
-        String companyName = data
-                .path("unsafe_metadata")
-                .path("company_name")
-                .asText(fullName);
-
-        if (companyName.isBlank()) {
-            if (fullName.isBlank()) {
-                throw new AppExceptions.BadRequestException(
-                        "Clerk webhook payload must include a company name or user name");
-            }
-            companyName = fullName;
-        }
+        boolean hasPendingInvites = companyInviteService.hasPendingInvites(email)
+                || projectInviteService.hasPendingInvites(email);
 
         log.debug("Processing user.created for clerkUserId={}", clerkUserId);
         User user = userService.createUser(clerkUserId, email, firstName, lastName);
         log.debug("User created userId={}", user.getId());
-        var company = companyService.createCompany(companyName, user);
-        log.debug("Company created companyId={}", company.getId());
-        companyMemberService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
-        clerkInviteService.markUserCreatedInvitesAccepted(email, user);
+
+        if (!hasPendingInvites) {
+            String companyName = data
+                    .path("unsafe_metadata")
+                    .path("company_name")
+                    .asText(fullName);
+
+            if (companyName.isBlank()) {
+                if (fullName.isBlank()) {
+                    throw new AppExceptions.BadRequestException(
+                            "Clerk webhook payload must include a company name or user name");
+                }
+                companyName = fullName;
+            }
+
+            var company = companyService.createCompany(companyName, user);
+            log.debug("Company created companyId={}", company.getId());
+            companyMemberService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
+        }
+
+        companyInviteService.markUserCreatedInvitesAccepted(email, user);
+        projectInviteService.markUserCreatedInvitesAccepted(email, user);
         log.info("Created company and user for clerkUserId={}", clerkUserId);
     }
 }

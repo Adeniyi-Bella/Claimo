@@ -1,55 +1,66 @@
 package com.claimo.api.webhooks.clerk;
 
-import com.claimo.api.user.service.UserService;
+import com.claimo.api.company.invites.CompanyInviteService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ClerkInvitationWebhookService {
 
     private final ClerkWebhookPayloadService payloadService;
-    private final ClerkInviteService clerkInviteService;
-    private final UserService userService;
+    private final CompanyInviteService companyInviteService;
+    private final CompanyInviteWebhookService companyInviteWebhookService;
+    private final ProjectInviteWebhookService projectInviteWebhookService;
 
-    @Transactional
     public void handleInvitationCreated(String payload) {
-        JsonNode root = payloadService.parse(payload);
-        JsonNode data = root.path("data");
-
-        String email = payloadService.requiredEmail(data);
-        String clerkInvitationId = payloadService.requiredText(
-                data, "id", "Clerk invitation id is missing from the webhook payload");
-
-        clerkInviteService.recordInvitationCreated(email, clerkInvitationId);
+        dispatch(payload, InvitationEventType.CREATED);
     }
 
-    @Transactional
     public void handleInvitationAccepted(String payload) {
-        JsonNode root = payloadService.parse(payload);
-        JsonNode data = root.path("data");
-
-        String email = payloadService.requiredEmail(data);
-        String clerkInvitationId = payloadService.extractOptionalText(data, "id");
-
-        userService.findByEmail(email)
-                .ifPresentOrElse(
-                        user -> clerkInviteService.acceptAndFinalizeInvitation(email, clerkInvitationId, user),
-                        () -> clerkInviteService.acceptInvitation(email, clerkInvitationId));
+        dispatch(payload, InvitationEventType.ACCEPTED);
     }
 
-    @Transactional
     public void handleInvitationRevoked(String payload) {
+        dispatch(payload, InvitationEventType.REVOKED);
+    }
+
+    private void dispatch(String payload, InvitationEventType eventType) {
         JsonNode root = payloadService.parse(payload);
         JsonNode data = root.path("data");
 
         String email = payloadService.requiredEmail(data);
         String clerkInvitationId = payloadService.extractOptionalText(data, "id");
 
-        clerkInviteService.logInvitationRevoked(email, clerkInvitationId);
+        boolean companyInvite = !companyInviteService.findInvites(clerkInvitationId, email).isEmpty();
+        if (companyInvite) {
+            routeCompany(eventType, payload);
+            return;
+        }
+
+        routeProject(eventType, payload);
+    }
+
+    private void routeCompany(InvitationEventType eventType, String payload) {
+        switch (eventType) {
+            case CREATED -> companyInviteWebhookService.handleInvitationCreated(payload);
+            case ACCEPTED -> companyInviteWebhookService.handleInvitationAccepted(payload);
+            case REVOKED -> companyInviteWebhookService.handleInvitationRevoked(payload);
+        }
+    }
+
+    private void routeProject(InvitationEventType eventType, String payload) {
+        switch (eventType) {
+            case CREATED -> projectInviteWebhookService.handleInvitationCreated(payload);
+            case ACCEPTED -> projectInviteWebhookService.handleInvitationAccepted(payload);
+            case REVOKED -> projectInviteWebhookService.handleInvitationRevoked(payload);
+        }
+    }
+
+    private enum InvitationEventType {
+        CREATED,
+        ACCEPTED,
+        REVOKED
     }
 }

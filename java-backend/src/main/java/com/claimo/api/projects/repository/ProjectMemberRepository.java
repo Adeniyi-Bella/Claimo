@@ -13,6 +13,8 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Pr
     List<ProjectMember> findAllByProjectId(UUID projectId);
     @EntityGraph(attributePaths = "project")
     List<ProjectMember> findAllByUserId(UUID userId);
+    @EntityGraph(attributePaths = {"project", "user"})
+    List<ProjectMember> findAllByProject_Company_Id(UUID companyId);
     Optional<ProjectMember> findByProjectIdAndUserId(UUID projectId, UUID userId);
     boolean existsByProjectIdAndUserId(UUID projectId, UUID userId);
 }

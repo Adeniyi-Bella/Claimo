@@ -12,5 +12,9 @@ public interface CompanyMemberService {
 
     List<CompanyMember> findByUserId(UUID userId);
 
+    List<CompanyMember> findByCompanyId(UUID companyId);
+
     boolean isMemberOfCompany(UUID userId, UUID companyId);
+
+    CompanyRole getRole(UUID companyId, UUID userId);
 }

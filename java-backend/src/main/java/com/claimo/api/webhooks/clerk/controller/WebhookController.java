@@ -1,4 +1,4 @@
-package com.claimo.api.webhooks.clerk;
+package com.claimo.api.webhooks.clerk.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.claimo.api.webhooks.clerk.ClerkSignatureVerifier;
+import com.claimo.api.webhooks.clerk.services.WebhookService;
 
 @RestController
 @RequestMapping("/api/v1/webhooks")
