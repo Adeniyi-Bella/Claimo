@@ -185,6 +185,12 @@ h2 {
   align-items: start;
 }
 
+.dashboard-main,
+.dashboard-side {
+  display: grid;
+  gap: 22px;
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -220,6 +226,18 @@ h2 {
 }
 
 .invite-card {
+  padding: 24px;
+  background: rgba(10, 15, 31, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(18px);
+  border-radius: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.workflow-card,
+.inspector-card {
   padding: 24px;
   background: rgba(10, 15, 31, 0.72);
   border: 1px solid rgba(148, 163, 184, 0.16);
@@ -266,6 +284,40 @@ h2 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stacked-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inline-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.inline-note {
+  color: #8f9db4;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .invite-form {
@@ -317,9 +369,155 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.summary-box {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.summary-box strong {
+  color: #edf4ff;
+  overflow-wrap: anywhere;
+}
+
 .project-list {
   display: grid;
   gap: 10px;
+}
+
+.resource-list {
+  display: grid;
+  gap: 10px;
+}
+
+.resource-empty {
+  color: #8f9db4;
+  line-height: 1.6;
+}
+
+.pill-group {
+  display: grid;
+  gap: 10px;
+}
+
+.resource-pill {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  color: #d6e0f0;
+}
+
+.resource-pill small {
+  color: #7b8aa7;
+  word-break: break-all;
+}
+
+.resource-pill.active {
+  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.member-list {
+  display: grid;
+  gap: 12px;
+}
+
+.member-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.member-card strong {
+  color: #edf4ff;
+}
+
+.member-card p {
+  color: #8f9db4;
+  margin-top: 4px;
+  word-break: break-word;
+}
+
+.member-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.role-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  color: #bfe7ff;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.member-meta {
+  display: grid;
+  gap: 10px;
+}
+
+.project-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  color: #d6e0f0;
+  font-size: 0.84rem;
+}
+
+.invite-suggestions {
+  display: grid;
+  gap: 10px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-button {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #d6e0f0;
+  padding: 8px 12px;
+  font-size: 0.84rem;
+}
+
+.chip-button:hover {
+  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.checklist {
+  display: grid;
+  gap: 12px;
+  padding-left: 18px;
+  color: #d6e0f0;
+  line-height: 1.6;
 }
 
 .project-empty {
@@ -387,9 +585,18 @@ code {
   }
 
   .invite-card-header,
+  .section-header,
   .token-card-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .form-grid.two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .member-card-head {
+    flex-direction: column;
   }
 }
 

@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, ProjectMemberId> {
+    @EntityGraph(attributePaths = "user")
     List<ProjectMember> findAllByProjectId(UUID projectId);
     @EntityGraph(attributePaths = "project")
     List<ProjectMember> findAllByUserId(UUID userId);

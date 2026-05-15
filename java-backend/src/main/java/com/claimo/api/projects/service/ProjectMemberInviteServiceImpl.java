@@ -87,6 +87,7 @@ public class ProjectMemberInviteServiceImpl implements ProjectMemberInviteServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProjectResponses.ProjectMember> getMembers(Jwt jwt, UUID projectId) {
         User user = getAuthenticatedUser(jwt);
         getProjectForMember(projectId, user);
