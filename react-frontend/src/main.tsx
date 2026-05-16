@@ -1,19 +1,20 @@
+import "./styles/globals.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { ClerkProvider } from "@clerk/clerk-react";
-import App from "./App";
-import "./styles.css";
+import { App } from "./App";
+import { SentryLogger } from "@lib/logger/sentry";
+import { router } from "@/lib/router";
+import { Toaster } from "@/components/common/toaster";
+import { ClerkProvider } from "@clerk/react";
+import { config } from "@/lib/config/config";
 
-const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!publishableKey) {
-  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY in react-frontend/.env");
-}
+SentryLogger.init(router);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider publishableKey={config.VITE_CLERK_PUBLISHABLE_KEY}>
       <App />
+      <Toaster />
     </ClerkProvider>
   </React.StrictMode>,
 );
