@@ -33,7 +33,10 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.1",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
+    "three": "^0.184.0",
+    "zod": "^4.4.3",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
@@ -42,6 +45,7 @@
     "@tanstack/router-plugin": "^1.150.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^5.1.1",
     "cypress": "^15.9.0",
     "eslint": "^9.39.1",

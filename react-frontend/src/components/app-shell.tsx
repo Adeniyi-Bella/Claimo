@@ -13,7 +13,7 @@ import {
   User,
 } from "lucide-react";
 import { Avatar } from "./common/avatar";
-import { CURRENT_USER, COMPANY } from "@/lib/mock-data";
+import { COMPANY } from "@/lib/mock-data";
 import { RoleBadge } from "./common/status-badge";
 import { ClaimoMark } from "./common/claimo-mark";
 import { cn } from "@/lib/utils/utils";
@@ -23,7 +23,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/common/popover";
-import { useClerk } from "@clerk/react";
+import { useClerk, useUser } from "@clerk/react";
 import { useNavigate } from "@tanstack/react-router";
 
 const nav = [
@@ -69,12 +69,18 @@ const notifications = [
 
 // Reusable user menu dropdown content
 function UserMenuContent({ onSignOut }: { onSignOut: () => void }) {
+  const { user } = useUser();
+  const currentUser = {
+    name: user?.fullName ?? user?.firstName ?? "User",
+    email: user?.primaryEmailAddress?.emailAddress ?? "",
+    avatarHue: 250, // fixed or derive from email hash
+  };
   return (
     <div className="w-56 p-1">
       <div className="px-2 py-2 mb-1 border-b border-border">
-        <div className="text-xs font-medium truncate">{CURRENT_USER.name}</div>
+        <div className="text-xs font-medium truncate">{currentUser.name}</div>
         <div className="text-[11px] text-muted-foreground truncate">
-          {CURRENT_USER.email}
+          {currentUser.email}
         </div>
       </div>
       <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition">
@@ -104,6 +110,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [openTopUserMenu, setOpenTopUserMenu] = useState(false);
   const { signOut } = useClerk();
   const navigate = useNavigate();
+  const { user } = useUser();
+  const currentUser = {
+    name: user?.fullName ?? user?.firstName ?? "User",
+    email: user?.primaryEmailAddress?.emailAddress ?? "",
+    avatarHue: 250, // fixed or derive from email hash
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -160,16 +172,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <PopoverTrigger asChild>
               <button className="flex w-full items-center gap-2 rounded-md p-1.5 hover:bg-sidebar-accent/60 transition">
                 <Avatar
-                  name={CURRENT_USER.name}
-                  hue={CURRENT_USER.avatarHue}
+                  name={currentUser.name}
+                  hue={currentUser.avatarHue}
                   size={32}
                 />
                 <div className="min-w-0 flex-1 text-left">
                   <div className="text-xs font-medium truncate">
-                    {CURRENT_USER.name}
+                    {currentUser.name}
                   </div>
                   <div className="text-[11px] text-muted-foreground truncate">
-                    {CURRENT_USER.email}
+                    {currentUser.email}
                   </div>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -268,13 +280,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <PopoverTrigger asChild>
               <button className="flex items-center gap-2 pl-2 border-l border-border ml-1 hover:opacity-80 transition">
                 <Avatar
-                  name={CURRENT_USER.name}
-                  hue={CURRENT_USER.avatarHue}
+                  name={currentUser.name}
+                  hue={currentUser.avatarHue}
                   size={28}
                 />
                 <div className="hidden md:block text-xs leading-tight">
                   <div className="font-medium">
-                    {CURRENT_USER.name.split(" ")[0]}
+                    {currentUser.name.split(" ")[0]}
                   </div>
                   <RoleBadge role="ACCOUNT_OWNER" />
                 </div>

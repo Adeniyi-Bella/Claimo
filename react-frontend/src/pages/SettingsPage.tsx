@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { COMPANY, CURRENT_USER } from "@/lib/mock-data";
+import { COMPANY } from "@/lib/mock-data";
 import { Avatar } from "@/components/common/avatar";
 import { RoleBadge, StatusBadge } from "@/components/common/status-badge";
 import { useCompanyMembers } from "@/lib/session-store";
@@ -24,8 +24,15 @@ import {
   Users,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { useUser } from "@clerk/react";
 
 export default function Settings() {
+  const { user } = useUser();
+  const currentUser = {
+    name: user?.fullName ?? user?.firstName ?? "User",
+    email: user?.primaryEmailAddress?.emailAddress ?? "",
+    avatarHue: 250, // fixed or derive from email hash
+  };
   const { members, invite, remove } = useCompanyMembers();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -55,14 +62,14 @@ export default function Settings() {
         >
           <div className="flex items-center gap-4">
             <Avatar
-              name={CURRENT_USER.name}
-              hue={CURRENT_USER.avatarHue}
+              name={currentUser.name}
+              hue={currentUser.avatarHue}
               size={56}
             />
             <div>
-              <div className="text-sm font-medium">{CURRENT_USER.name}</div>
+              <div className="text-sm font-medium">{currentUser.name}</div>
               <div className="text-xs text-muted-foreground">
-                {CURRENT_USER.email}
+                {currentUser.email}
               </div>
             </div>
             <button className="ml-auto h-8 px-3 rounded-md border border-border bg-surface text-xs hover:bg-accent">
@@ -76,7 +83,7 @@ export default function Settings() {
               label="Email"
               icon={Mail}
               disabled
-              defaultValue={CURRENT_USER.email}
+              defaultValue={currentUser.email}
             />
             <Field
               label="Password"
@@ -122,16 +129,16 @@ export default function Settings() {
               {/* Account owner — always present */}
               <div className="flex items-center gap-3 px-4 py-3">
                 <Avatar
-                  name={CURRENT_USER.name}
-                  hue={CURRENT_USER.avatarHue}
+                  name={currentUser.name}
+                  hue={currentUser.avatarHue}
                   size={32}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate">
-                    {CURRENT_USER.name}
+                    {currentUser.name}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {CURRENT_USER.email}
+                    {currentUser.email}
                   </div>
                 </div>
                 <RoleBadge role="ACCOUNT_OWNER" />

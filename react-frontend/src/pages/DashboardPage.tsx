@@ -19,12 +19,12 @@ import {
   fmtCurrency,
   fmtDate,
   projectSummary,
-  CURRENT_USER,
   COMPANY,
 } from "@/lib/mock-data";
 import { RoleBadge, StatusBadge } from "@/components/common/status-badge";
 import CreateProjectDialog from "@/components/project/create";
 import { Button } from "@/components/common/button";
+import { useUser } from "@clerk/react";
 
 const SESSION_KEY = "claimo:projects";
 
@@ -44,6 +44,12 @@ function saveProjects(projects: Project[]) {
 export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { user } = useUser();
+  // const currentUser = {
+  //   name: user?.fullName ?? user?.firstName ?? "User",
+  //   email: user?.primaryEmailAddress?.emailAddress ?? "",
+  //   avatarHue: 250, // fixed or derive from email hash
+  // };
 
   useEffect(() => {
     setProjects(loadProjects());
@@ -62,7 +68,16 @@ export default function Dashboard() {
       location: data.location,
       startDate: data.startDate,
       status: "Active",
-      members: [CURRENT_USER],
+      members: [
+        {
+          id: user?.id ?? `u-${Date.now()}`,
+          name: user?.fullName ?? "You",
+          email: user?.primaryEmailAddress?.emailAddress ?? "",
+          role: "ADMIN" as const,
+          joined: new Date().toISOString().slice(0, 10),
+          avatarHue: 250,
+        },
+      ],
       models: [],
     };
     const updated = [newProject, ...projects];
@@ -173,6 +188,12 @@ function FilledDashboard({
   projects: Project[];
   onCreateClick: () => void;
 }) {
+  const { user } = useUser();
+  const currentUser = {
+    name: user?.fullName ?? user?.firstName ?? "User",
+    email: user?.primaryEmailAddress?.emailAddress ?? "",
+    avatarHue: 250, // fixed or derive from email hash
+  };
   const totalModels = projects.reduce((s, p) => s + p.models.length, 0);
   const totals = projects.reduce(
     (acc, p) => {
@@ -196,23 +217,30 @@ function FilledDashboard({
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>{COMPANY.name}</span>
             <span>·</span>
-            <RoleBadge role={CURRENT_USER.companyRole} />
+            <RoleBadge role="ACCOUNT_OWNER" />
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-            Welcome back, {CURRENT_USER.name.split(" ")[0]}.
+            Welcome back, {currentUser.name.split(" ")[0]}.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Here's what's happening across your projects today.
           </p>
         </div>
-        <Button
-          onClick={onCreateClick}
-          className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
-        >
-          <Plus className="h-4 w-4" /> New project
-        </Button>
+        <div className="mt-6 inline-flex items-center gap-2">
+          <Button
+            onClick={onCreateClick}
+            className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
+          >
+            <Plus className="h-4 w-4" /> New project
+          </Button>
+          <Link
+            to="/settings"
+            className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm font-medium hover:bg-accent transition"
+          >
+            <UserPlus className="h-4 w-4" /> Invite teammates
+          </Link>
+        </div>
       </div>
-
       {/* Summary cards */}
       <div className="mt-8 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         <Stat
@@ -279,9 +307,11 @@ function FilledDashboard({
               const pct =
                 s.total > 0 ? Math.round((s.approved / s.total) * 100) : 0;
               return (
-                <div
+                <Link
                   key={p.id}
-                  className="grid grid-cols-12 gap-3 items-center px-5 py-4 hover:bg-accent/40 transition cursor-default"
+                  to="/projects/$projectId"
+                  params={{ projectId: p.id }}
+                  className="grid grid-cols-12 gap-3 items-center px-5 py-4 hover:bg-accent/40 transition cursor-pointer"
                 >
                   <div className="col-span-12 md:col-span-5 flex items-center gap-3 min-w-0">
                     <div className="h-9 w-9 rounded-md bg-linear-to-br from-[oklch(0.55_0.13_255)] to-[oklch(0.32_0.08_255)] flex items-center justify-center text-white text-xs font-semibold shrink-0">
@@ -321,7 +351,7 @@ function FilledDashboard({
                       {pct}% paid
                     </span>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
