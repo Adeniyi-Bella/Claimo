@@ -1,5 +1,6 @@
 import type { Project } from "@/lib/mock-data";
 import { fmtDate, modelSummary } from "@/lib/mock-data";
+import { Link } from "@tanstack/react-router";
 import { Boxes, Upload } from "lucide-react";
 
 export default function ModelsTab({
@@ -55,8 +56,10 @@ export default function ModelsTab({
             const thumb = modelThumbs[m.id];
 
             return (
-              <div
+              <Link
                 key={m.id}
+                to="/viewer/$projectId/$modelId"
+                params={{ projectId: project.id, modelId: m.id }}
                 className="rounded-xl border border-border bg-surface shadow-soft hover:shadow-elevated hover:border-primary/30 transition overflow-hidden cursor-pointer"
               >
                 {/* Thumbnail */}
@@ -73,7 +76,7 @@ export default function ModelsTab({
                     </div>
                   )}
                   <span className="absolute top-2 right-2 text-[10px] font-mono bg-surface/80 backdrop-blur border border-border rounded px-1.5 py-0.5 text-muted-foreground">
-                    .json
+                    .{m.fileType ?? "json"}
                   </span>
                 </div>
 
@@ -94,7 +97,7 @@ export default function ModelsTab({
                     />
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

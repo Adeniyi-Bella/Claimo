@@ -19,6 +19,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects/$projectId'
+import { Route as AuthenticatedViewerProjectIdModelIdRouteImport } from './routes/_authenticated/viewer/$projectId/$modelId'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -71,6 +72,12 @@ const AuthenticatedProjectsProjectIdRoute =
     path: '/projects/$projectId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedViewerProjectIdModelIdRoute =
+  AuthenticatedViewerProjectIdModelIdRouteImport.update({
+    id: '/viewer/$projectId/$modelId',
+    path: '/viewer/$projectId/$modelId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/register/sso-callback': typeof RegisterSsoCallbackRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/viewer/$projectId/$modelId': typeof AuthenticatedViewerProjectIdModelIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -93,6 +101,7 @@ export interface FileRoutesByTo {
   '/register/sso-callback': typeof RegisterSsoCallbackRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/viewer/$projectId/$modelId': typeof AuthenticatedViewerProjectIdModelIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -106,6 +115,7 @@ export interface FileRoutesById {
   '/register/sso-callback': typeof RegisterSsoCallbackRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/viewer/$projectId/$modelId': typeof AuthenticatedViewerProjectIdModelIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/register/sso-callback'
     | '/projects/$projectId'
     | '/projects/'
+    | '/viewer/$projectId/$modelId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/register/sso-callback'
     | '/projects/$projectId'
     | '/projects'
+    | '/viewer/$projectId/$modelId'
   id:
     | '__root__'
     | '/'
@@ -142,6 +154,7 @@ export interface FileRouteTypes {
     | '/register/sso-callback'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/projects/'
+    | '/_authenticated/viewer/$projectId/$modelId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/viewer/$projectId/$modelId': {
+      id: '/_authenticated/viewer/$projectId/$modelId'
+      path: '/viewer/$projectId/$modelId'
+      fullPath: '/viewer/$projectId/$modelId'
+      preLoaderRoute: typeof AuthenticatedViewerProjectIdModelIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -231,6 +251,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+  AuthenticatedViewerProjectIdModelIdRoute: typeof AuthenticatedViewerProjectIdModelIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -238,6 +259,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+  AuthenticatedViewerProjectIdModelIdRoute:
+    AuthenticatedViewerProjectIdModelIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

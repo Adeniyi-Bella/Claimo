@@ -10,6 +10,7 @@ export type PaymentStatus =
   | "COMPLETED";
 export type ProjectRole = "ADMIN" | "CONTRACTOR" | "VIEWER" | "APPROVER";
 export type ProjectStatus = "Active" | "Completed" | "Archived";
+export type ModelFileType = "ifc" | "json";
 
 export interface Member {
   id: string;
@@ -52,12 +53,33 @@ export interface PaymentItem {
   claims: Claim[];
 }
 
+export interface BufferAttribute {
+  itemSize: number;
+  type: string;
+  array: number[];
+}
+
+export interface BufferGeometryJson {
+  metadata?: { type: string; version: number };
+  type: "BufferGeometry";
+  data: {
+    attributes: {
+      position: BufferAttribute;
+      normal?: BufferAttribute;
+      uv?: BufferAttribute;
+    };
+    index?: { type: string; array: number[] };
+  };
+}
+
 export interface ProjectModel {
   id: string;
   name: string;
+  fileType: ModelFileType;     // NEW
+  fileUrl?: string;            // NEW — blob URL for IFC, undefined for JSON
   uploadedAt: string;
   uploadedBy: string;
-  geometryJson?: object;
+  geometryJson?: BufferGeometryJson; // keep for JSON fallback
   paymentItems: PaymentItem[];
 }
 
@@ -85,10 +107,25 @@ export interface ItemTotals {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const CATEGORIES = [
-  "Foundations", "Concrete Works", "Reinforcement", "Brickwork", "Carpentry",
-  "Roofing", "Plumbing", "Electrical", "HVAC", "Plastering",
-  "Tiling", "Painting", "Glazing", "Landscaping", "Demolition",
-  "Excavation", "Drainage", "Fire Protection", "Insulation",
+  "Foundations",
+  "Concrete Works",
+  "Reinforcement",
+  "Brickwork",
+  "Carpentry",
+  "Roofing",
+  "Plumbing",
+  "Electrical",
+  "HVAC",
+  "Plastering",
+  "Tiling",
+  "Painting",
+  "Glazing",
+  "Landscaping",
+  "Demolition",
+  "Excavation",
+  "Drainage",
+  "Fire Protection",
+  "Insulation",
 ];
 
 export const COMPANY = {
@@ -99,13 +136,13 @@ export const COMPANY = {
 
 export function itemTotals(item: PaymentItem): ItemTotals {
   const approved = item.claims
-    .filter(c => c.status === "APPROVED")
+    .filter((c) => c.status === "APPROVED")
     .reduce((s, c) => s + c.amount, 0);
   const pending = item.claims
-    .filter(c => c.status === "SUBMITTED")
+    .filter((c) => c.status === "SUBMITTED")
     .reduce((s, c) => s + c.amount, 0);
   const rejected = item.claims
-    .filter(c => c.status === "REJECTED")
+    .filter((c) => c.status === "REJECTED")
     .reduce((s, c) => s + c.amount, 0);
   const remaining = Math.max(0, item.contractValue - approved - pending);
   return {
@@ -122,7 +159,7 @@ export function itemTotals(item: PaymentItem): ItemTotals {
 export function derivedStatus(item: PaymentItem): PaymentStatus {
   const t = itemTotals(item);
   if (t.approved >= item.contractValue) return "COMPLETED";
-  if (item.claims.some(c => c.status === "SUBMITTED")) return "SUBMITTED";
+  if (item.claims.some((c) => c.status === "SUBMITTED")) return "SUBMITTED";
   if (t.approved > 0) return "IN_PROGRESS";
   const last = item.claims[item.claims.length - 1];
   if (last && last.status === "REJECTED") return "REJECTED";
@@ -130,7 +167,7 @@ export function derivedStatus(item: PaymentItem): PaymentStatus {
 }
 
 export function projectSummary(p: Project) {
-  const items = p.models.flatMap(m => m.paymentItems);
+  const items = p.models.flatMap((m) => m.paymentItems);
   const totals = items.reduce(
     (acc, i) => {
       const t = itemTotals(i);

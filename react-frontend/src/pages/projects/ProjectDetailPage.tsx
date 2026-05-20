@@ -1,4 +1,4 @@
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import {
   fmtDate,
@@ -19,15 +19,16 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent } from "@/components/common/sheet";
-import Overview from "./tabs/Overview";
-import ModelsTab from "./tabs/Models";
-import UploadModelModal from "./modals/Model";
-import AddPaymentItemModal from "./modals/Payment";
-import InviteModal from "./modals/Invite";
-import MembersTab from "./tabs/Members";
-import PaymentItemsTab from "./tabs/PaymentItems";
-import PaymentItemPanel from "./panel/PaymentRighthandPanel";
+
 import { usePaymentStore } from "@/hooks/usePaymentStore";
+import InviteModal from "@/components/project/modals/Invite";
+import UploadModelModal from "@/components/project/modals/Model";
+import AddPaymentItemModal from "@/components/project/modals/Payment";
+import PaymentItemPanel from "@/components/project/panel/PaymentRighthandPanel";
+import MembersTab from "@/components/project/tabs/Members";
+import ModelsTab from "@/components/project/tabs/Models";
+import Overview from "@/components/project/tabs/Overview";
+import PaymentItemsTab from "@/components/project/tabs/PaymentItems";
 
 const TABS = ["Overview", "Models", "Members", "Payment Items"] as const;
 
@@ -65,7 +66,10 @@ export default function ProjectDetail() {
 
   const syncFromSession = usePaymentStore((s) => s.syncFromSession);
 
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
+  const search = useSearch({ from: "/_authenticated/projects/$projectId" });
+  const [tab, setTab] = useState<(typeof TABS)[number]>(
+    (search as any)?.tab ?? "Overview",
+  );
   const [openInvite, setOpenInvite] = useState(false);
   const [openUpload, setOpenUpload] = useState(false);
   const [openAddItem, setOpenAddItem] = useState(false);
