@@ -10,7 +10,7 @@ function requireEnv(key: string, validator?: (v: string) => boolean): string {
 }
 
 export const config = {
-  // VITE_API_URL: requireEnv("VITE_API_URL", v => v.startsWith("http")),
+  VITE_API_URL: requireEnv("VITE_API_URL", v => v.startsWith("http")),
   VITE_CLERK_PUBLISHABLE_KEY: requireEnv("VITE_CLERK_PUBLISHABLE_KEY"),
   VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
   VITE_ENV: requireEnv("VITE_ENV", v => ["development", "production"].includes(v)),

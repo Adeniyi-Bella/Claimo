@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type * as OBC from "@thatopen/components";
 import type * as OBF from "@thatopen/components-front";
+import type { JobStatus, PaymentStatusType } from "../mock-data";
 
 const SESSION_KEY = "claimo:projects";
 
@@ -57,6 +58,9 @@ export interface PaymentItemLocal {
   description?: string;
   claims: any[];
   attachedElementIds: string[];
+  jobStatus?: JobStatus;
+  paymentStatus?: PaymentStatusType;
+  paymentConfirmationPending?: boolean;
 }
 
 // ─── IFC Tree ─────────────────────────────────────────────────────────────────
@@ -116,7 +120,7 @@ interface ViewerStore {
   detachSelectionFromPayment: (paymentId: string) => void;
 }
 
-export const useViewerStore = create<ViewerStore>((set, get) => ({
+export const useViewerStore = create<ViewerStore>((set) => ({
   projectId: "",
   modelName: "",
   paymentItems: [],

@@ -56,6 +56,8 @@ export default function PaymentItemsTab({
               <th className="text-right font-medium px-4 py-2.5">Submitted</th>
               <th className="text-left font-medium px-4 py-2.5">Status</th>
               <th className="text-left font-medium px-4 py-2.5">Updated</th>
+              <th className="text-left font-medium px-4 py-2.5">Job Status</th>
+              <th className="text-left font-medium px-4 py-2.5">Payment</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -97,6 +99,41 @@ export default function PaymentItemsTab({
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   {fmtDate(i.updatedAt)}
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full border
+    ${
+      (i.jobStatus ?? "NOT_STARTED") === "COMPLETED"
+        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
+        : (i.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
+          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
+          : "bg-muted text-muted-foreground border-border"
+    }`}
+                  >
+                    {(i.jobStatus ?? "NOT_STARTED") === "NOT_STARTED"
+                      ? "Not Started"
+                      : (i.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
+                        ? "In Progress"
+                        : "Completed"}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full border
+    ${
+      (i.paymentStatus ?? "NONE") === "APPROVED"
+        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
+        : (i.paymentStatus ?? "NONE") === "PAID"
+          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
+          : (i.paymentStatus ?? "NONE") === "REJECTED"
+            ? "bg-status-rejected text-status-rejected-fg border-status-rejected-fg/20"
+            : "bg-muted text-muted-foreground border-border"
+    }`}
+                  >
+                    {(i.paymentStatus ?? "NONE").charAt(0) +
+                      (i.paymentStatus ?? "NONE").slice(1).toLowerCase()}
+                  </span>
                 </td>
               </tr>
             ))}

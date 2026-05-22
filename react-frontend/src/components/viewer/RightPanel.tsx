@@ -41,7 +41,12 @@ function deriveStatus(item: PaymentItemLocal): ClaimStatusDisplay {
 
 const statusMeta: Record<
   ClaimStatusDisplay,
-  { label: string; icon: typeof CheckCircle2; barVar: string; badgeClass: string }
+  {
+    label: string;
+    icon: typeof CheckCircle2;
+    barVar: string;
+    badgeClass: string;
+  }
 > = {
   approved: {
     label: "Approved",
@@ -102,9 +107,10 @@ function PaymentCard({
   const approvedTotal = item.claims
     .filter((c: any) => c.status === "APPROVED")
     .reduce((s: number, c: any) => s + c.amount, 0);
-  const pct = item.contractValue > 0
-    ? Math.round((approvedTotal / item.contractValue) * 100)
-    : 0;
+  const pct =
+    item.contractValue > 0
+      ? Math.round((approvedTotal / item.contractValue) * 100)
+      : 0;
 
   return (
     <div
@@ -144,6 +150,41 @@ function PaymentCard({
             style={{ width: `${pct}%`, background: m.barVar }}
           />
         </div>
+      </div>
+
+      <div className="flex gap-1.5 pl-2 mb-1.5 flex-wrap">
+        <span
+          className={`text-[10px] font-medium px-1.5 py-0.5 rounded border
+    ${
+      (item.jobStatus ?? "NOT_STARTED") === "COMPLETED"
+        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
+        : (item.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
+          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
+          : "bg-muted text-muted-foreground border-border"
+    }`}
+        >
+          {(item.jobStatus ?? "NOT_STARTED") === "NOT_STARTED"
+            ? "Not Started"
+            : (item.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
+              ? "In Progress"
+              : "Done"}
+        </span>
+        <span
+          className={`text-[10px] font-medium px-1.5 py-0.5 rounded border
+    ${
+      (item.paymentStatus ?? "NONE") === "APPROVED"
+        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
+        : (item.paymentStatus ?? "NONE") === "PAID"
+          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
+          : (item.paymentStatus ?? "NONE") === "REJECTED"
+            ? "bg-status-rejected text-status-rejected-fg border-status-rejected-fg/20"
+            : "bg-muted text-muted-foreground border-border"
+    }`}
+        >
+          Pay:{" "}
+          {(item.paymentStatus ?? "NONE").charAt(0) +
+            (item.paymentStatus ?? "NONE").slice(1).toLowerCase()}
+        </span>
       </div>
 
       <div className="flex items-center justify-between pl-2">
@@ -205,9 +246,21 @@ function NoSelectionView() {
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "Contract", value: totals.contract, varName: "status-pending-fg" },
-            { label: "Approved", value: totals.approved, varName: "status-approved-fg" },
-            { label: "Submitted", value: totals.submitted, varName: "status-submitted-fg" },
+            {
+              label: "Contract",
+              value: totals.contract,
+              varName: "status-pending-fg",
+            },
+            {
+              label: "Approved",
+              value: totals.approved,
+              varName: "status-approved-fg",
+            },
+            {
+              label: "Submitted",
+              value: totals.submitted,
+              varName: "status-submitted-fg",
+            },
           ].map(({ label, value, varName }) => (
             <div
               key={label}
@@ -264,8 +317,9 @@ function SelectionView() {
   // Which payment items have selected elements already attached?
   const grouping = useMemo(() => {
     const attached: Record<string, string[]> = {};
-    const unattachedCount =
-      Array.from(selectedIds).filter((id) => !paymentMap.has(id)).length;
+    const unattachedCount = Array.from(selectedIds).filter(
+      (id) => !paymentMap.has(id),
+    ).length;
     for (const id of selectedIds) {
       const p = paymentMap.get(id);
       if (p) {

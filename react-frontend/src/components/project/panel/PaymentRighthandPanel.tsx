@@ -11,6 +11,8 @@ import {
   itemTotals,
   derivedStatus,
   type Claim,
+  type PaymentStatusType,
+  type JobStatus,
 } from "@/lib/mock-data";
 import {
   X,
@@ -60,6 +62,10 @@ export default function PaymentItemPanel({
   const setActingRole = usePaymentStore((s) => s.setActingRole);
   const submitClaim = usePaymentStore((s) => s.submitClaim);
   const decideClaim = usePaymentStore((s) => s.decideClaim);
+  const setJobStatus = usePaymentStore((s) => s.setJobStatus);
+  const setPaymentStatus = usePaymentStore((s) => s.setPaymentStatus);
+  const confirmPayment = usePaymentStore((s) => s.confirmPayment);
+  const rejectPayment = usePaymentStore((s) => s.rejectPayment);
 
   const totals = useMemo(() => (item ? itemTotals(item) : null), [item]);
   const status = useMemo(() => (item ? derivedStatus(item) : null), [item]);
@@ -256,6 +262,129 @@ export default function PaymentItemPanel({
           </div>
         )}
 
+        {/* Job Status — contractor only */}
+        {(actingRole === "CONTRACTOR" || actingRole === "ADMIN") && (
+          <div className="rounded-lg border border-border p-3 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <HardHat className="h-3 w-3" /> Job Status
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"] as JobStatus[]).map(
+                (s) => (
+                  <button
+                    key={s}
+                    disabled={actingRole !== "CONTRACTOR"}
+                    onClick={() => {
+                      const prev = item.jobStatus ?? "NOT_STARTED";
+                      if (prev === s) return;
+                      setJobStatus(item.id, s);
+                      toast.success("Job status updated", {
+                        description: `Status changed to ${s.replace("_", " ").toLowerCase()}.`,
+                      });
+                    }}
+                    className={`h-7 rounded text-[11px] font-medium transition border
+            ${
+              (item.jobStatus ?? "NOT_STARTED") === s
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-transparent text-muted-foreground border-border hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed"
+            }`}
+                  >
+                    {s === "NOT_STARTED"
+                      ? "Not Started"
+                      : s === "IN_PROGRESS"
+                        ? "In Progress"
+                        : "Completed"}
+                  </button>
+                ),
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Payment Status — approver only sets PAID or NONE */}
+        {actingRole === "APPROVER" && (
+          <div className="rounded-lg border border-border p-3 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> Payment Status
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {(["NONE", "PAID"] as PaymentStatusType[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    const prev = item.paymentStatus ?? "NONE";
+                    if (prev === s) return;
+                    setPaymentStatus(item.id, s);
+                    toast.success("Payment status updated", {
+                      description: `Marked as ${s.toLowerCase()}. Contractor has been notified to confirm.`,
+                    });
+                  }}
+                  className={`h-7 rounded text-[11px] font-medium transition border
+            ${
+              (item.paymentStatus ?? "NONE") === s
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-transparent text-muted-foreground border-border hover:bg-accent"
+            }`}
+                >
+                  {s === "NONE" ? "None" : "Paid"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Pending payment confirmation — contractor sees this */}
+        {actingRole === "CONTRACTOR" && item.paymentConfirmationPending && (
+          <div className="rounded-lg border border-status-submitted-fg/30 bg-status-submitted/30 p-3 space-y-2.5">
+            <div className="text-xs font-semibold text-status-submitted-fg flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              Payment confirmation required
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {item.approverName} has marked this payment as paid. Please
+              confirm or dispute.
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  confirmPayment(item.id);
+                  toast.success("Payment confirmed", {
+                    description: "You have confirmed receipt of this payment.",
+                  });
+                }}
+                className="flex-1 h-9 inline-flex items-center justify-center gap-1.5 rounded-md bg-status-approved-fg text-white text-sm font-medium hover:opacity-90 transition"
+              >
+                <Check className="h-4 w-4" /> Confirm receipt
+              </button>
+              <button
+                onClick={() => {
+                  rejectPayment(item.id);
+                  toast.error("Payment disputed", {
+                    description:
+                      "Payment marked as not received. The approver has been notified.",
+                  });
+                }}
+                className="flex-1 h-9 inline-flex items-center justify-center gap-1.5 rounded-md border border-status-rejected-fg/40 text-status-rejected-fg text-sm font-medium hover:bg-status-rejected/40 transition"
+              >
+                <X className="h-4 w-4" /> Dispute
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Contractor sees current payment status when no confirmation pending */}
+        {actingRole === "CONTRACTOR" && !item.paymentConfirmationPending && (
+          <div className="rounded-lg border border-border p-3 space-y-1">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> Payment Status
+            </div>
+            <div className="text-sm font-medium">
+              {(item.paymentStatus ?? "NONE").charAt(0) +
+                (item.paymentStatus ?? "NONE").slice(1).toLowerCase()}
+            </div>
+          </div>
+        )}
+
         {/* Submit claim (contractor) */}
         {canSubmit && (
           <div className="rounded-lg border border-border p-3 space-y-2.5">
@@ -382,7 +511,6 @@ export default function PaymentItemPanel({
                     Cancel
                   </button>
                   <button
-
                     onClick={() => onReject(pendingClaim.id)}
                     className="flex-1 h-8 inline-flex items-center justify-center gap-1.5 rounded-md bg-status-rejected-fg text-white text-xs font-medium hover:opacity-90 transition"
                   >
@@ -463,6 +591,41 @@ export default function PaymentItemPanel({
                       <span className="absolute left-[5px] top-5 -bottom-3 w-px bg-border" />
                     )}
                     <ClaimRow claim={c} />
+                  </li>
+                ))}
+            </ol>
+          )}
+        </div>
+
+        {/* Audit Trail */}
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            Audit Trail
+          </div>
+          {(item.auditTrail ?? []).length === 0 ? (
+            <div className="text-xs text-muted-foreground rounded-md border border-dashed border-border p-4 text-center">
+              No activity yet.
+            </div>
+          ) : (
+            <ol className="space-y-2">
+              {(item.auditTrail ?? [])
+                .slice()
+                .reverse()
+                .map((entry) => (
+                  <li key={entry.id} className="flex gap-2.5 text-[11px]">
+                    <span className="mt-1 h-2 w-2 rounded-full shrink-0 bg-muted-foreground/40" />
+                    <div>
+                      <span className="font-medium text-foreground">
+                        {entry.actorName}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {entry.action}
+                      </span>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {new Date(entry.timestamp).toLocaleString()}
+                      </div>
+                    </div>
                   </li>
                 ))}
             </ol>

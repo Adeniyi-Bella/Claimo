@@ -12,6 +12,21 @@ export type ProjectRole = "ADMIN" | "CONTRACTOR" | "VIEWER" | "APPROVER";
 export type ProjectStatus = "Active" | "Completed" | "Archived";
 export type ModelFileType = "ifc" | "json";
 
+export type JobStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+export type PaymentStatusType = "NONE" | "PAID" | "REJECTED" | "APPROVED";
+
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  actorId: string;
+  actorName: string;
+  actorRole: ProjectRole;
+  action: string;
+  field: "JOB_STATUS" | "PAYMENT_STATUS" | "CLAIM" | "SYSTEM";
+  fromValue?: string;
+  toValue?: string;
+}
+
 export interface Member {
   id: string;
   name: string;
@@ -52,6 +67,10 @@ export interface PaymentItem {
   updatedAt: string;
   claims: Claim[];
   attachedElementIds: string[];
+  jobStatus: JobStatus;
+  paymentStatus: PaymentStatusType;
+  paymentConfirmationPending: boolean;
+  auditTrail: AuditEntry[];
 }
 
 export interface BufferAttribute {
@@ -76,8 +95,8 @@ export interface BufferGeometryJson {
 export interface ProjectModel {
   id: string;
   name: string;
-  fileType: ModelFileType;     // NEW
-  fileUrl?: string;            // NEW — blob URL for IFC, undefined for JSON
+  fileType: ModelFileType; // NEW
+  fileUrl?: string; // NEW — blob URL for IFC, undefined for JSON
   uploadedAt: string;
   uploadedBy: string;
   geometryJson?: BufferGeometryJson; // keep for JSON fallback
