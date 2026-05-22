@@ -79,8 +79,14 @@
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* @import "tailwindcss" source(none); */
@@ -96,7 +102,8 @@
  */
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -148,9 +155,15 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-soft: 0 1px 2px 0 oklch(0.2 0.04 250 / 0.04), 0 1px 3px 0 oklch(0.2 0.04 250 / 0.06);
-  --shadow-elevated: 0 4px 12px -2px oklch(0.2 0.04 250 / 0.08), 0 2px 6px -1px oklch(0.2 0.04 250 / 0.04);
-  --shadow-glow: 0 0 0 1px oklch(0.42 0.13 255 / 0.12), 0 8px 24px -8px oklch(0.42 0.13 255 / 0.25);
+  --shadow-soft:
+    0 1px 2px 0 oklch(0.2 0.04 250 / 0.04),
+    0 1px 3px 0 oklch(0.2 0.04 250 / 0.06);
+  --shadow-elevated:
+    0 4px 12px -2px oklch(0.2 0.04 250 / 0.08),
+    0 2px 6px -1px oklch(0.2 0.04 250 / 0.04);
+  --shadow-glow:
+    0 0 0 1px oklch(0.42 0.13 255 / 0.12),
+    0 8px 24px -8px oklch(0.42 0.13 255 / 0.25);
 }
 
 :root {
@@ -213,6 +226,13 @@
   --sidebar-accent-foreground: oklch(0.32 0.08 255);
   --sidebar-border: oklch(0.92 0.008 250);
   --sidebar-ring: oklch(0.42 0.13 255);
+
+  --viewer-toolbar: oklch(0.18 0.02 255);
+  --viewer-panel: oklch(0.17 0.02 255);
+  --viewer-panel-border: oklch(1 0 0 / 8%);
+  --viewer-canvas: oklch(0.13 0.02 255);
+  --status-selected: oklch(0.72 0.18 255);
+  --status-neutral: oklch(0.45 0.02 255);
 }
 
 .dark {
@@ -251,7 +271,8 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -265,16 +286,31 @@
 @layer utilities {
   .bg-grid {
     background-image:
-      linear-gradient(to right, oklch(0.92 0.008 250 / 0.6) 1px, transparent 1px),
-      linear-gradient(to bottom, oklch(0.92 0.008 250 / 0.6) 1px, transparent 1px);
+      linear-gradient(
+        to right,
+        oklch(0.92 0.008 250 / 0.6) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        oklch(0.92 0.008 250 / 0.6) 1px,
+        transparent 1px
+      );
     background-size: 48px 48px;
   }
   .bg-dots {
-    background-image: radial-gradient(oklch(0.85 0.01 250) 1px, transparent 1px);
+    background-image: radial-gradient(
+      oklch(0.85 0.01 250) 1px,
+      transparent 1px
+    );
     background-size: 16px 16px;
   }
   .text-gradient-primary {
-    background: linear-gradient(135deg, oklch(0.32 0.08 255), oklch(0.55 0.16 250));
+    background: linear-gradient(
+      135deg,
+      oklch(0.32 0.08 255),
+      oklch(0.55 0.16 250)
+    );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

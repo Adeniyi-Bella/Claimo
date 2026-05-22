@@ -51,6 +51,7 @@ export interface PaymentItem {
   createdAt: string;
   updatedAt: string;
   claims: Claim[];
+  attachedElementIds: string[];
 }
 
 export interface BufferAttribute {

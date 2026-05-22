@@ -1,8 +1,13 @@
 import { useParams, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as OBC from "@thatopen/components";
-import { ArrowLeft, Boxes, Loader2 } from "lucide-react";
+import * as OBCF from "@thatopen/components-front";
+import { Boxes, Loader2 } from "lucide-react";
 import { loadModelFile } from "@/lib/model-storage";
+import { useViewerStore, type IfcTreeNode } from "@/lib/viewer/store";
+import { LeftPanel } from "@/components/viewer/LeftPanel";
+import { ViewerToolbar } from "@/components/viewer/ViewerToolbar";
+import { RightPanel } from "@/components/viewer/RightPanel";
 
 const SESSION_KEY = "claimo:projects";
 
@@ -15,60 +20,6 @@ function loadProjects(): any[] {
   }
 }
 
-// ─── Toolbar ─────────────────────────────────────────────────────────────────
-
-function Toolbar({
-  modelName,
-  projectId,
-  status,
-}: {
-  modelName: string;
-  projectId: string;
-  status: "idle" | "loading" | "converting" | "ready" | "error";
-}) {
-  const statusLabel: Record<typeof status, string> = {
-    idle: "",
-    loading: "Initialising viewer…",
-    converting: "Converting IFC to Fragments — this may take a moment…",
-    ready: "",
-    error: "Failed to load model.",
-  };
-
-  return (
-    <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-surface/80 backdrop-blur border-b border-border">
-      <div className="flex items-center gap-3">
-        <Link
-          to="/projects/$projectId"
-          params={{ projectId }}
-          search={{ tab: "Models" } as any}
-          className="h-8 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to models
-        </Link>
-        <div className="h-4 w-px bg-border" />
-        <div className="inline-flex items-center gap-1.5 text-sm font-medium">
-          <Boxes className="h-4 w-4 text-primary" />
-          {modelName}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {(status === "loading" || status === "converting") && (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        )}
-        {statusLabel[status] && <span>{statusLabel[status]}</span>}
-        {status === "ready" && (
-          <span className="hidden sm:inline">
-            Scroll · zoom &nbsp;|&nbsp; Left drag · orbit &nbsp;|&nbsp; Right
-            drag · pan
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── Route component ──────────────────────────────────────────────────────────
 
 export default function ModelViewer() {
@@ -78,13 +29,28 @@ export default function ModelViewer() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const componentsRef = useRef<OBC.Components | null>(null);
+  const cameraRef = useRef<OBC.OrthoPerspectiveCamera | null>(null);
   const [status, setStatus] = useState<
     "idle" | "loading" | "converting" | "ready" | "error"
   >("idle");
 
+  const initStore = useViewerStore((s) => s.init);
+
   const projects = loadProjects();
   const project = projects.find((p: any) => p.id === projectId);
   const model = project?.models.find((m: any) => m.id === modelId);
+
+  // Seed viewer store with this model's payment items
+  useEffect(() => {
+    if (project && model) {
+      initStore(projectId, modelId, model.name);
+    }
+  }, [projectId, modelId]);
+
+  const handleResetCamera = useCallback(async () => {
+    if (!cameraRef.current) return;
+    await cameraRef.current.controls.setLookAt(12, 6, 12, 0, 0, 0, true);
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || !model) return;
@@ -121,6 +87,8 @@ export default function ModelViewer() {
         world.renderer.showLogo = false;
 
         world.camera = new OBC.OrthoPerspectiveCamera(components);
+
+        cameraRef.current = world.camera;
         // Start at a wide angle; will be overridden once model loads
         await world.camera.controls.setLookAt(12, 6, 12, 0, 0, 0);
 
@@ -155,6 +123,9 @@ export default function ModelViewer() {
           loadedModel.useCamera(world.camera.three);
           world.scene.three.add(loadedModel.object);
           fragments.core.update(true);
+          useViewerStore
+            .getState()
+            .setOBCRefs(components, highlighter, hider, model.id);
           setStatus("ready");
         });
 
@@ -170,6 +141,22 @@ export default function ModelViewer() {
         );
 
         components.get(OBC.Grids).create(world);
+
+        const highlighter = components.get(OBCF.Highlighter);
+        components.get(OBC.Raycasters).get(world);
+        highlighter.setup({ world });
+        highlighter.zoomToSelection = true;
+        highlighter.events.select.onHighlight.add((modelIdMap) => {
+          const ids = Object.values(modelIdMap).flatMap((set) =>
+            Array.from(set).map(String),
+          );
+          useViewerStore.getState().selectMany(ids);
+        });
+
+        highlighter.events.select.onClear.add(() => {
+          useViewerStore.getState().clearSelection();
+        });
+        const hider = components.get(OBC.Hider);
 
         // ── 3. Load the model ────────────────────────────────────────────────
         if (model.fileType === "ifc") {
@@ -218,6 +205,7 @@ export default function ModelViewer() {
             },
           });
 
+          // Snap grid to ground floor
           const loadedModel = fragments.list.get(model.id);
           if (loadedModel) {
             const storeys = await loadedModel.getItemsOfCategories([
@@ -248,6 +236,51 @@ export default function ModelViewer() {
             components.get(OBC.Grids).list.forEach((grid) => {
               grid.three.position.y = groundElevation;
             });
+
+            const { setIfcTree, setIfcTreeLoading } = useViewerStore.getState();
+            setIfcTreeLoading(true);
+            try {
+              const loadedModel = fragments.list.get(model.id);
+              if (loadedModel) {
+                const spatialStructure =
+                  await loadedModel.getSpatialStructure();
+                console.log(
+                  "spatial structure:",
+                  JSON.stringify(spatialStructure, null, 2),
+                );
+                const convertNode = (
+                  raw: any,
+                  inheritedCategory?: string,
+                ): IfcTreeNode | null => {
+                  if (raw.localId === null) {
+                    return (raw.children ?? []).flatMap(
+                      (c: any) => convertNode(c, raw.category) ?? [],
+                    );
+                  }
+                  return {
+                    localId: raw.localId,
+                    expressId: String(raw.localId),
+                    name:
+                      inheritedCategory ?? raw.category ?? String(raw.localId),
+                    type: inheritedCategory ?? raw.category ?? "",
+                    modelId: model.id,
+                    children: (raw.children ?? []).flatMap(
+                      (c: any) => convertNode(c) ?? [],
+                    ),
+                  };
+                };
+
+                setIfcTree(
+                  (spatialStructure.children ?? []).flatMap(
+                    (c: any) => convertNode(c) ?? [],
+                  ),
+                );
+              }
+            } catch (err) {
+              console.error("Failed to build IFC tree:", err);
+            } finally {
+              setIfcTreeLoading(false);
+            }
           }
         } else if (model.fileType === "json" && model.geometryJson) {
           // ── JSON / BufferGeometry path ─────────────────────────────────────
@@ -343,23 +376,92 @@ export default function ModelViewer() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[oklch(0.12_0.02_250)]">
-      <Toolbar modelName={model.name} projectId={projectId} status={status} />
-
-      {/* ThatOpen renders into this div — no <Canvas> */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0 pt-[53px]"
-        style={{ background: "oklch(0.12 0.02 250)" }}
+    <div
+      className="dark flex flex-col h-screen w-screen overflow-hidden"
+      style={{ background: "var(--background)", color: "var(--foreground)" }}
+    >
+      <ViewerToolbar
+        modelName={model.name}
+        projectId={projectId}
+        status={status}
+        onResetCamera={handleResetCamera}
       />
 
-      {status === "error" && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <p className="text-sm text-destructive bg-surface/80 px-4 py-2 rounded-lg">
-            Failed to load model. Check the console for details.
-          </p>
-        </div>
-      )}
+      <div className="flex flex-1 min-h-0">
+        <LeftPanel />
+
+        {/* Canvas area */}
+        <main
+          className="flex-1 relative min-w-0"
+          style={{ background: "var(--viewer-canvas)" }}
+        >
+          {/* ThatOpen mounts here */}
+          <div
+            ref={containerRef}
+            className="absolute inset-0"
+            style={{ background: "var(--viewer-canvas)" }}
+          />
+
+          {status !== "ready" && status !== "error" && (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20"
+              style={{ background: "var(--viewer-canvas)" }}
+            >
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="text-sm font-medium text-foreground">
+                {status === "idle" && "Preparing…"}
+                {status === "loading" && "Initialising scene…"}
+                {status === "converting" &&
+                  "Converting IFC, this may take a moment…"}
+              </div>
+            </div>
+          )}
+
+          {/* Legend overlay — bottom left of canvas, same as example */}
+          <div
+            className="absolute bottom-4 left-4 rounded-md border px-3 py-2 text-[10px] font-medium z-10 backdrop-blur"
+            style={{
+              background: "oklch(0.17 0.02 255 / 90%)",
+              borderColor: "var(--viewer-panel-border)",
+            }}
+          >
+            <div className="uppercase tracking-wider text-muted-foreground mb-1.5">
+              Claim status
+            </div>
+            {[
+              { label: "Approved", bg: "var(--status-approved-fg)" },
+              { label: "In Progress", bg: "var(--status-submitted-fg)" },
+              { label: "Rejected", bg: "var(--status-rejected-fg)" },
+              { label: "Unclaimed", bg: "var(--status-neutral)" },
+              { label: "Selected", bg: "var(--status-selected)" },
+            ].map((i) => (
+              <div key={i.label} className="flex items-center gap-2 mb-1">
+                <span
+                  className="h-2.5 w-2.5 rounded-sm shrink-0"
+                  style={{ background: i.bg }}
+                />
+                <span className="text-muted-foreground">{i.label}</span>
+              </div>
+            ))}
+            <div
+              className="mt-2 pt-2 border-t text-muted-foreground leading-snug"
+              style={{ borderColor: "var(--viewer-panel-border)" }}
+            >
+              Click · select &nbsp;|&nbsp; Shift · multi
+            </div>
+          </div>
+
+          {status === "error" && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <p className="text-sm text-destructive bg-surface/80 px-4 py-2 rounded-lg border border-border">
+                Failed to load model. Check the console for details.
+              </p>
+            </div>
+          )}
+        </main>
+
+        <RightPanel />
+      </div>
     </div>
   );
 }

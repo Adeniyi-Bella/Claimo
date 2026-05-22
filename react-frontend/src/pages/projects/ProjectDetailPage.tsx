@@ -86,6 +86,13 @@ export default function ProjectDetail() {
     }
   });
 
+  const handleDeleteModel = (modelId: string) => {
+  updateProject({
+    ...project,
+    models: project.models.filter((m) => m.id !== modelId),
+  });
+};
+
   const updateProject = (updated: Project) => {
     const next = projects.map((p) => (p.id === updated.id ? updated : p));
     setProjects(next);
@@ -186,6 +193,7 @@ export default function ProjectDetail() {
             project={project}
             onUpload={() => setOpenUpload(true)}
             modelThumbs={modelThumbs}
+            onDeleteModel={handleDeleteModel}
           />
         )}
         {tab === "Members" && (

@@ -1,16 +1,18 @@
 import type { Project } from "@/lib/mock-data";
 import { fmtDate, modelSummary } from "@/lib/mock-data";
 import { Link } from "@tanstack/react-router";
-import { Boxes, Upload } from "lucide-react";
+import { Boxes, Trash2, Upload } from "lucide-react";
 
 export default function ModelsTab({
   project,
   onUpload,
   modelThumbs = {},
+  onDeleteModel,
 }: {
   project: Project;
   onUpload: () => void;
   modelThumbs?: Record<string, string>;
+  onDeleteModel: (modelId: string) => void;
 }) {
   return (
     <div>
@@ -78,6 +80,16 @@ export default function ModelsTab({
                   <span className="absolute top-2 right-2 text-[10px] font-mono bg-surface/80 backdrop-blur border border-border rounded px-1.5 py-0.5 text-muted-foreground">
                     .{m.fileType ?? "json"}
                   </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onDeleteModel(m.id);
+                    }}
+                    className="absolute top-2 left-2 p-1 rounded bg-surface/80 backdrop-blur border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
+                    title="Delete model"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
 
                 {/* Info */}
