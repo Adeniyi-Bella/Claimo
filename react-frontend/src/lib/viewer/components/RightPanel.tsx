@@ -2,10 +2,22 @@ import { Receipt, Link2, Link2Off } from "lucide-react";
 import { Button } from "@/components/common/button";
 import { ScrollArea } from "@/components/common/scroll-area";
 import { cn } from "@/lib/utils/utils";
-import { useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { getElementPaymentMap } from "../state/selectors";
 import type { PaymentItemLocal } from "../state/types";
 import { useViewerStore } from "../state/store";
+import {
+  VIEWER_PANEL_COLLAPSED_WIDTH,
+  VIEWER_PANEL_MAX_WIDTH,
+  VIEWER_PANEL_MIN_WIDTH,
+  startPanelResize,
+} from "./panelResize";
 
 const EUR = new Intl.NumberFormat("en-IE", {
   style: "currency",
@@ -304,26 +316,85 @@ function SelectionView() {
 }
 
 export function RightPanel() {
+  const panelRef = useRef<HTMLDivElement>(null);
   const hasSelection = useViewerStore((s) => s.selectedIds.size > 0);
+  const collapsed = useViewerStore((s) => s.rightPanelCollapsed);
+  const width = useViewerStore((s) => s.rightPanelWidth);
+  const toggle = useViewerStore((s) => s.toggleRightPanel);
+  const setWidth = useViewerStore((s) => s.setRightPanelWidth);
+
+  const handleResizePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      startPanelResize(event, {
+        side: "right",
+        panel,
+        startWidth: width,
+        minWidth: VIEWER_PANEL_MIN_WIDTH,
+        maxWidth: VIEWER_PANEL_MAX_WIDTH,
+        onCommit: setWidth,
+      });
+    },
+    [setWidth, width],
+  );
 
   return (
     <aside
-      className="w-80 flex flex-col shrink-0 border-l"
+      ref={panelRef}
+      className="relative flex shrink-0 flex-col border-l overflow-hidden"
       style={{
+        width: collapsed ? VIEWER_PANEL_COLLAPSED_WIDTH : width,
         background: "var(--viewer-panel)",
         borderColor: "var(--viewer-panel-border)",
       }}
     >
-      <div
-        className="h-10 px-4 flex items-center gap-2 border-b shrink-0"
-        style={{ borderColor: "var(--viewer-panel-border)" }}
-      >
-        <Receipt className="h-4 w-4 text-primary" />
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-          Payment Claims
-        </h2>
-      </div>
-      {hasSelection ? <SelectionView /> : <NoSelectionView />}
+      {collapsed ? (
+        <div className="flex h-full items-center justify-center">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 rounded-md border border-transparent text-muted-foreground hover:text-foreground hover:bg-accent"
+            onClick={toggle}
+            aria-label="Expand right panel"
+            title="Expand right panel"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div
+            className="h-10 px-4 flex items-center justify-between border-b shrink-0"
+            style={{ borderColor: "var(--viewer-panel-border)" }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Receipt className="h-4 w-4 text-primary shrink-0" />
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground truncate">
+                Payment Claims
+              </h2>
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+              onClick={toggle}
+              aria-label="Collapse right panel"
+              title="Collapse right panel"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col flex-1 min-h-0">
+            {hasSelection ? <SelectionView /> : <NoSelectionView />}
+          </div>
+          <div
+            className="absolute inset-y-0 left-0 z-30 w-1 cursor-col-resize hover:bg-primary/20"
+            onPointerDown={handleResizePointerDown}
+            aria-hidden="true"
+          />
+        </>
+      )}
     </aside>
   );
 }

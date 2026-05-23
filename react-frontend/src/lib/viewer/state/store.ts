@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import type * as OBC from "@thatopen/components";
 import type * as OBF from "@thatopen/components-front";
+import {
+  VIEWER_LEFT_PANEL_DEFAULT_WIDTH,
+  VIEWER_PANEL_COLLAPSED_WIDTH,
+  VIEWER_RIGHT_PANEL_DEFAULT_WIDTH,
+} from "../components/panelResize";
 import type { IfcTreeNode, PaymentItemLocal } from "./types";
 
 const SESSION_KEY = "claimo:projects";
@@ -56,6 +61,10 @@ interface ViewerStore {
   paymentItems: PaymentItemLocal[];
   ifcTree: IfcTreeNode[];
   ifcTreeLoading: boolean;
+  leftPanelCollapsed: boolean;
+  rightPanelCollapsed: boolean;
+  leftPanelWidth: number;
+  rightPanelWidth: number;
   selectedIds: Set<string>;
   hoveredId: string | null;
   showEdges: boolean;
@@ -74,6 +83,12 @@ interface ViewerStore {
   ) => void;
   setIfcTree: (tree: IfcTreeNode[]) => void;
   setIfcTreeLoading: (v: boolean) => void;
+  setLeftPanelCollapsed: (v: boolean) => void;
+  toggleLeftPanel: () => void;
+  setRightPanelCollapsed: (v: boolean) => void;
+  toggleRightPanel: () => void;
+  setLeftPanelWidth: (width: number) => void;
+  setRightPanelWidth: (width: number) => void;
   toggleSelect: (id: string, additive: boolean) => void;
   selectMany: (ids: string[]) => void;
   clearSelection: () => void;
@@ -92,6 +107,10 @@ export const useViewerStore = create<ViewerStore>((set) => ({
   paymentItems: [],
   ifcTree: [],
   ifcTreeLoading: false,
+  leftPanelCollapsed: false,
+  rightPanelCollapsed: false,
+  leftPanelWidth: VIEWER_LEFT_PANEL_DEFAULT_WIDTH,
+  rightPanelWidth: VIEWER_RIGHT_PANEL_DEFAULT_WIDTH,
   selectedIds: new Set(),
   hoveredId: null,
   showEdges: false,
@@ -114,6 +133,10 @@ export const useViewerStore = create<ViewerStore>((set) => ({
       hoveredId: null,
       ifcTree: [],
       ifcTreeLoading: false,
+      leftPanelCollapsed: false,
+      rightPanelCollapsed: false,
+      leftPanelWidth: VIEWER_LEFT_PANEL_DEFAULT_WIDTH,
+      rightPanelWidth: VIEWER_RIGHT_PANEL_DEFAULT_WIDTH,
       _components: null,
       _highlighter: null,
       _hider: null,
@@ -129,6 +152,24 @@ export const useViewerStore = create<ViewerStore>((set) => ({
     }),
   setIfcTree: (tree) => set({ ifcTree: tree }),
   setIfcTreeLoading: (v) => set({ ifcTreeLoading: v }),
+  setLeftPanelCollapsed: (v) => set({ leftPanelCollapsed: v }),
+  toggleLeftPanel: () =>
+    set((s) => ({
+      leftPanelCollapsed: !s.leftPanelCollapsed,
+    })),
+  setRightPanelCollapsed: (v) => set({ rightPanelCollapsed: v }),
+  toggleRightPanel: () =>
+    set((s) => ({
+      rightPanelCollapsed: !s.rightPanelCollapsed,
+    })),
+  setLeftPanelWidth: (width) =>
+    set({
+      leftPanelWidth: Math.max(VIEWER_PANEL_COLLAPSED_WIDTH, width),
+    }),
+  setRightPanelWidth: (width) =>
+    set({
+      rightPanelWidth: Math.max(VIEWER_PANEL_COLLAPSED_WIDTH, width),
+    }),
   toggleSelect: (id, additive) =>
     set((s) => {
       const next = new Set(additive ? s.selectedIds : []);
