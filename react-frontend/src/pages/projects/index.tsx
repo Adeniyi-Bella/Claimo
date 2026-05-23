@@ -15,20 +15,9 @@ import {
   fmtCurrency,
   fmtDate,
   projectSummary,
-  type Project,
 } from "@/lib/mock-data";
 import { useState } from "react";
-
-const SESSION_KEY = "claimo:projects";
-
-function loadProjects(): Project[] {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
+import { useProjectList } from "@/lib/project-storage";
 
 export default function Projects() {
   const [view, setView] = useState<"grid" | "table">("grid");
@@ -36,7 +25,7 @@ export default function Projects() {
     "All" | "Active" | "Completed" | "Archived"
   >("All");
   const [q, setQ] = useState("");
-  const projects = loadProjects();
+  const { projects } = useProjectList();
   const filtered = projects.filter(
     (p) =>
       (filter === "All" || p.status === filter) &&

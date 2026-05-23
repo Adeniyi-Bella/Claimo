@@ -1,14 +1,8 @@
 import type { ViewerModelRecord, ViewerProjectRecord } from "./model";
-
-export const VIEWER_SESSION_KEY = "claimo:projects";
+import { getProjectById, loadProjects } from "@/lib/project-storage";
 
 export function loadViewerProjects(): ViewerProjectRecord[] {
-  try {
-    const raw = sessionStorage.getItem(VIEWER_SESSION_KEY);
-    return raw ? (JSON.parse(raw) as ViewerProjectRecord[]) : [];
-  } catch {
-    return [];
-  }
+  return loadProjects() as unknown as ViewerProjectRecord[];
 }
 
 export function getViewerProjectModel(
@@ -18,8 +12,7 @@ export function getViewerProjectModel(
   project: ViewerProjectRecord | null;
   model: ViewerModelRecord | null;
 } {
-  const projects = loadViewerProjects();
-  const project = projects.find((item) => item.id === projectId) ?? null;
+  const project = getProjectById(projectId) as ViewerProjectRecord | null;
   const model =
     project?.models.find((item) => item.id === modelId) ?? null;
 

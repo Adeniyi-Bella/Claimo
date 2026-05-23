@@ -1,13 +1,16 @@
 import { Avatar } from "@/components/common/avatar";
-// import { StatusBadge } from "@/components/common/status-badge";
 import {
   fmtCurrency,
   fmtDate,
-  type Project,
   type PaymentItem,
-  itemTotals,
-  // derivedStatus,
 } from "@/lib/mock-data";
+import {
+  getJobStatusClass,
+  getJobStatusLabel,
+  getPaymentStatusClass,
+  getPaymentStatusLabel,
+  getSubmittedOrApprovedAmount,
+} from "@/lib/project-display";
 import { Filter, Plus, Search } from "lucide-react";
 
 export default function PaymentItemsTab({
@@ -16,7 +19,6 @@ export default function PaymentItemsTab({
   onAdd,
 }: {
   items: PaymentItem[];
-  project: Project;
   onPick: (i: PaymentItem) => void;
   onAdd: () => void;
 }) {
@@ -86,53 +88,25 @@ export default function PaymentItemsTab({
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
                   {(() => {
-                    const t = itemTotals(i);
-                    return t.pending > 0
-                      ? fmtCurrency(t.pending)
-                      : t.approved > 0
-                        ? fmtCurrency(t.approved)
-                        : "—";
+                    const amount = getSubmittedOrApprovedAmount(i);
+                    return amount !== null ? fmtCurrency(amount) : "—";
                   })()}
                 </td>
-                {/* <td className="px-4 py-3">
-                  <StatusBadge status={derivedStatus(i)} />
-                </td> */}
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   {fmtDate(i.updatedAt)}
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full border
-    ${
-      (i.jobStatus ?? "NOT_STARTED") === "COMPLETED"
-        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
-        : (i.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
-          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
-          : "bg-muted text-muted-foreground border-border"
-    }`}
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${getJobStatusClass(i.jobStatus)}`}
                   >
-                    {(i.jobStatus ?? "NOT_STARTED") === "NOT_STARTED"
-                      ? "Not Started"
-                      : (i.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
-                        ? "In Progress"
-                        : "Completed"}
+                    {getJobStatusLabel(i.jobStatus)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full border
-    ${
-      (i.paymentStatus ?? "NONE") === "APPROVED"
-        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
-        : (i.paymentStatus ?? "NONE") === "PAID"
-          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
-          : (i.paymentStatus ?? "NONE") === "REJECTED"
-            ? "bg-status-rejected text-status-rejected-fg border-status-rejected-fg/20"
-            : "bg-muted text-muted-foreground border-border"
-    }`}
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${getPaymentStatusClass(i.paymentStatus)}`}
                   >
-                    {(i.paymentStatus ?? "NONE").charAt(0) +
-                      (i.paymentStatus ?? "NONE").slice(1).toLowerCase()}
+                    {getPaymentStatusLabel(i.paymentStatus)}
                   </span>
                 </td>
               </tr>

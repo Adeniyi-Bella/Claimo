@@ -8,23 +8,9 @@ import {
   type PaymentStatusType,
   type Project,
 } from "@/lib/mock-data";
+import { loadProjects, updateProjects } from "@/lib/project-storage";
 
 export type ActingRole = "CONTRACTOR" | "APPROVER" | "ADMIN" | "VIEWER";
-
-const SESSION_KEY = "claimo:projects";
-
-function loadProjects(): Project[] {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveProjects(projects: Project[]) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(projects));
-}
 
 function updateItem(
   projects: Project[],
@@ -116,36 +102,37 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   submitClaim: (itemId, input) => {
     const now = new Date().toISOString();
     let created!: Claim;
-    set((state) => {
-      const next = updateItem(state.projects, itemId, (item) => {
-        const seq = item.claims.length + 1;
-        created = {
-          id: `${item.id}-c-${seq}-${Date.now()}`,
-          sequence: seq,
-          amount: input.amount,
-          description: input.description,
-          status: "SUBMITTED",
-          submittedBy: item.contractorName,
-          submittedById: item.contractorId,
-          submittedAt: now,
-        };
-        const entry = makeAuditEntry(
-          item.contractorId,
-          item.contractorName,
-          "CONTRACTOR",
-          `Submitted claim #${seq} for ${fmtCurrency(input.amount)}`,
-          "CLAIM",
-          undefined,
-          "SUBMITTED",
-        );
-        return {
-          ...item,
-          claims: [...item.claims, created],
-          updatedAt: now,
-          auditTrail: [...(item.auditTrail ?? []), entry],
-        };
-      });
-      saveProjects(next);
+    set(() => {
+      const next = updateProjects((projects) =>
+        updateItem(projects, itemId, (item) => {
+          const seq = item.claims.length + 1;
+          created = {
+            id: `${item.id}-c-${seq}-${Date.now()}`,
+            sequence: seq,
+            amount: input.amount,
+            description: input.description,
+            status: "SUBMITTED",
+            submittedBy: item.contractorName,
+            submittedById: item.contractorId,
+            submittedAt: now,
+          };
+          const entry = makeAuditEntry(
+            item.contractorId,
+            item.contractorName,
+            "CONTRACTOR",
+            `Submitted claim #${seq} for ${fmtCurrency(input.amount)}`,
+            "CLAIM",
+            undefined,
+            "SUBMITTED",
+          );
+          return {
+            ...item,
+            claims: [...item.claims, created],
+            updatedAt: now,
+            auditTrail: [...(item.auditTrail ?? []), entry],
+          };
+        }),
+      );
       return { projects: next };
     });
     return created;
@@ -153,8 +140,8 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
   decideClaim: (itemId, claimId, decision, note) => {
     const now = new Date().toISOString();
-    set((state) => {
-      const item = findItem(state.projects, itemId);
+    set(() => {
+      const item = findItem(get().projects, itemId);
       if (!item) return {};
       const claim = item.claims.find((c) => c.id === claimId);
       if (!claim) return {};
@@ -167,32 +154,33 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         "SUBMITTED",
         decision,
       );
-      const next = updateItem(state.projects, itemId, (i) => ({
-        ...i,
-        updatedAt: now,
-        auditTrail: [...(i.auditTrail ?? []), entry],
-        claims: i.claims.map((c) =>
-          c.id === claimId
-            ? {
-                ...c,
-                status: decision,
-                decidedBy: item.approverName,
-                decidedById: item.approverId,
-                decidedAt: now,
-                decisionNote: note,
-              }
-            : c,
-        ),
-      }));
-      saveProjects(next);
+      const next = updateProjects((projects) =>
+        updateItem(projects, itemId, (i) => ({
+          ...i,
+          updatedAt: now,
+          auditTrail: [...(i.auditTrail ?? []), entry],
+          claims: i.claims.map((c) =>
+            c.id === claimId
+              ? {
+                  ...c,
+                  status: decision,
+                  decidedBy: item.approverName,
+                  decidedById: item.approverId,
+                  decidedAt: now,
+                  decisionNote: note,
+                }
+              : c,
+          ),
+        })),
+      );
       return { projects: next };
     });
   },
 
   setJobStatus: (itemId, status) => {
     const now = new Date().toISOString();
-    set((state) => {
-      const item = findItem(state.projects, itemId);
+    set(() => {
+      const item = findItem(get().projects, itemId);
       if (!item) return {};
       const entry = makeAuditEntry(
         item.contractorId,
@@ -203,21 +191,22 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         item.jobStatus,
         status,
       );
-      const next = updateItem(state.projects, itemId, (i) => ({
-        ...i,
-        jobStatus: status,
-        updatedAt: now,
-        auditTrail: [...(i.auditTrail ?? []), entry],
-      }));
-      saveProjects(next);
+      const next = updateProjects((projects) =>
+        updateItem(projects, itemId, (i) => ({
+          ...i,
+          jobStatus: status,
+          updatedAt: now,
+          auditTrail: [...(i.auditTrail ?? []), entry],
+        })),
+      );
       return { projects: next };
     });
   },
 
   setPaymentStatus: (itemId, status) => {
     const now = new Date().toISOString();
-    set((state) => {
-      const item = findItem(state.projects, itemId);
+    set(() => {
+      const item = findItem(get().projects, itemId);
       if (!item) return {};
       const entry = makeAuditEntry(
         item.approverId,
@@ -228,23 +217,24 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         item.paymentStatus ?? "NONE",
         status,
       );
-      const next = updateItem(state.projects, itemId, (i) => ({
-        ...i,
-        paymentStatus: status,
-        // When approver sets PAID, flag pending confirmation for contractor
-        paymentConfirmationPending: status === "PAID",
-        updatedAt: now,
-        auditTrail: [...(i.auditTrail ?? []), entry],
-      }));
-      saveProjects(next);
+      const next = updateProjects((projects) =>
+        updateItem(projects, itemId, (i) => ({
+          ...i,
+          paymentStatus: status,
+          // When approver sets PAID, flag pending confirmation for contractor
+          paymentConfirmationPending: status === "PAID",
+          updatedAt: now,
+          auditTrail: [...(i.auditTrail ?? []), entry],
+        })),
+      );
       return { projects: next };
     });
   },
 
   confirmPayment: (itemId) => {
     const now = new Date().toISOString();
-    set((state) => {
-      const item = findItem(state.projects, itemId);
+    set(() => {
+      const item = findItem(get().projects, itemId);
       if (!item) return {};
       const entry = makeAuditEntry(
         item.contractorId,
@@ -255,22 +245,23 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         "PAID",
         "APPROVED",
       );
-      const next = updateItem(state.projects, itemId, (i) => ({
-        ...i,
-        paymentStatus: "APPROVED",
-        paymentConfirmationPending: false,
-        updatedAt: now,
-        auditTrail: [...(i.auditTrail ?? []), entry],
-      }));
-      saveProjects(next);
+      const next = updateProjects((projects) =>
+        updateItem(projects, itemId, (i) => ({
+          ...i,
+          paymentStatus: "APPROVED",
+          paymentConfirmationPending: false,
+          updatedAt: now,
+          auditTrail: [...(i.auditTrail ?? []), entry],
+        })),
+      );
       return { projects: next };
     });
   },
 
   rejectPayment: (itemId) => {
     const now = new Date().toISOString();
-    set((state) => {
-      const item = findItem(state.projects, itemId);
+    set(() => {
+      const item = findItem(get().projects, itemId);
       if (!item) return {};
       const entry = makeAuditEntry(
         item.contractorId,
@@ -281,14 +272,15 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         "PAID",
         "REJECTED",
       );
-      const next = updateItem(state.projects, itemId, (i) => ({
-        ...i,
-        paymentStatus: "REJECTED",
-        paymentConfirmationPending: false,
-        updatedAt: now,
-        auditTrail: [...(i.auditTrail ?? []), entry],
-      }));
-      saveProjects(next);
+      const next = updateProjects((projects) =>
+        updateItem(projects, itemId, (i) => ({
+          ...i,
+          paymentStatus: "REJECTED",
+          paymentConfirmationPending: false,
+          updatedAt: now,
+          auditTrail: [...(i.auditTrail ?? []), entry],
+        })),
+      );
       return { projects: next };
     });
   },

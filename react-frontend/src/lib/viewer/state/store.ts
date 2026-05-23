@@ -7,50 +7,35 @@ import {
   VIEWER_RIGHT_PANEL_DEFAULT_WIDTH,
 } from "../components/panelResize";
 import type { IfcTreeNode, PaymentItemLocal } from "./types";
-
-const SESSION_KEY = "claimo:projects";
+import { getProjectById, updateProjects } from "@/lib/project-storage";
 
 function loadPaymentItems(projectId: string, modelId: string) {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return [];
-    const projects = JSON.parse(raw);
-    const project = projects.find((p: any) => p.id === projectId);
-    if (!project) return [];
-    const model = project.models.find((m: any) => m.id === modelId);
-    return model ? model.paymentItems : [];
-  } catch {
-    return [];
-  }
+  const project = getProjectById(projectId);
+  const model = project?.models.find((item) => item.id === modelId);
+  return model ? model.paymentItems : [];
 }
 
 function persistAttachments(
   projectId: string,
   updatedItems: PaymentItemLocal[],
 ) {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    if (!raw) return;
-    const projects = JSON.parse(raw);
-    const next = projects.map((p: any) => {
-      if (p.id !== projectId) return p;
+  updateProjects((projects) =>
+    projects.map((project) => {
+      if (project.id !== projectId) return project;
       return {
-        ...p,
-        models: p.models.map((m: any) => ({
-          ...m,
-          paymentItems: m.paymentItems.map((item: any) => {
-            const updated = updatedItems.find((u) => u.id === item.id);
+        ...project,
+        models: project.models.map((model) => ({
+          ...model,
+          paymentItems: model.paymentItems.map((item) => {
+            const updated = updatedItems.find((candidate) => candidate.id === item.id);
             return updated
               ? { ...item, attachedElementIds: updated.attachedElementIds }
               : item;
           }),
         })),
       };
-    });
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
-  } catch {
-    // noop
-  }
+    }),
+  );
 }
 
 export type { IfcTreeNode, PaymentItemLocal } from "./types";

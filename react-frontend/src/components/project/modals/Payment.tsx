@@ -10,23 +10,7 @@ import {
 import type { PaymentItem, Project } from "@/lib/mock-data";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/common/button";
-
-const CATEGORIES = [
-  "Foundations",
-  "Concrete Works",
-  "Reinforcement",
-  "Brickwork",
-  "Carpentry",
-  "Roofing",
-  "Plumbing",
-  "Electrical",
-  "HVAC",
-  "Plastering",
-  "Tiling",
-  "Painting",
-  "Glazing",
-  "Landscaping",
-];
+import { CATEGORIES } from "@/lib/mock-data";
 
 export default function AddPaymentItemModal({
   open,

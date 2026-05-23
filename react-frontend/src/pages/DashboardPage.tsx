@@ -13,7 +13,7 @@ import {
   Wallet,
   XCircle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   type Project,
   fmtCurrency,
@@ -25,24 +25,10 @@ import { RoleBadge, StatusBadge } from "@/components/common/status-badge";
 import CreateProjectDialog from "@/components/project/create";
 import { Button } from "@/components/common/button";
 import { useUser } from "@clerk/react";
-
-const SESSION_KEY = "claimo:projects";
-
-function loadProjects(): Project[] {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveProjects(projects: Project[]) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(projects));
-}
+import { useProjectList } from "@/lib/project-storage";
 
 export default function Dashboard() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { projects, setProjects } = useProjectList();
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useUser();
   // const currentUser = {
@@ -50,10 +36,6 @@ export default function Dashboard() {
   //   email: user?.primaryEmailAddress?.emailAddress ?? "",
   //   avatarHue: 250, // fixed or derive from email hash
   // };
-
-  useEffect(() => {
-    setProjects(loadProjects());
-  }, []);
 
   const handleCreate = (data: {
     name: string;
@@ -80,9 +62,7 @@ export default function Dashboard() {
       ],
       models: [],
     };
-    const updated = [newProject, ...projects];
-    setProjects(updated);
-    saveProjects(updated);
+    setProjects((current) => [newProject, ...current]);
   };
 
   return (

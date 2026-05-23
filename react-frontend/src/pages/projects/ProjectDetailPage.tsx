@@ -1,58 +1,48 @@
 import { Link, useParams, useSearch } from "@tanstack/react-router";
-import { AppShell } from "@/components/app-shell";
-import {
-  fmtDate,
-  projectSummary,
-  // type PaymentItem,
-  type Project,
-} from "@/lib/mock-data";
-import {
-  Boxes,
-  Calendar,
-  ChevronRight,
-  Edit3,
-  MapPin,
-  Upload,
-  UserPlus,
-  Users,
-  ArrowLeft,
-} from "lucide-react";
 import { useState } from "react";
-import { Sheet, SheetContent } from "@/components/common/sheet";
+import { ArrowLeft, Boxes, Calendar, ChevronRight, Edit3, MapPin, Upload, UserPlus, Users } from "lucide-react";
 
-import { usePaymentStore } from "@/hooks/usePaymentStore";
+import { AppShell } from "@/components/app-shell";
+import AddPaymentItemModal from "@/components/project/modals/Payment";
 import InviteModal from "@/components/project/modals/Invite";
 import UploadModelModal from "@/components/project/modals/Model";
-import AddPaymentItemModal from "@/components/project/modals/Payment";
 import PaymentItemPanel from "@/components/project/panel/PaymentRighthandPanel";
 import MembersTab from "@/components/project/tabs/Members";
 import ModelsTab from "@/components/project/tabs/Models";
 import Overview from "@/components/project/tabs/Overview";
 import PaymentItemsTab from "@/components/project/tabs/PaymentItems";
+import { Sheet, SheetContent } from "@/components/common/sheet";
+import { useProjectDetail } from "@/components/project/useProjectDetail";
+import { fmtDate, projectSummary } from "@/lib/mock-data";
 
 const TABS = ["Overview", "Models", "Members", "Payment Items"] as const;
-
-const SESSION_KEY = "claimo:projects";
-
-function loadProjects(): Project[] {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveProjects(projects: Project[]) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(projects));
-}
 
 export default function ProjectDetail() {
   const { projectId } = useParams({
     from: "/_authenticated/projects/$projectId",
   });
-  const [projects, setProjects] = useState<Project[]>(loadProjects);
-  const project = projects.find((p) => p.id === projectId);
+  const search = useSearch({ from: "/_authenticated/projects/$projectId" });
+  const [tab, setTab] = useState<(typeof TABS)[number]>(
+    (search as { tab?: (typeof TABS)[number] })?.tab ?? "Overview",
+  );
+
+  const {
+    activeItem,
+    handleAddPaymentItem,
+    handleDeleteModel,
+    handleInvite,
+    handleRemoveMember,
+    handleUploadModel,
+    modelThumbs,
+    openAddItem,
+    openInvite,
+    openUpload,
+    project,
+    setActiveItem,
+    setOpenAddItem,
+    setOpenInvite,
+    setOpenUpload,
+  } = useProjectDetail(projectId);
 
   if (!project) {
     return (
@@ -64,41 +54,9 @@ export default function ProjectDetail() {
     );
   }
 
-  const syncFromSession = usePaymentStore((s) => s.syncFromSession);
-
-  const search = useSearch({ from: "/_authenticated/projects/$projectId" });
-  const [tab, setTab] = useState<(typeof TABS)[number]>(
-    (search as any)?.tab ?? "Overview",
-  );
-  const [openInvite, setOpenInvite] = useState(false);
-  const [openUpload, setOpenUpload] = useState(false);
-  const [openAddItem, setOpenAddItem] = useState(false);
-  const [activeItem, setActiveItem] = useState<string | null>(null);
   const summary = projectSummary(project);
-  const allItems = project.models.flatMap((m) => m.paymentItems);
+  const allItems = project.models.flatMap((model) => model.paymentItems);
 
-  const [modelThumbs, setModelThumbs] = useState<Record<string, string>>(() => {
-    try {
-      const raw = sessionStorage.getItem("claimo:thumbs");
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const handleDeleteModel = (modelId: string) => {
-  updateProject({
-    ...project,
-    models: project.models.filter((m) => m.id !== modelId),
-  });
-};
-
-  const updateProject = (updated: Project) => {
-    const next = projects.map((p) => (p.id === updated.id ? updated : p));
-    setProjects(next);
-    saveProjects(next);
-    syncFromSession(); // ← keep zustand store in sync
-  };
   return (
     <AppShell>
       <div className="border-b border-border bg-surface">
@@ -120,7 +78,7 @@ export default function ProjectDetail() {
                 <div className="h-11 w-11 rounded-lg bg-linear-to-br from-[oklch(0.55_0.13_255)] to-[oklch(0.32_0.08_255)] flex items-center justify-center text-white font-semibold shrink-0">
                   {project.name
                     .split(" ")
-                    .map((w) => w[0])
+                    .map((word) => word[0])
                     .slice(0, 2)
                     .join("")}
                 </div>
@@ -171,15 +129,14 @@ export default function ProjectDetail() {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="mt-6 flex items-center gap-1 -mb-px">
-            {TABS.map((t) => (
+            {TABS.map((value) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-3 h-9 text-sm transition border-b-2 ${tab === t ? "border-primary text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                key={value}
+                onClick={() => setTab(value)}
+                className={`px-3 h-9 text-sm transition border-b-2 ${tab === value ? "border-primary text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
-                {t}
+                {value}
               </button>
             ))}
           </div>
@@ -200,61 +157,39 @@ export default function ProjectDetail() {
           <MembersTab
             project={project}
             onInvite={() => setOpenInvite(true)}
-            onRemove={(memberId) =>
-              updateProject({
-                ...project,
-                members: project.members.filter((m) => m.id !== memberId),
-              })
-            }
+            onRemove={handleRemoveMember}
           />
         )}
         {tab === "Payment Items" && (
           <PaymentItemsTab
             items={allItems}
-            project={project}
             onPick={(item) => setActiveItem(item.id)}
             onAdd={() => setOpenAddItem(true)}
           />
         )}
       </div>
 
-      {/* Modals */}
       <InviteModal
         open={openInvite}
         onOpenChange={setOpenInvite}
         project={project}
-        onInvite={(member) =>
-          updateProject({ ...project, members: [...project.members, member] })
-        }
+        onInvite={handleInvite}
       />
       <UploadModelModal
         open={openUpload}
         onOpenChange={setOpenUpload}
         onUpload={(model, thumb) => {
-          const updatedModels = [...project.models, model];
-          updateProject({ ...project, models: updatedModels });
-          const newThumbs = { ...modelThumbs, [model.id]: thumb };
-          setModelThumbs(newThumbs);
-          sessionStorage.setItem("claimo:thumbs", JSON.stringify(newThumbs));
-          setTab("Models"); // switch to models tab after upload
+          handleUploadModel(model, thumb);
+          setTab("Models");
         }}
       />
-
       <AddPaymentItemModal
         open={openAddItem}
         onOpenChange={setOpenAddItem}
         project={project}
-        onAdd={(item) => {
-          const updatedModels = project.models.map((m) =>
-            m.id === item.modelId
-              ? { ...m, paymentItems: [...m.paymentItems, item] }
-              : m,
-          );
-          updateProject({ ...project, models: updatedModels });
-        }}
+        onAdd={handleAddPaymentItem}
       />
 
-      {/* Payment item panel */}
       <Sheet
         open={!!activeItem}
         onOpenChange={(v) => !v && setActiveItem(null)}
@@ -263,11 +198,7 @@ export default function ProjectDetail() {
           side="right"
           className="w-full sm:max-w-md p-0 overflow-y-auto"
         >
-          {activeItem && (
-            <PaymentItemPanel
-              itemId={activeItem}
-            />
-          )}
+          {activeItem && <PaymentItemPanel itemId={activeItem} />}
         </SheetContent>
       </Sheet>
     </AppShell>

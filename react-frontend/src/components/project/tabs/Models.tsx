@@ -38,7 +38,7 @@ export default function ModelsTab({
             No models yet
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground max-w-sm mx-auto">
-            Upload a Three.js BufferGeometry JSON file to get started. Models
+            Upload an ifc file to get started. Models
             are the foundation for linking payment claims to real building
             elements.
           </p>
