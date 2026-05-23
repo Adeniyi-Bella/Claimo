@@ -15,66 +15,73 @@ export default function UploadModelModal({
   onUpload,
 }: UploadModelModalProps) {
   const [dragging, setDragging] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 
-  const accept = [".ifc", ".json"];
+  const accept = [".ifc"];
 
-  const handleFile = (f: File) => {
-    setError(null);
-    const ext = f.name.split(".").pop()?.toLowerCase();
-    if (ext !== "ifc" && ext !== "json") {
-      setError("Only .ifc and .json files are supported.");
-      return;
+  const validateFiles = (nextFiles: File[]) => {
+    const invalid = nextFiles.find((f) => {
+      const ext = f.name.split(".").pop()?.toLowerCase();
+      return ext !== "ifc";
+    });
+
+    if (invalid) {
+      setError("Only .ifc files are supported.");
+      setFiles([]);
+      return [];
     }
-    setFile(f);
+
+    setError(null);
+    setFiles(nextFiles);
+    return nextFiles;
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const f = e.dataTransfer.files[0];
-    if (f) handleFile(f);
+    const dropped = Array.from(e.dataTransfer.files);
+    if (dropped.length) validateFiles(dropped);
   };
 
   const handleSubmit = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
     setLoading(true);
 
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() as ModelFileType;
-      const id = crypto.randomUUID();
+      for (const file of files) {
+        const ext = file.name.split(".").pop()?.toLowerCase() as ModelFileType;
+        const id = crypto.randomUUID();
 
-      let geometryJson = undefined;
-      let fileUrl = undefined;
+        let geometryJson = undefined;
+        let fileUrl = undefined;
 
-      if (ext === "json") {
-        // Parse JSON geometry — existing logic
-        const text = await file.text();
-        geometryJson = JSON.parse(text);
-      } else {
-        const buffer = await file.arrayBuffer();
-        await saveModelFile(id, buffer);
+        if (ext === "json") {
+          const text = await file.text();
+          geometryJson = JSON.parse(text);
+        } else {
+          const buffer = await file.arrayBuffer();
+          await saveModelFile(id, buffer);
+        }
+
+        const model: ProjectModel = {
+          id,
+          name: file.name,
+          fileType: ext,
+          fileUrl,
+          geometryJson,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: "You",
+          paymentItems: [],
+        };
+
+        onUpload(model, "");
       }
-
-      const model: ProjectModel = {
-        id,
-        name: file.name,
-        fileType: ext,
-        fileUrl,
-        geometryJson,
-        uploadedAt: new Date().toISOString(),
-        uploadedBy: "You",
-        paymentItems: [],
-      };
-
-      // Thumb is empty string for IFC (no canvas preview at upload time)
-      onUpload(model, "");
-      setFile(null);
+      setFiles([]);
       onOpenChange(false);
     } catch (e) {
       setError("Failed to process file. Please check the format.");
@@ -111,19 +118,24 @@ export default function UploadModelModal({
           <input
             ref={inputRef}
             type="file"
+            multiple
             accept={accept.join(",")}
             className="hidden"
-            onChange={(e) =>
-              e.target.files?.[0] && handleFile(e.target.files[0])
-            }
+            onChange={(e) => validateFiles(Array.from(e.target.files ?? []))}
           />
-          {file ? (
+          {files.length > 0 ? (
             <div className="flex flex-col items-center gap-2">
               <FileBox className="h-8 w-8 text-primary" />
-              <span className="text-sm font-medium">{file.name}</span>
-              <span className="text-xs text-muted-foreground">
-                {(file.size / 1024 / 1024).toFixed(2)} MB
+              <span className="text-sm font-medium">
+                {files.length === 1
+                  ? files[0].name
+                  : `${files.length} files selected`}
               </span>
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                {files.map((f) => (
+                  <div key={`${f.name}-${f.size}`}>{f.name}</div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -133,7 +145,7 @@ export default function UploadModelModal({
                 <span className="text-primary font-medium">browse</span>
               </p>
               <p className="text-xs opacity-60">
-                Supports .ifc and .json (BufferGeometry)
+                Supports .ifc files and multiple ifc files uploads.
               </p>
             </div>
           )}
@@ -142,7 +154,7 @@ export default function UploadModelModal({
         {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
 
         {/* IFC notice */}
-        {file?.name.endsWith(".ifc") && (
+        {files.some((file) => file.name.endsWith(".ifc")) && (
           <p className="mt-3 text-xs text-muted-foreground bg-accent rounded-lg px-3 py-2">
             IFC files are converted to Fragments on first load in the viewer.
             This may take a moment depending on model size.
@@ -158,10 +170,14 @@ export default function UploadModelModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!file || loading}
+            disabled={files.length === 0 || loading}
             className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Processing…" : "Upload"}
+            {loading
+              ? "Processing…"
+              : files.length > 1
+                ? `Upload ${files.length} files`
+                : "Upload"}
           </button>
         </div>
       </div>
