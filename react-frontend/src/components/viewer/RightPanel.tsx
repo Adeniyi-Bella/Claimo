@@ -35,7 +35,7 @@ function deriveStatus(item: PaymentItemLocal): ClaimStatusDisplay {
   const approvedTotal = approved.reduce((s: number, c: any) => s + c.amount, 0);
   if (approvedTotal >= item.contractValue) return "approved";
   if (submitted.length > 0) return "submitted";
-  if (approved.length > 0) return "submitted"; // in progress
+  if (approved.length > 0) return "submitted";
   return "not_started";
 }
 
@@ -76,22 +76,6 @@ const statusMeta: Record<
     badgeClass: "text-muted-foreground bg-muted border-border",
   },
 };
-
-function StatusBadge({ status }: { status: ClaimStatusDisplay }) {
-  const m = statusMeta[status];
-  const Icon = m.icon;
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border uppercase tracking-wide",
-        m.badgeClass,
-      )}
-    >
-      <Icon className="h-3 w-3" />
-      {m.label}
-    </span>
-  );
-}
 
 function PaymentCard({
   item,
@@ -139,7 +123,7 @@ function PaymentCard({
             {item.contractorName}
           </div>
         </div>
-        <StatusBadge status={status} />
+        {/* <StatusBadge status={status} /> */}
       </div>
 
       {/* Progress bar */}

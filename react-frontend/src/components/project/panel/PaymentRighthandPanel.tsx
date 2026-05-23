@@ -52,10 +52,8 @@ const rejectReasonSchema = z
 
 export default function PaymentItemPanel({
   itemId,
-  onClose,
 }: {
   itemId: string;
-  onClose: () => void;
 }) {
   const item = useItem(itemId);
   const actingRole = usePaymentStore((s) => s.actingRole);
@@ -158,9 +156,9 @@ export default function PaymentItemPanel({
             </span>
           </div>
         </div>
-        <Button variant="destructive" onClick={onClose}>
+        {/* <Button variant="destructive" onClick={onClose}>
           <X className="h-4 w-4" />
-        </Button>
+        </Button> */}
       </div>
 
       <div className="p-5 space-y-5 overflow-y-auto">

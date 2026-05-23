@@ -91,28 +91,28 @@ export default function AddPaymentItemModal({
     }
 
     const contractor = project.members.find((m) => m.id === contractorId)!;
-    const approver = project.members.find((m) => m.id === approverId)!; // ← move it here
+    const approver = project.members.find((m) => m.id === approverId)!;
     const model = project.models.find((m) => m.id === modelId)!;
 
     const item: PaymentItem = {
-  id: `pi-${Date.now()}`,
-  category,
-  modelId,
-  modelName: model.name,
-  contractorId,
-  contractorName: contractor.name,
-  approverId,
-  approverName: approver.name,
-  contractValue: parseFloat(contractValue) || 0,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  claims: [],
-  attachedElementIds: [],        // ← added
-  jobStatus: "NOT_STARTED",      // ← added (check your JobStatus enum for valid values)
-  paymentStatus: "NONE",       // ← added (check your PaymentStatus enum for valid values)
-  paymentConfirmationPending: false, // ← added
-  auditTrail: [],                // ← added (note: the error shows "auditTrail", not "auditTrails")
-};
+      id: `pi-${Date.now()}`,
+      category,
+      modelId,
+      modelName: model.name,
+      contractorId,
+      contractorName: contractor.name,
+      approverId,
+      approverName: approver.name,
+      contractValue: parseFloat(contractValue) || 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      claims: [],
+      attachedElementIds: [],
+      jobStatus: "NOT_STARTED",
+      paymentStatus: "NONE",
+      paymentConfirmationPending: false,
+      auditTrail: [],
+    };
 
     onAdd(item);
     setCategory(CATEGORIES[0]);

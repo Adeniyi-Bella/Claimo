@@ -1,12 +1,12 @@
 import { Avatar } from "@/components/common/avatar";
-import { StatusBadge } from "@/components/common/status-badge";
+// import { StatusBadge } from "@/components/common/status-badge";
 import {
   fmtCurrency,
   fmtDate,
   type Project,
   type PaymentItem,
   itemTotals,
-  derivedStatus,
+  // derivedStatus,
 } from "@/lib/mock-data";
 import { Filter, Plus, Search } from "lucide-react";
 
@@ -54,7 +54,7 @@ export default function PaymentItemsTab({
               <th className="text-left font-medium px-4 py-2.5">Contractor</th>
               <th className="text-right font-medium px-4 py-2.5">Contract</th>
               <th className="text-right font-medium px-4 py-2.5">Submitted</th>
-              <th className="text-left font-medium px-4 py-2.5">Status</th>
+              {/* <th className="text-left font-medium px-4 py-2.5">Status</th> */}
               <th className="text-left font-medium px-4 py-2.5">Updated</th>
               <th className="text-left font-medium px-4 py-2.5">Job Status</th>
               <th className="text-left font-medium px-4 py-2.5">Payment</th>
@@ -94,9 +94,9 @@ export default function PaymentItemsTab({
                         : "—";
                   })()}
                 </td>
-                <td className="px-4 py-3">
+                {/* <td className="px-4 py-3">
                   <StatusBadge status={derivedStatus(i)} />
-                </td>
+                </td> */}
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   {fmtDate(i.updatedAt)}
                 </td>

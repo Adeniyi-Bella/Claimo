@@ -266,7 +266,6 @@ export default function ProjectDetail() {
           {activeItem && (
             <PaymentItemPanel
               itemId={activeItem}
-              onClose={() => setActiveItem(null)}
             />
           )}
         </SheetContent>
