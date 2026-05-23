@@ -1,8 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Box, Grid3x3, Palette, Camera, X, Download } from "lucide-react";
+import {
+  ArrowLeft,
+  Box,
+  Grid3x3,
+  Palette,
+  Camera,
+  X,
+  Download,
+} from "lucide-react";
 import { Switch } from "@/components/common/switch";
 import { Button } from "@/components/common/button";
-import { useViewerStore } from "@/lib/viewer/store";
+import { useViewerStore } from "../state/store";
+import { useViewerSettings } from "../hooks/useViewerSettings";
 
 export function ViewerToolbar({
   modelName,
@@ -17,12 +26,16 @@ export function ViewerToolbar({
   onResetCamera?: () => void;
   onExportIfc?: () => void;
 }) {
-  const showEdges = useViewerStore((s) => s.showEdges);
-  const colorByStatus = useViewerStore((s) => s.colorByStatus);
-  const setShowEdges = useViewerStore((s) => s.setShowEdges);
-  const setColorByStatus = useViewerStore((s) => s.setColorByStatus);
   const clearSelection = useViewerStore((s) => s.clearSelection);
   const selectedCount = useViewerStore((s) => s.selectedIds.size);
+  const {
+    showEdges,
+    colorByStatus,
+    backgroundDark,
+    setShowEdges,
+    setColorByStatus,
+    toggleBackground,
+  } = useViewerSettings();
 
   return (
     <header
@@ -32,7 +45,6 @@ export function ViewerToolbar({
         borderColor: "var(--viewer-panel-border)",
       }}
     >
-      {/* Left */}
       <div className="flex items-center gap-3">
         <Link
           to="/projects/$projectId"
@@ -72,7 +84,6 @@ export function ViewerToolbar({
         </div>
       </div>
 
-      {/* Right */}
       <div className="flex items-center gap-4">
         <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
           <Palette className="h-3.5 w-3.5" />
@@ -89,6 +100,14 @@ export function ViewerToolbar({
           <Switch
             checked={showEdges}
             onCheckedChange={setShowEdges}
+            className="data-[state=checked]:bg-primary"
+          />
+        </label>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+          Background
+          <Switch
+            checked={backgroundDark}
+            onCheckedChange={toggleBackground}
             className="data-[state=checked]:bg-primary"
           />
         </label>

@@ -1,23 +1,11 @@
-import { useMemo } from "react";
-import {
-  Link2,
-  Link2Off,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Receipt,
-  Minus,
-} from "lucide-react";
-import { ScrollArea } from "@/components/common/scroll-area";
+import { Receipt, Link2, Link2Off } from "lucide-react";
 import { Button } from "@/components/common/button";
+import { ScrollArea } from "@/components/common/scroll-area";
 import { cn } from "@/lib/utils/utils";
-import {
-  useViewerStore,
-  getElementPaymentMap,
-  type PaymentItemLocal,
-} from "@/lib/viewer/store";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import { useMemo } from "react";
+import { getElementPaymentMap } from "../state/selectors";
+import type { PaymentItemLocal } from "../state/types";
+import { useViewerStore } from "../state/store";
 
 const EUR = new Intl.NumberFormat("en-IE", {
   style: "currency",
@@ -41,40 +29,12 @@ function deriveStatus(item: PaymentItemLocal): ClaimStatusDisplay {
 
 const statusMeta: Record<
   ClaimStatusDisplay,
-  {
-    label: string;
-    icon: typeof CheckCircle2;
-    barVar: string;
-    badgeClass: string;
-  }
+  { barVar: string }
 > = {
-  approved: {
-    label: "Approved",
-    icon: CheckCircle2,
-    barVar: "var(--status-approved-fg)",
-    badgeClass:
-      "text-[var(--status-approved-fg)] bg-[var(--status-approved)] border-[var(--status-approved-fg)]/20",
-  },
-  submitted: {
-    label: "In Progress",
-    icon: Clock,
-    barVar: "var(--status-submitted-fg)",
-    badgeClass:
-      "text-[var(--status-submitted-fg)] bg-[var(--status-submitted)] border-[var(--status-submitted-fg)]/20",
-  },
-  rejected: {
-    label: "Rejected",
-    icon: XCircle,
-    barVar: "var(--status-rejected-fg)",
-    badgeClass:
-      "text-[var(--status-rejected-fg)] bg-[var(--status-rejected)] border-[var(--status-rejected-fg)]/20",
-  },
-  not_started: {
-    label: "Not Started",
-    icon: Minus,
-    barVar: "var(--status-neutral)",
-    badgeClass: "text-muted-foreground bg-muted border-border",
-  },
+  approved: { barVar: "var(--status-approved-fg)" },
+  submitted: { barVar: "var(--status-submitted-fg)" },
+  rejected: { barVar: "var(--status-rejected-fg)" },
+  not_started: { barVar: "var(--status-neutral)" },
 };
 
 function PaymentCard({
@@ -105,12 +65,10 @@ function PaymentCard({
           : "border-(--viewer-panel-border) bg-card/30 hover:bg-card/50",
       )}
     >
-      {/* Status bar left accent */}
       <span
         className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
         style={{ background: m.barVar }}
       />
-
       <div className="flex items-start justify-between gap-2 mb-1.5 pl-2">
         <div className="min-w-0">
           <div className="text-[10px] font-mono text-muted-foreground">
@@ -123,10 +81,7 @@ function PaymentCard({
             {item.contractorName}
           </div>
         </div>
-        {/* <StatusBadge status={status} /> */}
       </div>
-
-      {/* Progress bar */}
       <div className="pl-2 mb-1.5">
         <div className="h-1 rounded-full bg-muted overflow-hidden">
           <div
@@ -135,42 +90,6 @@ function PaymentCard({
           />
         </div>
       </div>
-
-      <div className="flex gap-1.5 pl-2 mb-1.5 flex-wrap">
-        <span
-          className={`text-[10px] font-medium px-1.5 py-0.5 rounded border
-    ${
-      (item.jobStatus ?? "NOT_STARTED") === "COMPLETED"
-        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
-        : (item.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
-          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
-          : "bg-muted text-muted-foreground border-border"
-    }`}
-        >
-          {(item.jobStatus ?? "NOT_STARTED") === "NOT_STARTED"
-            ? "Not Started"
-            : (item.jobStatus ?? "NOT_STARTED") === "IN_PROGRESS"
-              ? "In Progress"
-              : "Done"}
-        </span>
-        <span
-          className={`text-[10px] font-medium px-1.5 py-0.5 rounded border
-    ${
-      (item.paymentStatus ?? "NONE") === "APPROVED"
-        ? "bg-status-approved text-status-approved-fg border-status-approved-fg/20"
-        : (item.paymentStatus ?? "NONE") === "PAID"
-          ? "bg-status-submitted text-status-submitted-fg border-status-submitted-fg/20"
-          : (item.paymentStatus ?? "NONE") === "REJECTED"
-            ? "bg-status-rejected text-status-rejected-fg border-status-rejected-fg/20"
-            : "bg-muted text-muted-foreground border-border"
-    }`}
-        >
-          Pay:{" "}
-          {(item.paymentStatus ?? "NONE").charAt(0) +
-            (item.paymentStatus ?? "NONE").slice(1).toLowerCase()}
-        </span>
-      </div>
-
       <div className="flex items-center justify-between pl-2">
         <div className="text-xs font-mono tabular-nums text-foreground">
           {EUR.format(approvedTotal)}{" "}
@@ -192,11 +111,8 @@ function PaymentCard({
   );
 }
 
-// ─── No selection view — shows all payment items ──────────────────────────────
-
 function NoSelectionView() {
   const paymentItems = useViewerStore((s) => s.paymentItems);
-
   const totals = useMemo(() => {
     const approved = paymentItems.reduce((acc, item) => {
       return (
@@ -220,7 +136,6 @@ function NoSelectionView() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Summary strip */}
       <div
         className="px-4 py-3 border-b shrink-0"
         style={{ borderColor: "var(--viewer-panel-border)" }}
@@ -230,21 +145,9 @@ function NoSelectionView() {
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[
-            {
-              label: "Contract",
-              value: totals.contract,
-              varName: "status-pending-fg",
-            },
-            {
-              label: "Approved",
-              value: totals.approved,
-              varName: "status-approved-fg",
-            },
-            {
-              label: "Submitted",
-              value: totals.submitted,
-              varName: "status-submitted-fg",
-            },
+            { label: "Contract", value: totals.contract, varName: "status-pending-fg" },
+            { label: "Approved", value: totals.approved, varName: "status-approved-fg" },
+            { label: "Submitted", value: totals.submitted, varName: "status-submitted-fg" },
           ].map(({ label, value, varName }) => (
             <div
               key={label}
@@ -267,7 +170,6 @@ function NoSelectionView() {
           ))}
         </div>
       </div>
-
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-2">
           {paymentItems.length === 0 && (
@@ -284,21 +186,17 @@ function NoSelectionView() {
   );
 }
 
-// ─── Selection view — attach/detach selected elements ────────────────────────
-
 function SelectionView() {
   const selectedIds = useViewerStore((s) => s.selectedIds);
   const paymentItems = useViewerStore((s) => s.paymentItems);
   const attach = useViewerStore((s) => s.attachSelectionToPayment);
   const detach = useViewerStore((s) => s.detachSelectionFromPayment);
-
   const selectedCount = selectedIds.size;
   const paymentMap = useMemo(
     () => getElementPaymentMap(paymentItems),
     [paymentItems],
   );
 
-  // Which payment items have selected elements already attached?
   const grouping = useMemo(() => {
     const attached: Record<string, string[]> = {};
     const unattachedCount = Array.from(selectedIds).filter(
@@ -316,7 +214,6 @@ function SelectionView() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Selection header */}
       <div
         className="px-4 py-3 border-b shrink-0"
         style={{
@@ -344,7 +241,6 @@ function SelectionView() {
 
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-4">
-          {/* Currently attached section */}
           {Object.keys(grouping.attached).length > 0 && (
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">
@@ -381,7 +277,6 @@ function SelectionView() {
             </div>
           )}
 
-          {/* Attach to section */}
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 px-1">
               Attach selection to
@@ -407,8 +302,6 @@ function SelectionView() {
     </div>
   );
 }
-
-// ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function RightPanel() {
   const hasSelection = useViewerStore((s) => s.selectedIds.size > 0);
