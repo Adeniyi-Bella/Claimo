@@ -14,7 +14,10 @@ export async function loadViewerModelIntoRuntime({
 }: {
   runtime: ViewerRuntime;
   model: ViewerModelRecord;
-  onTree: (tree: LoadedIfcViewerData["ifcTree"]) => void;
+  onTree: (
+    modelId: string,
+    tree: LoadedIfcViewerData["ifcTree"],
+  ) => void;
 }): Promise<boolean> {
   const cached = await loadFragmentCache(model.id);
   if (cached) {
@@ -34,7 +37,7 @@ export async function loadViewerModelIntoRuntime({
     }
 
     applyGroundElevation(runtime.components, cached.groundElevation);
-    onTree(cached.ifcTree);
+    onTree(model.id, cached.ifcTree);
     return true;
   }
 
@@ -47,6 +50,6 @@ export async function loadViewerModelIntoRuntime({
     ifcTree: loaded.ifcTree,
     groundElevation: loaded.groundElevation,
   });
-  onTree(loaded.ifcTree);
+  onTree(model.id, loaded.ifcTree);
   return true;
 }

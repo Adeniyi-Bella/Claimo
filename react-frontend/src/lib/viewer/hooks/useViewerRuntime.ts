@@ -10,7 +10,12 @@ import {
 } from "../scene";
 import type { ViewerModelRecord } from "../model";
 
-export type ModelViewerStatus = "idle" | "loading" | "converting" | "ready" | "error";
+export type ModelViewerStatus =
+  | "idle"
+  | "loading"
+  | "converting"
+  | "ready"
+  | "error";
 
 export interface UseViewerRuntimeResult {
   status: ModelViewerStatus;
@@ -19,18 +24,25 @@ export interface UseViewerRuntimeResult {
 }
 
 export function useViewerRuntime(
-  model: ViewerModelRecord | null,
+  models: ViewerModelRecord[],
   backgroundColor: string,
 ): UseViewerRuntimeResult {
   const containerRef = useRef<HTMLDivElement>(null);
   const componentsRef = useRef<OBC.Components | null>(null);
-  const runtimeRef = useRef<Awaited<ReturnType<typeof createViewerRuntime>> | null>(null);
+  const runtimeRef = useRef<Awaited<ReturnType<typeof createViewerRuntime>> | null>(
+    null,
+  );
   const cameraRef = useRef<any>(null);
   const backgroundColorRef = useRef(backgroundColor);
   const [status, setStatus] = useState<ModelViewerStatus>("idle");
 
   const setIfcTree = useViewerStore((state) => state.setIfcTree);
   const setIfcTreeLoading = useViewerStore((state) => state.setIfcTreeLoading);
+  const setOBCRefs = useViewerStore((state) => state.setOBCRefs);
+  const setSelectionFromModelMap = useViewerStore(
+    (state) => state.setSelectionFromModelMap,
+  );
+  const lastSelectionRef = useRef<Record<string, Set<number>>>({});
 
   const handleResetCamera = useCallback(async () => {
     if (!cameraRef.current) return;
@@ -46,7 +58,7 @@ export function useViewerRuntime(
   }, [backgroundColor]);
 
   useEffect(() => {
-    if (!containerRef.current || !model) return;
+    if (!containerRef.current || models.length === 0) return;
 
     let cancelled = false;
 
@@ -68,9 +80,7 @@ export function useViewerRuntime(
           backgroundColorRef.current,
         );
 
-        useViewerStore
-          .getState()
-          .setOBCRefs(runtime.components, runtime.highlighter, runtime.hider, model.id);
+        setOBCRefs(runtime.components, runtime.highlighter, runtime.hider);
 
         runtime.fragments.list.onItemSet.add(({ value: loadedModel }) => {
           loadedModel.useCamera(runtime.camera.three);
@@ -88,26 +98,37 @@ export function useViewerRuntime(
           },
         );
 
+        runtime.highlighter.events.select.onBeforeHighlight.add(
+          (modelIdMap) => {
+            lastSelectionRef.current = cloneModelIdMap(modelIdMap);
+          },
+        );
+
         runtime.highlighter.events.select.onHighlight.add((modelIdMap) => {
-          const ids = Object.values(modelIdMap).flatMap((set) =>
-            Array.from(set).map(String),
+          const preferredModelId = getSelectionModelId(
+            modelIdMap,
+            lastSelectionRef.current,
           );
-          useViewerStore.getState().selectMany(ids);
+          setSelectionFromModelMap(modelIdMap, preferredModelId);
+          lastSelectionRef.current = cloneModelIdMap(modelIdMap);
         });
 
         runtime.highlighter.events.select.onClear.add(() => {
+          lastSelectionRef.current = {};
           useViewerStore.getState().clearSelection();
         });
 
-        if (model.fileType === "ifc") {
-          setStatus("converting");
-          setIfcTreeLoading(true);
+        setStatus("converting");
+        setIfcTreeLoading(true);
 
-          try {
+        for (const model of models) {
+          if (cancelled) break;
+
+          if (model.fileType === "ifc") {
             const ok = await loadViewerModelIntoRuntime({
               runtime,
               model,
-              onTree: setIfcTree,
+              onTree: (modelId, tree) => setIfcTree(modelId, tree),
             });
 
             if (cancelled) {
@@ -119,25 +140,32 @@ export function useViewerRuntime(
               setStatus("error");
               return;
             }
-            setStatus("ready");
-          } finally {
-            setIfcTreeLoading(false);
-          }
-        } else if (model.fileType === "json" && model.geometryJson) {
-          const mesh = createViewerGeometryMesh(model.geometryJson);
-          if (!mesh) {
-            setStatus("error");
-            return;
+            continue;
           }
 
-          runtime.world.scene.three.add(mesh);
-          setStatus("ready");
-        } else {
+          if (model.fileType === "json" && model.geometryJson) {
+            const mesh = createViewerGeometryMesh(model.geometryJson);
+            if (!mesh) {
+              setStatus("error");
+              return;
+            }
+
+            runtime.world.scene.three.add(mesh);
+            continue;
+          }
+
           setStatus("error");
+          return;
+        }
+
+        if (!cancelled) {
+          setStatus("ready");
         }
       } catch (err) {
         console.error("Viewer init error:", err);
         if (!cancelled) setStatus("error");
+      } finally {
+        setIfcTreeLoading(false);
       }
     };
 
@@ -152,11 +180,40 @@ export function useViewerRuntime(
       }
       cameraRef.current = null;
     };
-  }, [model, setIfcTree, setIfcTreeLoading]);
+  }, [models, setIfcTree, setIfcTreeLoading, setOBCRefs, setSelectionFromModelMap]);
 
   return {
     status,
     containerRef,
     handleResetCamera,
   };
+}
+
+function cloneModelIdMap(modelIdMap: Record<string, Set<number>>) {
+  return Object.fromEntries(
+    Object.entries(modelIdMap).map(([modelId, ids]) => [
+      modelId,
+      new Set(ids),
+    ]),
+  );
+}
+
+function getSelectionModelId(
+  next: Record<string, Set<number>>,
+  previous: Record<string, Set<number>>,
+): string | undefined {
+  const nextEntries = Object.entries(next);
+  if (nextEntries.length === 0) return undefined;
+
+  for (const [modelId, ids] of nextEntries) {
+    const prev = previous[modelId];
+    if (!prev || prev.size !== ids.size) {
+      return modelId;
+    }
+    for (const id of ids) {
+      if (!prev.has(id)) return modelId;
+    }
+  }
+
+  return nextEntries[nextEntries.length - 1]?.[0];
 }

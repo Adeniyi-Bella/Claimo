@@ -3,7 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 export const VIEWER_PANEL_COLLAPSED_WIDTH = 44;
 export const VIEWER_PANEL_MIN_WIDTH = 240;
 export const VIEWER_PANEL_MAX_WIDTH = 560;
-export const VIEWER_LEFT_PANEL_DEFAULT_WIDTH = 256;
+export const VIEWER_LEFT_PANEL_DEFAULT_WIDTH = 300;
 export const VIEWER_RIGHT_PANEL_DEFAULT_WIDTH = 320;
 
 export function clampPanelWidth(width: number, min: number, max: number) {

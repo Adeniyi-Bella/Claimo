@@ -18,12 +18,41 @@ function collectExpressIds(node: IfcTreeNode): string[] {
   return [node.expressId, ...node.children.flatMap(collectExpressIds)];
 }
 
-function IfcTreeNodeRow({ node, depth }: { node: IfcTreeNode; depth: number }) {
-  const [open, setOpen] = useState(depth < 2);
-  const selectedIds = useViewerStore((s) => s.selectedIds);
+function filterTree(tree: IfcTreeNode[], query: string): IfcTreeNode[] {
+  if (!query.trim()) return tree;
+  const q = query.toLowerCase();
+
+  const filterNode = (node: IfcTreeNode): IfcTreeNode | null => {
+    const selfMatch =
+      node.name.toLowerCase().includes(q) ||
+      node.type.toLowerCase().includes(q);
+    const filteredChildren = node.children
+      .map(filterNode)
+      .filter(Boolean) as IfcTreeNode[];
+    if (selfMatch || filteredChildren.length > 0) {
+      return { ...node, children: filteredChildren };
+    }
+    return null;
+  };
+
+  return tree.map(filterNode).filter(Boolean) as IfcTreeNode[];
+}
+
+function IfcTreeNodeRow({
+  node,
+  modelId,
+  depth,
+}: {
+  node: IfcTreeNode;
+  modelId: string;
+  depth: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedByModelId = useViewerStore((s) => s.selectedByModelId);
   const highlighter = useViewerStore((s) => s._highlighter);
   const hider = useViewerStore((s) => s._hider);
   const activeModelId = useViewerStore((s) => s._activeModelId);
+  const setActiveModelId = useViewerStore((s) => s.setActiveModelId);
   const selectMany = useViewerStore((s) => s.selectMany);
   const clearSelection = useViewerStore((s) => s.clearSelection);
 
@@ -34,22 +63,35 @@ function IfcTreeNodeRow({ node, depth }: { node: IfcTreeNode; depth: number }) {
     [node],
   );
 
-  const isSelected = selectedIds.has(node.expressId);
+  const modelSelection = selectedByModelId[modelId] ?? new Set<number>();
+  const isSelected = modelSelection.has(node.localId);
   const subtreeHasSelected = useMemo(
-    () => Array.from(selectedIds).some((id) => subtreeExpressIds.has(id)),
-    [selectedIds, subtreeExpressIds],
+    () =>
+      Array.from(modelSelection).some((id) =>
+        subtreeExpressIds.has(String(id)),
+      ),
+    [modelSelection, subtreeExpressIds],
   );
+
+  const activateModel = () => {
+    if (activeModelId !== modelId) {
+      setActiveModelId(modelId);
+    }
+  };
 
   const handleSelect = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!highlighter || !activeModelId) return;
+    if (!highlighter) return;
 
+    const additive =
+      activeModelId === modelId && (e.shiftKey || e.ctrlKey || e.metaKey);
+    activateModel();
     const allIds = collectNodeIds(node);
     const modelIdMap: Record<string, Set<number>> = {
-      [activeModelId]: new Set(allIds),
+      [modelId]: new Set(allIds),
     };
 
-    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+    if (additive) {
       await highlighter.highlightByID("select", modelIdMap, false, false);
     } else {
       await highlighter.clear("select");
@@ -57,9 +99,9 @@ function IfcTreeNodeRow({ node, depth }: { node: IfcTreeNode; depth: number }) {
     }
 
     const stringIds = allIds.map(String);
-    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+    if (additive) {
       const merged = Array.from(
-        new Set([...Array.from(selectedIds), ...stringIds]),
+        new Set([...Array.from(modelSelection), ...allIds]),
       );
       selectMany(merged);
     } else {
@@ -69,20 +111,22 @@ function IfcTreeNodeRow({ node, depth }: { node: IfcTreeNode; depth: number }) {
 
   const handleIsolate = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!hider || !activeModelId) return;
+    if (!hider) return;
+    activateModel();
     const allIds = collectNodeIds(node);
     const modelIdMap: Record<string, Set<number>> = {
-      [activeModelId]: new Set(allIds),
+      [modelId]: new Set(allIds),
     };
     await hider.isolate(modelIdMap);
   };
 
   const handleHide = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!hider || !activeModelId) return;
+    if (!hider) return;
+    activateModel();
     const allIds = collectNodeIds(node);
     const modelIdMap: Record<string, Set<number>> = {
-      [activeModelId]: new Set(allIds),
+      [modelId]: new Set(allIds),
     };
     await hider.set(false, modelIdMap);
     if (subtreeHasSelected) clearSelection();
@@ -146,6 +190,7 @@ function IfcTreeNodeRow({ node, depth }: { node: IfcTreeNode; depth: number }) {
             <IfcTreeNodeRow
               key={child.expressId}
               node={child}
+              modelId={modelId}
               depth={depth + 1}
             />
           ))}
@@ -155,39 +200,161 @@ function IfcTreeNodeRow({ node, depth }: { node: IfcTreeNode; depth: number }) {
   );
 }
 
+function ModelTreeSection({
+  modelId,
+  modelName,
+  tree,
+  hidden,
+  active,
+  query,
+}: {
+  modelId: string;
+  modelName: string;
+  tree: IfcTreeNode[];
+  hidden: boolean;
+  active: boolean;
+  query: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const setActiveModelId = useViewerStore((s) => s.setActiveModelId);
+  const setModelVisibility = useViewerStore((s) => s.setModelVisibility);
+  const highlighter = useViewerStore((s) => s._highlighter);
+  const hider = useViewerStore((s) => s._hider);
+  const clearSelection = useViewerStore((s) => s.clearSelection);
+
+  const filtered = useMemo(() => filterTree(tree, query), [tree, query]);
+
+  const showModel = async () => {
+    if (!hider) return;
+    await setModelVisibility(modelId, true);
+  };
+
+  const hideModel = async () => {
+    if (!hider) return;
+    await setModelVisibility(modelId, false);
+  };
+
+  const showAllElements = async () => {
+    if (!hider || !highlighter) return;
+    setActiveModelId(modelId);
+    await hider.set(true, { [modelId]: new Set(tree.flatMap(collectTreeIds)) });
+    await highlighter.clear("select");
+    clearSelection();
+  };
+
+  return (
+    <div
+      className={cn(
+        "rounded-md border overflow-hidden",
+        active
+          ? "border-primary/40 bg-primary/5"
+          : "border-border bg-background/30",
+        hidden && "opacity-75",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 px-2 py-1.5 border-b border-border/70">
+        <div className="min-w-0 flex-1">
+          <button
+            className="w-full text-left"
+            onClick={() => {
+              setActiveModelId(modelId);
+              setExpanded((value) => !value);
+            }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="truncate text-xs font-semibold text-foreground">
+                {modelName}
+              </span>
+              {active && (
+                <span className="text-[9px] uppercase tracking-wider text-primary">
+                  Active
+                </span>
+              )}
+            </div>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            title="Show all elements in model"
+            className="p-1 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground"
+            onClick={showAllElements}
+          >
+            <Eye className="h-3.5 w-3.5" />
+          </button>
+          <button
+            title={hidden ? "Show model" : "Hide model"}
+            className="p-1 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground"
+            onClick={hidden ? showModel : hideModel}
+          >
+            {hidden ? (
+              <Eye className="h-3.5 w-3.5" />
+            ) : (
+              <EyeOff className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="px-1.5 py-1">
+          {filtered.length > 0 ? (
+            filtered.map((node) => (
+              <IfcTreeNodeRow
+                key={node.expressId}
+                node={node}
+                modelId={modelId}
+                depth={0}
+              />
+            ))
+          ) : (
+            <div className="px-2 py-4 text-[11px] text-center text-muted-foreground">
+              No elements match
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function collectTreeIds(node: IfcTreeNode): number[] {
+  const ids = [node.localId];
+  for (const child of node.children) {
+    ids.push(...collectTreeIds(child));
+  }
+  return ids;
+}
+
 export function IfcTreePanel() {
-  const ifcTree = useViewerStore((s) => s.ifcTree);
+  const models = useViewerStore((s) => s.models);
+  const ifcTreesByModelId = useViewerStore((s) => s.ifcTreesByModelId);
   const ifcTreeLoading = useViewerStore((s) => s.ifcTreeLoading);
+  const activeModelId = useViewerStore((s) => s._activeModelId);
+  const hiddenModelIds = useViewerStore((s) => s.hiddenModelIds);
+  const clearSelection = useViewerStore((s) => s.clearSelection);
+  const highlighter = useViewerStore((s) => s._highlighter);
+  const hider = useViewerStore((s) => s._hider);
   const [query, setQuery] = useState("");
 
-  const filtered = useMemo(() => {
-    if (!query.trim()) return ifcTree;
-    const q = query.toLowerCase();
-    const filterNode = (node: IfcTreeNode): IfcTreeNode | null => {
-      const selfMatch =
-        node.name.toLowerCase().includes(q) ||
-        node.type.toLowerCase().includes(q);
-      const filteredChildren = node.children
-        .map(filterNode)
-        .filter(Boolean) as IfcTreeNode[];
-      if (selfMatch || filteredChildren.length > 0) {
-        return { ...node, children: filteredChildren };
-      }
-      return null;
-    };
-    return ifcTree.map(filterNode).filter(Boolean) as IfcTreeNode[];
-  }, [ifcTree, query]);
+  const showAllModels = async () => {
+    if (!hider || !highlighter) return;
+    await hider.set(true);
+    useViewerStore.setState({ hiddenModelIds: new Set() });
+    await highlighter.clear("select");
+    clearSelection();
+  };
 
   if (ifcTreeLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 h-32 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="text-[11px]">Building tree…</span>
+        <span className="text-[11px]">Building trees…</span>
       </div>
     );
   }
 
-  if (ifcTree.length === 0) {
+  if (models.length === 0) {
     return (
       <div className="text-[11px] text-muted-foreground py-8 text-center">
         No IFC model loaded
@@ -197,39 +364,36 @@ export function IfcTreePanel() {
 
   return (
     <div className="flex flex-col gap-2 h-full">
+      {models.length > 1 && (
+        <button
+          onClick={showAllModels}
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground w-full px-1 py-0.5 rounded hover:bg-accent/40"
+        >
+          <Eye className="h-3 w-3" />
+          Show all models
+        </button>
+      )}
+
       <Input
-        placeholder="Search elements…"
+        placeholder="Search elements across all models…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="h-8 text-xs bg-background border-border"
       />
-      <button
-        onClick={async () => {
-          const {
-            _hider: hider,
-            _highlighter: highlighter,
-            clearSelection,
-          } = useViewerStore.getState();
-          if (!hider || !highlighter) return;
-          await hider.set(true);
-          await highlighter.clear("select");
-          clearSelection();
-        }}
-        className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground w-full px-1 py-0.5 rounded hover:bg-accent/40"
-      >
-        <Eye className="h-3 w-3" />
-        Show all
-      </button>
+
       <ScrollArea className="flex-1 -mx-2">
-        <div className="px-2">
-          {filtered.map((node) => (
-            <IfcTreeNodeRow key={node.expressId} node={node} depth={0} />
+        <div className="px-2 space-y-2">
+          {models.map((model) => (
+            <ModelTreeSection
+              key={model.id}
+              modelId={model.id}
+              modelName={model.name}
+              tree={ifcTreesByModelId[model.id] ?? []}
+              hidden={hiddenModelIds.has(model.id)}
+              active={activeModelId === model.id}
+              query={query}
+            />
           ))}
-          {filtered.length === 0 && (
-            <div className="text-[11px] text-muted-foreground py-4 text-center">
-              No elements match
-            </div>
-          )}
         </div>
       </ScrollArea>
     </div>

@@ -1,4 +1,4 @@
-import { Link, useParams, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Boxes, Calendar, ChevronRight, Edit3, MapPin, Upload, UserPlus, Users } from "lucide-react";
 
@@ -21,6 +21,7 @@ export default function ProjectDetail() {
   const { projectId } = useParams({
     from: "/_authenticated/projects/$projectId",
   });
+  const navigate = useNavigate();
   const search = useSearch({ from: "/_authenticated/projects/$projectId" });
   const [tab, setTab] = useState<(typeof TABS)[number]>(
     (search as { tab?: (typeof TABS)[number] })?.tab ?? "Overview",
@@ -56,6 +57,20 @@ export default function ProjectDetail() {
 
   const summary = projectSummary(project);
   const allItems = project.models.flatMap((model) => model.paymentItems);
+
+  const handleViewModels = (modelIds: string[]) => {
+    if (modelIds.length === 0) return;
+    const selected = modelIds.filter((id) =>
+      project.models.some((model) => model.id === id),
+    );
+    if (selected.length === 0) return;
+    const firstModelId = selected[0];
+    navigate({
+      to: "/viewer/$projectId/$modelId",
+      params: { projectId: project.id, modelId: firstModelId },
+      search: { modelIds: selected.join(",") } as any,
+    });
+  };
 
   return (
     <AppShell>
@@ -151,6 +166,7 @@ export default function ProjectDetail() {
             onUpload={() => setOpenUpload(true)}
             modelThumbs={modelThumbs}
             onDeleteModel={handleDeleteModel}
+            onViewModels={handleViewModels}
           />
         )}
         {tab === "Members" && (

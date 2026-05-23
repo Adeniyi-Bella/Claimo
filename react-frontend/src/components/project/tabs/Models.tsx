@@ -1,19 +1,43 @@
+import { useEffect, useMemo, useState } from "react";
 import type { Project } from "@/lib/mock-data";
 import { fmtDate, modelSummary } from "@/lib/mock-data";
 import { Link } from "@tanstack/react-router";
-import { Boxes, Trash2, Upload } from "lucide-react";
+import { Boxes, Check, Trash2, Upload } from "lucide-react";
 
 export default function ModelsTab({
   project,
   onUpload,
   modelThumbs = {},
   onDeleteModel,
+  onViewModels,
 }: {
   project: Project;
   onUpload: () => void;
   modelThumbs?: Record<string, string>;
   onDeleteModel: (modelId: string) => void;
+  onViewModels: (modelIds: string[]) => void;
 }) {
+  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedModelIds((current) =>
+      current.filter((id) => project.models.some((model) => model.id === id)),
+    );
+  }, [project.models]);
+
+  const selectedSet = useMemo(
+    () => new Set(selectedModelIds),
+    [selectedModelIds],
+  );
+
+  const toggleSelected = (modelId: string) => {
+    setSelectedModelIds((current) =>
+      current.includes(modelId)
+        ? current.filter((id) => id !== modelId)
+        : [...current, modelId],
+    );
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -21,12 +45,28 @@ export default function ModelsTab({
           {project.models.length} model{project.models.length !== 1 ? "s" : ""}{" "}
           in this project
         </div>
-        <button
-          onClick={onUpload}
-          className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
-        >
-          <Upload className="h-4 w-4" /> Upload model
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onViewModels(project.models.map((model) => model.id))}
+            disabled={project.models.length === 0}
+            className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            View all
+          </button>
+          <button
+            onClick={() => onViewModels(selectedModelIds)}
+            disabled={selectedModelIds.length === 0}
+            className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            View selected
+          </button>
+          <button
+            onClick={onUpload}
+            className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
+          >
+            <Upload className="h-4 w-4" /> Upload model
+          </button>
+        </div>
       </div>
 
       {project.models.length === 0 ? (
@@ -66,6 +106,25 @@ export default function ModelsTab({
               >
                 {/* Thumbnail */}
                 <div className="h-32 relative overflow-hidden bg-linear-to-br from-[oklch(0.93_0.02_250)] to-[oklch(0.83_0.05_250)]">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleSelected(m.id);
+                    }}
+                    className={`absolute top-2 left-2 h-6 w-6 inline-flex items-center justify-center rounded border backdrop-blur transition ${
+                      selectedSet.has(m.id)
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-surface/80 text-muted-foreground hover:text-foreground"
+                    }`}
+                    aria-label={`Select ${m.name}`}
+                    title={`Select ${m.name}`}
+                  >
+                    {selectedSet.has(m.id) ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : null}
+                  </button>
                   {thumb ? (
                     <img
                       src={thumb}
@@ -83,9 +142,10 @@ export default function ModelsTab({
                   <button
                     onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       onDeleteModel(m.id);
                     }}
-                    className="absolute top-2 left-2 p-1 rounded bg-surface/80 backdrop-blur border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
+                    className="absolute top-2 left-10 p-1 rounded bg-surface/80 backdrop-blur border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
                     title="Delete model"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

@@ -1,7 +1,7 @@
-import { useParams } from "@tanstack/react-router";
+import { useParams, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useViewerStore } from "../state/store";
-import { getViewerProjectModel } from "../session";
+import { getViewerProjectModels } from "../session";
 import type { ViewerModelRecord, ViewerProjectRecord } from "../model";
 
 export interface UseViewerSessionResult {
@@ -9,30 +9,35 @@ export interface UseViewerSessionResult {
   modelId: string;
   project: ViewerProjectRecord | null;
   model: ViewerModelRecord | null;
+  models: ViewerModelRecord[];
 }
 
 export function useViewerSession(): UseViewerSessionResult {
   const { projectId, modelId } = useParams({
     from: "/_authenticated/viewer/$projectId/$modelId",
   });
+  const search = useSearch({
+    from: "/_authenticated/viewer/$projectId/$modelId",
+  }) as { modelIds?: string | null };
 
   const initStore = useViewerStore((state) => state.init);
 
-  const { project, model } = useMemo(
-    () => getViewerProjectModel(projectId, modelId),
-    [projectId, modelId],
+  const { project, activeModel: model, models } = useMemo(
+    () => getViewerProjectModels(projectId, modelId, search.modelIds),
+    [projectId, modelId, search.modelIds],
   );
 
   useEffect(() => {
-    if (project && model) {
-      initStore(projectId, modelId, model.name);
+    if (project && models.length > 0 && model) {
+      initStore(projectId, models, model.id);
     }
-  }, [initStore, model, modelId, project, projectId]);
+  }, [initStore, model, models, project, projectId]);
 
   return {
     projectId,
     modelId,
     project,
     model,
+    models,
   };
 }

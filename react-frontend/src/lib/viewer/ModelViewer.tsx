@@ -11,13 +11,15 @@ export default function ModelViewer() {
     projectId,
     project,
     model,
+    models,
     status,
     containerRef,
     handleResetCamera,
     canvasBackground,
+    modelName,
   } = useModelViewer();
 
-  if (!project || !model) {
+  if (!project || models.length === 0 || !model) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 text-muted-foreground">
         <Boxes className="h-12 w-12 opacity-30" />
@@ -39,7 +41,7 @@ export default function ModelViewer() {
       style={{ background: "var(--background)", color: "var(--foreground)" }}
     >
       <ViewerToolbar
-        modelName={model.name}
+        modelName={modelName || model.name}
         projectId={projectId}
         status={status}
         onResetCamera={handleResetCamera}
