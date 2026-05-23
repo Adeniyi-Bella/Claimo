@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProjectModel, ModelFileType } from "@/lib/mock-data";
 import { Upload, X, FileBox } from "lucide-react";
 import { saveModelFile } from "@/lib/model-storage";
@@ -19,6 +19,22 @@ export default function UploadModelModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const resetState = () => {
+    setDragging(false);
+    setFiles([]);
+    setError(null);
+    setLoading(false);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      resetState();
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -96,7 +112,10 @@ export default function UploadModelModal({
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold">Upload model</h2>
           <button
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              resetState();
+              onOpenChange(false);
+            }}
             className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-accent transition"
           >
             <X className="h-4 w-4" />
@@ -163,7 +182,10 @@ export default function UploadModelModal({
 
         <div className="mt-5 flex justify-end gap-2">
           <button
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              resetState();
+              onOpenChange(false);
+            }}
             className="h-9 px-4 rounded-md border border-border text-sm hover:bg-accent transition"
           >
             Cancel
