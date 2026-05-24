@@ -1,4 +1,4 @@
-package com.claimo.api.auth.properties;
+package com.claimo.api.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 
 @ConfigurationProperties(prefix = "clerk")
 @Validated
-public record ClerkProperties(
+public record ClerkConfigProperties(
         @NotBlank(message = "Clerk secret key is required") String secretKey,
 
         @NotBlank(message = "Clerk invitation redirect URL is required") String invitationRedirectUrl,

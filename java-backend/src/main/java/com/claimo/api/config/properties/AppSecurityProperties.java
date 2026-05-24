@@ -1,4 +1,4 @@
-package com.claimo.api.shared.config.properties;
+package com.claimo.api.config.properties;
 
 import java.util.List;
 

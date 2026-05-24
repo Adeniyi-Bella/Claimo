@@ -1,7 +1,7 @@
 package com.claimo.api.filter;
 
+import com.claimo.api.config.properties.AppRateLimitProperties;
 import com.claimo.api.exceptions.HttpErrorResponder;
-import com.claimo.api.shared.config.properties.AppRateLimitProperties;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -1,11 +1,9 @@
 package com.claimo.api.config;
 
+import com.claimo.api.config.properties.AppSecurityProperties;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.exceptions.ErrorMessageResolver;
 import com.claimo.api.filter.RateLimit;
-// import com.claimo.api.redis.RedisService;
-// import com.claimo.api.security.JwtBlacklistValidator;
-import com.claimo.api.shared.config.properties.AppSecurityProperties;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

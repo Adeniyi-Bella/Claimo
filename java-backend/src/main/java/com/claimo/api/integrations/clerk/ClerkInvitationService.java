@@ -7,7 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
-import com.claimo.api.auth.properties.ClerkProperties;
+import com.claimo.api.config.properties.ClerkConfigProperties;
 import com.claimo.api.exceptions.AppExceptions;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +20,7 @@ public class ClerkInvitationService {
 
     private static final URI INVITATIONS_URI = URI.create("https://api.clerk.com/v1/invitations");
 
-    private final ClerkProperties clerkProperties;
+    private final ClerkConfigProperties clerkProperties;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))

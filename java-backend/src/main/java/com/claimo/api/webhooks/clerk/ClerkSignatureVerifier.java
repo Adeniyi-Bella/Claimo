@@ -1,9 +1,10 @@
 package com.claimo.api.webhooks.clerk;
 
-import com.claimo.api.auth.properties.ClerkProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import com.claimo.api.config.properties.ClerkConfigProperties;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -14,7 +15,7 @@ import java.util.Base64;
 @Slf4j
 public class ClerkSignatureVerifier {
 
-    private final ClerkProperties clerkProperties;
+    private final ClerkConfigProperties clerkProperties;
 
     /**
      * Verifies the Clerk webhook signature using HMAC-SHA256.
