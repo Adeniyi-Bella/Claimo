@@ -1,5 +1,6 @@
 package com.claimo.api.webhooks.clerk;
 
+import com.adeniyibella.mailrelay.publisher.NotificationPublisher;
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.services.CompanyService;
@@ -25,6 +26,7 @@ public class ClerkUserWebhookService {
     private final CompanyInviteService companyInviteService;
     private final ClerkWebhookPayloadService payloadService;
     private final ProjectInviteService projectInviteService;
+    private final NotificationPublisher notificationPublisher;
 
     @Transactional
     public void handleUserCreated(String payload) {
@@ -44,12 +46,20 @@ public class ClerkUserWebhookService {
         String lastName = data.path("last_name").asText("");
         String fullName = (firstName + " " + lastName).trim();
 
+        User user = createUserAndCompany(data, clerkUserId, email, firstName, lastName, fullName);
+
+        notificationPublisher.sendWelcomeEmail(user.getId(), user.getEmail(), user.getFirstName());
+
+        log.info("Created company and user for clerkUserId={}", clerkUserId);
+    }
+
+    @Transactional
+    protected User createUserAndCompany(JsonNode data, String clerkUserId, String email,
+            String firstName, String lastName, String fullName) {
         boolean hasPendingInvites = companyInviteService.hasPendingInvites(email)
                 || projectInviteService.hasPendingInvites(email);
 
-        log.debug("Processing user.created for clerkUserId={}", clerkUserId);
         User user = userService.createUser(clerkUserId, email, firstName, lastName);
-        log.debug("User created userId={}", user.getId());
 
         if (!hasPendingInvites) {
             String companyName = data
@@ -66,12 +76,15 @@ public class ClerkUserWebhookService {
             }
 
             var company = companyService.createCompany(companyName, user);
-            log.debug("Company created companyId={}", company.getId());
             companyMemberService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
+
         }
 
         companyInviteService.markUserCreatedInvitesAccepted(email, user);
         projectInviteService.markUserCreatedInvitesAccepted(email, user);
+
         log.info("Created company and user for clerkUserId={}", clerkUserId);
+
+        return user;
     }
 }

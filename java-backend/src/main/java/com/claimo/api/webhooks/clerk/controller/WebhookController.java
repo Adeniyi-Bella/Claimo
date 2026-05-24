@@ -4,11 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.webhooks.clerk.ClerkSignatureVerifier;
 import com.claimo.api.webhooks.clerk.services.WebhookService;
 
@@ -33,15 +35,22 @@ public class WebhookController {
             @RequestHeader("svix-id") String svixId,
             @RequestHeader("svix-timestamp") String svixTimestamp,
             @RequestHeader("svix-signature") String svixSignature,
-            @RequestBody String payload) {
+            @RequestBody String payload,
+            HttpServletRequest request) {
 
         if (!signatureVerifier.verifyUserCreated(svixId, svixTimestamp, svixSignature, payload)) {
-            log.warn("Invalid Clerk webhook signature");
-            return ResponseEntity.status(401).build();
+            log.warn("Invalid Clerk webhook signature — possible spoofing attempt | svix-id={} svix-timestamp={} ip={}",
+                    svixId, svixTimestamp, request.getRemoteAddr());
+            return ResponseEntity.ok().build();
         }
 
-        webhookService.handleUserCreated(payload);
-        return ResponseEntity.ok().build();
+        try {
+            webhookService.handleUserCreated(payload);
+            return ResponseEntity.ok().build();
+        } catch (AppExceptions.BadRequestException ex) {
+            log.error("Bad webhook payload — manual check needed | svix-id={} message={}", svixId, ex.getMessage());
+            return ResponseEntity.ok().build();
+        }
     }
 
     @PostMapping("/clerk/invitation-created")
