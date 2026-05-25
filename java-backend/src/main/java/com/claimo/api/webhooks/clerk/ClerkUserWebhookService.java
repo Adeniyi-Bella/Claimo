@@ -1,10 +1,10 @@
 package com.claimo.api.webhooks.clerk;
 
-import com.adeniyibella.mailrelay.publisher.NotificationPublisher;
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.services.CompanyService;
 import com.claimo.api.exceptions.AppExceptions;
+import com.claimo.api.notifications.WelcomeEmailService;
 import com.claimo.api.projects.invites.ProjectInviteService;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
@@ -26,7 +26,7 @@ public class ClerkUserWebhookService {
     private final CompanyInviteService companyInviteService;
     private final ClerkWebhookPayloadService payloadService;
     private final ProjectInviteService projectInviteService;
-    private final NotificationPublisher notificationPublisher;
+    private final WelcomeEmailService welcomeEmailService;
 
     @Transactional
     public void handleUserCreated(String payload) {
@@ -48,7 +48,7 @@ public class ClerkUserWebhookService {
 
         User user = createUserAndCompany(data, clerkUserId, email, firstName, lastName, fullName);
 
-        notificationPublisher.sendWelcomeEmail(user.getId(), user.getEmail(), user.getFirstName());
+        welcomeEmailService.sendWelcomeEmail(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
 
         log.info("Created company and user for clerkUserId={}", clerkUserId);
     }

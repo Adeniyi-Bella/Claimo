@@ -93,11 +93,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>com.github.Adeniyi-Bella</groupId>
 			<artifactId>mail-relay</artifactId>
 			<version>1.0.1</version>
-		</dependency>
+		</dependency> -->
 	</dependencies>
 
 	<build>
@@ -153,11 +153,11 @@
 		</plugins>
 	</build>
 
-	<repositories>
+	<!-- <repositories>
 		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
-	</repositories>
+	</repositories> -->
 
 </project>
