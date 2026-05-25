@@ -4,7 +4,7 @@ CREATE TABLE pending_invites (
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     role VARCHAR(50) NOT NULL,
-    invited_by UUID NOT NULL REFERENCES users(id),
+    invited_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 

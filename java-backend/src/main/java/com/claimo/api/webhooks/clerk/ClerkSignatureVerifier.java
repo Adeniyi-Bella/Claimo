@@ -66,4 +66,8 @@ public class ClerkSignatureVerifier {
     public boolean verifyInvitationRevoked(String svixId, String svixTimestamp, String svixSignature, String payload) {
         return verify(svixId, svixTimestamp, svixSignature, payload, clerkProperties.invitationRevokedWebhookSecret());
     }
+
+    public boolean verifyUserDeleted(String svixId, String svixTimestamp, String svixSignature, String payload) {
+        return verify(svixId, svixTimestamp, svixSignature, payload, clerkProperties.userDeletedWebhookSecret());
+    }
 }

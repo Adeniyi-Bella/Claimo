@@ -18,5 +18,7 @@ public interface UserService {
 
     Optional<User> findByEmail(String email);
 
+    void deleteAllUserDataByClerkUserIdAndEmail(String clerkUserId, String email);
+
     UserProfileResponse getProfile(Jwt jwt);
 }

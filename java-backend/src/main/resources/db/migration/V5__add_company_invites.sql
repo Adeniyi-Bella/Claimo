@@ -2,11 +2,11 @@ CREATE TABLE company_invites (
     id UUID PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     clerk_invitation_id VARCHAR(255) UNIQUE,
-    company_id UUID NOT NULL REFERENCES companies(id),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     role VARCHAR(50) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     accepted_at TIMESTAMP WITH TIME ZONE,
-    invited_by UUID NOT NULL REFERENCES users(id),
+    invited_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 

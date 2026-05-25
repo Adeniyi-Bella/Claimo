@@ -19,6 +19,11 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
+    public void handleUserDeleted(String payload) {
+        clerkUserWebhookService.handleUserDeleted(payload);
+    }
+
+    @Override
     public void handleInvitationCreated(String payload) {
         clerkInvitationWebhookService.handleInvitationCreated(payload);
     }

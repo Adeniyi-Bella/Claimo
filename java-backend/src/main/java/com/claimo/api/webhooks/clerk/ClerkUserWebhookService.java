@@ -87,4 +87,28 @@ public class ClerkUserWebhookService {
 
         return user;
     }
+
+    @Transactional
+    public void handleUserDeleted(String payload) {
+        JsonNode root = payloadService.parse(payload);
+        JsonNode data = root.path("data");
+
+        String clerkUserId = payloadService.requiredText(
+                data, "id", "Clerk user id is missing from the webhook payload");
+
+        String email = userService.findByClerkUserId(clerkUserId)
+                .map(User::getEmail)
+                .orElseGet(() -> payloadService.extractOptionalText(data, "email_address"));
+
+        if (email == null || email.isBlank()) {
+            log.warn("User deleted webhook missing resolvable email for clerkUserId={}, skipping cleanup", clerkUserId);
+            return;
+        }
+
+        email = email.toLowerCase().trim();
+
+        userService.deleteAllUserDataByClerkUserIdAndEmail(clerkUserId, email);
+
+        log.info("Deleted user and related data for clerkUserId={} email={}", clerkUserId, email);
+    }
 }

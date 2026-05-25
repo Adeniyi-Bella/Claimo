@@ -3,6 +3,8 @@ package com.claimo.api.webhooks.clerk.services;
 public interface WebhookService {
     void handleUserCreated(String payload);
 
+    void handleUserDeleted(String payload);
+
     void handleInvitationCreated(String payload);
 
     void handleInvitationAccepted(String payload);

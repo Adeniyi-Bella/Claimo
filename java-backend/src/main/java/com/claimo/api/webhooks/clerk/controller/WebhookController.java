@@ -118,4 +118,34 @@ public class WebhookController {
         webhookService.handleInvitationRevoked(payload);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/clerk/user-deleted")
+    @Operation(summary = "Receive Clerk user.deleted events")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Event processed successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid webhook signature"),
+            @ApiResponse(responseCode = "500", description = "Failed to process event")
+
+    })
+    public ResponseEntity<Void> handleUserDeletedWebhook(
+            @RequestHeader("svix-id") String svixId,
+            @RequestHeader("svix-timestamp") String svixTimestamp,
+            @RequestHeader("svix-signature") String svixSignature,
+            @RequestBody String payload,
+            HttpServletRequest request) {
+
+        if (!signatureVerifier.verifyUserDeleted(svixId, svixTimestamp, svixSignature, payload)) {
+            log.warn("Invalid Clerk webhook signature | svix-id={} ip={}", svixId, request.getRemoteAddr());
+            return ResponseEntity.ok().build();
+        }
+
+        try {
+            webhookService.handleUserDeleted(payload);
+            return ResponseEntity.ok().build();
+        } catch (AppExceptions.BadRequestException ex) {
+            log.error("Bad webhook payload | svix-id={} message={}", svixId, ex.getMessage());
+            return ResponseEntity.ok().build();
+        }
+    }
+
 }

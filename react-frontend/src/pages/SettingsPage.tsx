@@ -25,16 +25,21 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { useUser } from "@clerk/react";
+import { useNavigate } from "@tanstack/react-router";
 
 export default function Settings() {
   const { user } = useUser();
+  const navigate = useNavigate();
   const currentUser = {
     name: user?.fullName ?? user?.firstName ?? "User",
     email: user?.primaryEmailAddress?.emailAddress ?? "",
-    avatarHue: 250, // fixed or derive from email hash
+    avatarHue: 250,
   };
   const { members, invite, remove } = useCompanyMembers();
   const [open, setOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -45,6 +50,26 @@ export default function Settings() {
     setName("");
     setEmail("");
     setOpen(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || deletePending) return;
+
+    setDeletePending(true);
+    setDeleteError("");
+
+    try {
+      await user.delete();
+      navigate({ to: "/" });
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't delete your account right now.",
+      );
+    } finally {
+      setDeletePending(false);
+    }
   };
 
   return (
@@ -190,7 +215,11 @@ export default function Settings() {
                 data. This cannot be undone.
               </div>
             </div>
-            <button className="h-8 px-3 inline-flex items-center gap-1.5 rounded-md bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition">
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="h-8 px-3 inline-flex items-center gap-1.5 rounded-md bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition"
+            >
               <Trash2 className="h-3.5 w-3.5" /> Delete company
             </button>
           </div>
@@ -243,6 +272,48 @@ export default function Settings() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete account and company</DialogTitle>
+            <DialogDescription>
+              This action is irreversible. Deleting your account will
+              permanently delete your user account and the company data tied to
+              it, including projects, models, members, and payment records owned
+              by this account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-muted-foreground">
+            If you are the owner of this company, this will also delete the
+            company and any projects it owns. If you are only a member, only
+            your own account-linked data will be removed.
+          </div>
+          {deleteError && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {deleteError}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deletePending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deletePending}
+            >
+              {deletePending ? "Deleting..." : "Delete permanently"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppShell>

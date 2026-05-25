@@ -73,6 +73,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
+    public void deleteAllUserDataByClerkUserIdAndEmail(String clerkUserId, String email) {
+        userRepository.deleteAllUserDataByClerkUserIdAndEmail(clerkUserId, email);
+    }
+
+    @Override
     public boolean existsByClerkUserId(String clerkUserId) {
         return userRepository.existsByClerkUserId(clerkUserId);
     }
