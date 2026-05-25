@@ -12,7 +12,11 @@ SentryLogger.init(router);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={config.VITE_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider
+      publishableKey={config.VITE_CLERK_PUBLISHABLE_KEY}
+      signInForceRedirectUrl="/dashboard"
+      signUpForceRedirectUrl="/dashboard"
+    >
       <App />
       <Toaster />
     </ClerkProvider>

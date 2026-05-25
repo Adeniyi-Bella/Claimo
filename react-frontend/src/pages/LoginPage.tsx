@@ -5,7 +5,13 @@ import { SignIn } from "@clerk/react";
 export default function Login() {
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to your Claimo workspace.">
-      <SignIn routing="path" path="/login" signUpUrl="/register" forceRedirectUrl="/dashboard" />
+      <SignIn
+        routing="path"
+        path="/login"
+        signUpUrl="/register"
+        forceRedirectUrl="/dashboard"
+        signUpForceRedirectUrl="/dashboard"
+      />
 
       <div className="mt-6 text-center text-sm text-muted-foreground">
         New to Claimo? <Link to="/register" className="text-primary font-medium hover:underline">Create an account</Link>
