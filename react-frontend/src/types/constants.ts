@@ -136,3 +136,91 @@ export const DOC_SECTIONS = [
   //   ],
   // },
 ];
+
+export const CHANGELOG = [
+  {
+    version: "1.8.0",
+    date: "May 20, 2026",
+    tag: "New",
+    items: [
+      "Floor plan navigator extracted from IFC storeys",
+      "Section cuts along X / Y / Z axes in the viewer",
+      "BufferGeometry JSON uploads supported alongside IFC",
+    ],
+  },
+  {
+    version: "1.7.2",
+    date: "May 4, 2026",
+    tag: "Fixed",
+    items: [
+      "Partial claims that bring approved-to-date to exactly the contract value now correctly mark items as Completed",
+      "Resolved a race condition when two approvers acted on the same claim within the same second",
+    ],
+  },
+  {
+    version: "1.7.0",
+    date: "April 18, 2026",
+    tag: "New",
+    items: [
+      "Role switcher in payment item panel for demos and onboarding",
+      "Sonner toast notifications for every claim action",
+      "Stacked progress bar showing approved / pending / remaining at a glance",
+    ],
+  },
+  {
+    version: "1.6.0",
+    date: "March 30, 2026",
+    tag: "New",
+    items: [
+      "Rejection reasons are now mandatory and surfaced in the audit trail",
+      "Per-project member roles (Admin, Approver, Contractor, Viewer)",
+    ],
+  },
+  {
+    version: "1.5.0",
+    date: "March 2, 2026",
+    tag: "Improved",
+    items: [
+      "Viewer load time reduced by 38% on models above 50 MB",
+      "Dark mode polish across dashboard and project pages",
+    ],
+  },
+];
+
+export const ABOUT_VALUES = [
+  { title: "One source of truth", body: "The model and the money belong on the same screen. Every Claimo decision is grounded in that principle." },
+  { title: "Trust through transparency", body: "Audit trails are not an after-thought. Every state change is permanent, attributed and exportable." },
+  { title: "Built with builders", body: "We ship with our customers — contractors, QSs and developers — not for them." },
+];
+
+export const ABOUT_TIMELINE = [
+  { year: "2023", title: "Founded in Rotterdam", body: "After a decade in QS and BIM consulting, the founding team set out to fix the spreadsheet sprawl of payment claims." },
+  { year: "2024", title: "First production projects", body: "Three pilot contractors processed €18M of claims through the platform in the first six months." },
+  { year: "2025", title: "Series A", body: "Raised €7M led by Northzone to grow the engineering team and expand across the Benelux and DACH." },
+  { year: "2026", title: "Today", body: "Used by 140+ construction companies on projects from €500K renovations to €400M infrastructure builds." },
+];
+
+export const CONTACT_CHANNELS = [
+  // { title: "Sales", body: "Pricing, demos and procurement.", email: "sales@claimo.app" },
+  { title: "Support", body: "Existing customers — we reply within one business day.", email: "support@claimo.app" },
+  // { title: "Security", body: "Responsible disclosure and security questionnaires.", email: "security@claimo.app" },
+  // { title: "Press", body: "Media enquiries and brand assets.", email: "press@claimo.app" },
+];
+
+export const CONTACT_OFFICE = {
+  line1: "Claimo Technologies B.V.",
+  line2: "Junkernstrasse",
+  line3: "65205 Wiesbaden",
+  line4: "Germany",
+  // vat: "NL864123456B01",
+  // kvk: "84512987",
+};
+
+export const HELP_CATEGORIES = [
+  { title: "Account", body: "Sign-in, password reset, two-factor auth, profile and notification preferences." },
+  // { title: "Billing", body: "Invoices, VAT, payment methods, plan upgrades and cancellations." },
+  { title: "Projects", body: "Creating projects, inviting members, archiving and project-level permissions." },
+  { title: "Claims & approvals", body: "Submitting, editing, withdrawing and the rules around partial claims." },
+  { title: "Viewer & models", body: "Supported formats, upload errors and performance tuning for large models." },
+  { title: "Security & data", body: "Encryption, residency, exports, deletion requests and incident reporting." },
+];

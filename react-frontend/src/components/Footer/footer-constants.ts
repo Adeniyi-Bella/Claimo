@@ -14,8 +14,8 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
     heading: "Company",
     links: [
       { label: "About", to: "/about" },
-      { label: "Customers", to: "/customers" },
-      { label: "Careers", to: "/careers" },
+      // { label: "Customers", to: "/customers" },
+      // { label: "Careers", to: "/careers" },
       { label: "Contact", to: "/contact" },
     ],
   },
@@ -24,8 +24,8 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
     links: [
       { label: "Docs", to: "/docs" },
       { label: "Help center", to: "/help" },
-      { label: "Status", to: "/status" },
-      { label: "Security", to: "/security" },
+      // { label: "Status", to: "/status" },
+      // { label: "Security", to: "/security" },
     ],
   },
 ];

@@ -19,6 +19,13 @@ import { Route as NavbarPricingRouteImport } from './routes/_navbar/pricing'
 import { Route as NavbarFeaturesRouteImport } from './routes/_navbar/features'
 import { Route as NavbarDocsRouteImport } from './routes/_navbar/docs'
 import { Route as NavbarBimViewerRouteImport } from './routes/_navbar/bim-viewer'
+import { Route as FooterTermsRouteImport } from './routes/_footer/terms'
+import { Route as FooterPrivacyRouteImport } from './routes/_footer/privacy'
+import { Route as FooterHelpRouteImport } from './routes/_footer/help'
+import { Route as FooterDpaRouteImport } from './routes/_footer/dpa'
+import { Route as FooterContactRouteImport } from './routes/_footer/contact'
+import { Route as FooterChangelogRouteImport } from './routes/_footer/changelog'
+import { Route as FooterAboutRouteImport } from './routes/_footer/about'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
@@ -74,6 +81,41 @@ const NavbarBimViewerRoute = NavbarBimViewerRouteImport.update({
   path: '/bim-viewer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FooterTermsRoute = FooterTermsRouteImport.update({
+  id: '/_footer/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FooterPrivacyRoute = FooterPrivacyRouteImport.update({
+  id: '/_footer/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FooterHelpRoute = FooterHelpRouteImport.update({
+  id: '/_footer/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FooterDpaRoute = FooterDpaRouteImport.update({
+  id: '/_footer/dpa',
+  path: '/dpa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FooterContactRoute = FooterContactRouteImport.update({
+  id: '/_footer/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FooterChangelogRoute = FooterChangelogRouteImport.update({
+  id: '/_footer/changelog',
+  path: '/changelog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FooterAboutRoute = FooterAboutRouteImport.update({
+  id: '/_footer/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -109,6 +151,13 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/about': typeof FooterAboutRoute
+  '/changelog': typeof FooterChangelogRoute
+  '/contact': typeof FooterContactRoute
+  '/dpa': typeof FooterDpaRoute
+  '/help': typeof FooterHelpRoute
+  '/privacy': typeof FooterPrivacyRoute
+  '/terms': typeof FooterTermsRoute
   '/bim-viewer': typeof NavbarBimViewerRoute
   '/docs': typeof NavbarDocsRoute
   '/features': typeof NavbarFeaturesRoute
@@ -125,6 +174,13 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/about': typeof FooterAboutRoute
+  '/changelog': typeof FooterChangelogRoute
+  '/contact': typeof FooterContactRoute
+  '/dpa': typeof FooterDpaRoute
+  '/help': typeof FooterHelpRoute
+  '/privacy': typeof FooterPrivacyRoute
+  '/terms': typeof FooterTermsRoute
   '/bim-viewer': typeof NavbarBimViewerRoute
   '/docs': typeof NavbarDocsRoute
   '/features': typeof NavbarFeaturesRoute
@@ -143,6 +199,13 @@ export interface FileRoutesById {
   '/register': typeof RegisterRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_footer/about': typeof FooterAboutRoute
+  '/_footer/changelog': typeof FooterChangelogRoute
+  '/_footer/contact': typeof FooterContactRoute
+  '/_footer/dpa': typeof FooterDpaRoute
+  '/_footer/help': typeof FooterHelpRoute
+  '/_footer/privacy': typeof FooterPrivacyRoute
+  '/_footer/terms': typeof FooterTermsRoute
   '/_navbar/bim-viewer': typeof NavbarBimViewerRoute
   '/_navbar/docs': typeof NavbarDocsRoute
   '/_navbar/features': typeof NavbarFeaturesRoute
@@ -161,6 +224,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/dashboard'
     | '/settings'
+    | '/about'
+    | '/changelog'
+    | '/contact'
+    | '/dpa'
+    | '/help'
+    | '/privacy'
+    | '/terms'
     | '/bim-viewer'
     | '/docs'
     | '/features'
@@ -177,6 +247,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/dashboard'
     | '/settings'
+    | '/about'
+    | '/changelog'
+    | '/contact'
+    | '/dpa'
+    | '/help'
+    | '/privacy'
+    | '/terms'
     | '/bim-viewer'
     | '/docs'
     | '/features'
@@ -194,6 +271,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
+    | '/_footer/about'
+    | '/_footer/changelog'
+    | '/_footer/contact'
+    | '/_footer/dpa'
+    | '/_footer/help'
+    | '/_footer/privacy'
+    | '/_footer/terms'
     | '/_navbar/bim-viewer'
     | '/_navbar/docs'
     | '/_navbar/features'
@@ -210,6 +294,13 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRouteWithChildren
   RegisterRoute: typeof RegisterRouteWithChildren
+  FooterAboutRoute: typeof FooterAboutRoute
+  FooterChangelogRoute: typeof FooterChangelogRoute
+  FooterContactRoute: typeof FooterContactRoute
+  FooterDpaRoute: typeof FooterDpaRoute
+  FooterHelpRoute: typeof FooterHelpRoute
+  FooterPrivacyRoute: typeof FooterPrivacyRoute
+  FooterTermsRoute: typeof FooterTermsRoute
   NavbarBimViewerRoute: typeof NavbarBimViewerRoute
   NavbarDocsRoute: typeof NavbarDocsRoute
   NavbarFeaturesRoute: typeof NavbarFeaturesRoute
@@ -286,6 +377,55 @@ declare module '@tanstack/react-router' {
       path: '/bim-viewer'
       fullPath: '/bim-viewer'
       preLoaderRoute: typeof NavbarBimViewerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_footer/terms': {
+      id: '/_footer/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof FooterTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_footer/privacy': {
+      id: '/_footer/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof FooterPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_footer/help': {
+      id: '/_footer/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof FooterHelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_footer/dpa': {
+      id: '/_footer/dpa'
+      path: '/dpa'
+      fullPath: '/dpa'
+      preLoaderRoute: typeof FooterDpaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_footer/contact': {
+      id: '/_footer/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof FooterContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_footer/changelog': {
+      id: '/_footer/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof FooterChangelogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_footer/about': {
+      id: '/_footer/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof FooterAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings': {
@@ -374,6 +514,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRouteWithChildren,
   RegisterRoute: RegisterRouteWithChildren,
+  FooterAboutRoute: FooterAboutRoute,
+  FooterChangelogRoute: FooterChangelogRoute,
+  FooterContactRoute: FooterContactRoute,
+  FooterDpaRoute: FooterDpaRoute,
+  FooterHelpRoute: FooterHelpRoute,
+  FooterPrivacyRoute: FooterPrivacyRoute,
+  FooterTermsRoute: FooterTermsRoute,
   NavbarBimViewerRoute: NavbarBimViewerRoute,
   NavbarDocsRoute: NavbarDocsRoute,
   NavbarFeaturesRoute: NavbarFeaturesRoute,

@@ -1,6 +1,7 @@
 import type { FeatureProps } from "@/types";
 import { Footer } from "./Footer/Footer";
 import { Header } from "./Header/Header";
+import type { ReactNode } from "react";
 
 export function HeroSection({
   eyebrow,
@@ -32,6 +33,14 @@ export function HeroSection({
         <div className="mx-auto max-w-5xl px-6 py-14 md:py-16">{children}</div>
       </main>
       <Footer />
+    </div>
+  );
+}
+
+export function Prose({ children }: { children: ReactNode }) {
+  return (
+    <div className="prose prose-neutral max-w-none text-foreground [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:mt-10 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2 [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:text-muted-foreground [&_li]:my-1">
+      {children}
     </div>
   );
 }
