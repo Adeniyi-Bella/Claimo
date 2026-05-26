@@ -1,65 +1,24 @@
 import {
   ArrowRight,
   Boxes,
-  Check,
   FileCheck2,
   LayoutDashboard,
-  ShieldCheck,
   Workflow,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { ClaimoMark } from "@/components/common/claimo-mark";
 import { StatusBadge } from "@/components/common/status-badge";
+import { Header } from "@/components/Header/Header";
+import { Footer } from "@/components/Footer/Footer";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto max-w-7xl flex h-14 items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <ClaimoMark className="h-7 w-7" />
-            <span className="font-semibold tracking-tight">Claimo</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition">
-              Features
-            </a>
-            <a href="#how" className="hover:text-foreground transition">
-              How it works
-            </a>
-            <a href="#pricing" className="hover:text-foreground transition">
-              Pricing
-            </a>
-            <a href="#" className="hover:text-foreground transition">
-              Docs
-            </a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              className="h-8 px-3 inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/register"
-              className="h-8 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
-            >
-              Get started <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-40 mask-[radial-gradient(ellipse_at_top,black,transparent_70%)]" />
         <div className="relative mx-auto max-w-7xl px-6 pt-20 pb-24 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted-foreground shadow-soft">
-            <span className="h-1.5 w-1.5 rounded-full bg-status-approved-fg" />
-            New — Floor plan navigator and section cuts in the BIM viewer
-          </div>
           <h1 className="mt-6 text-5xl md:text-6xl font-semibold tracking-tight leading-[1.05] max-w-3xl mx-auto">
             Submit, track and approve{" "}
             <span className="text-gradient-primary">
@@ -244,97 +203,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section
-        id="pricing"
-        className="border-t border-border bg-surface-elevated/40"
-      >
-        <div className="mx-auto max-w-5xl px-6 py-20 text-center">
-          <div className="text-xs uppercase tracking-wider text-primary font-semibold">
-            Pricing
-          </div>
-          <h2 className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight">
-            Free to view. Scale when you submit.
-          </h2>
-          <div className="mt-12 grid md:grid-cols-2 gap-6 text-left">
-            {[
-              {
-                name: "Viewer",
-                price: "Free",
-                desc: "For clients and observers who only need read-only access.",
-                features: [
-                  "Unlimited projects (view only)",
-                  "BIM viewer & floor plans",
-                  "Notifications",
-                  "Audit trail visibility",
-                ],
-                cta: "Create account",
-                highlight: false,
-              },
-              {
-                name: "Build",
-                price: "€29",
-                suffix: "/ user / month",
-                desc: "For contractors and admins running active claims.",
-                features: [
-                  "Submit, approve, reject claims",
-                  "Unlimited models & items",
-                  "Roles & per-project permissions",
-                  "Export & integrations (soon)",
-                ],
-                cta: "Start 14-day trial",
-                highlight: true,
-              },
-            ].map((p) => (
-              <div
-                key={p.name}
-                className={`rounded-xl border p-7 bg-surface ${p.highlight ? "border-primary/30 shadow-glow" : "border-border shadow-soft"}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">{p.name}</div>
-                  {p.highlight && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider rounded-full bg-primary/10 text-primary px-2 py-0.5">
-                      Most popular
-                    </span>
-                  )}
-                </div>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold tracking-tight">
-                    {p.price}
-                  </span>
-                  {p.suffix && (
-                    <span className="text-sm text-muted-foreground">
-                      {p.suffix}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  {p.desc}
-                </div>
-                <ul className="mt-5 space-y-2 text-sm">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/register"
-                  className={`mt-7 inline-flex w-full justify-center items-center rounded-md h-10 text-sm font-medium transition ${p.highlight ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border bg-surface hover:bg-accent"}`}
-                >
-                  {p.cta}
-                </Link>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5" /> SOC 2-ready · GDPR compliant
-            · EU data residency
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-4xl px-6 py-20 text-center">
@@ -351,75 +219,11 @@ export default function HomePage() {
             >
               Get started <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              to="/dashboard"
-              className="h-10 px-5 inline-flex items-center rounded-md border border-border bg-surface font-medium hover:bg-accent"
-            >
-              Open demo dashboard
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-surface-elevated/30">
-        <div className="mx-auto max-w-7xl px-6 py-12 grid md:grid-cols-4 gap-8 text-sm">
-          <div>
-            <div className="flex items-center gap-2">
-              <ClaimoMark className="h-6 w-6" />
-              <span className="font-semibold">Claimo</span>
-            </div>
-            <div className="mt-3 text-muted-foreground">
-              Construction payment claims, in one place.
-            </div>
-          </div>
-          {[
-            {
-              h: "Product",
-              l: ["Features", "BIM viewer", "Pricing", "Changelog"],
-            },
-            { h: "Company", l: ["About", "Customers", "Careers", "Contact"] },
-            {
-              h: "Resources",
-              l: ["Docs", "Help center", "Status", "Security"],
-            },
-          ].map((c) => (
-            <div key={c.h}>
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {c.h}
-              </div>
-              <ul className="mt-3 space-y-2">
-                {c.l.map((x) => (
-                  <li key={x}>
-                    <a
-                      href="#"
-                      className="text-muted-foreground hover:text-foreground transition"
-                    >
-                      {x}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="border-t border-border">
-          <div className="mx-auto max-w-7xl px-6 py-5 flex flex-wrap justify-between gap-3 text-xs text-muted-foreground">
-            <div>© {new Date().getFullYear()} Claimo Technologies B.V.</div>
-            <div className="flex gap-5">
-              <a href="#" className="hover:text-foreground">
-                Privacy
-              </a>
-              <a href="#" className="hover:text-foreground">
-                Terms
-              </a>
-              <a href="#" className="hover:text-foreground">
-                DPA
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
