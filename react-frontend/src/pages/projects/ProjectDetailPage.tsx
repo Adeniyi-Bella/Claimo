@@ -5,7 +5,7 @@ import { ArrowLeft, Boxes, Calendar, ChevronRight, Edit3, MapPin, Upload, UserPl
 import { AppShell } from "@/components/app-shell";
 import AddPaymentItemModal from "@/components/project/modals/Payment";
 import InviteModal from "@/components/project/modals/Invite";
-import UploadModelModal from "@/components/project/modals/Model";
+import UploadModelModal from "@/components/project/modals/UploadModel";
 import PaymentItemPanel from "@/components/project/panel/PaymentRighthandPanel";
 import MembersTab from "@/components/project/tabs/Members";
 import ModelsTab from "@/components/project/tabs/Models";
