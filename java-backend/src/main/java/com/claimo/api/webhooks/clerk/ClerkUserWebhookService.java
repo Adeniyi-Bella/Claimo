@@ -53,8 +53,7 @@ public class ClerkUserWebhookService {
         log.info("Created company and user for clerkUserId={}", clerkUserId);
     }
 
-    @Transactional
-    protected User createUserAndCompany(JsonNode data, String clerkUserId, String email,
+    private User createUserAndCompany(JsonNode data, String clerkUserId, String email,
             String firstName, String lastName, String fullName) {
         boolean hasPendingInvites = companyInviteService.hasPendingInvites(email)
                 || projectInviteService.hasPendingInvites(email);
