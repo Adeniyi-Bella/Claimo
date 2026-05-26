@@ -10,8 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FeaturesRouteImport } from './routes/features'
+import { Route as DocsRouteImport } from './routes/docs'
+import { Route as BimViewerRouteImport } from './routes/bim-viewer'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RegisterSsoCallbackRouteImport } from './routes/register/sso-callback'
@@ -27,6 +30,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -35,6 +43,16 @@ const LoginRoute = LoginRouteImport.update({
 const FeaturesRoute = FeaturesRouteImport.update({
   id: '/features',
   path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BimViewerRoute = BimViewerRouteImport.update({
+  id: '/bim-viewer',
+  path: '/bim-viewer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -87,8 +105,11 @@ const AuthenticatedViewerProjectIdModelIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bim-viewer': typeof BimViewerRoute
+  '/docs': typeof DocsRoute
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -100,8 +121,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bim-viewer': typeof BimViewerRoute
+  '/docs': typeof DocsRoute
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -115,8 +139,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/bim-viewer': typeof BimViewerRoute
+  '/docs': typeof DocsRoute
   '/features': typeof FeaturesRoute
   '/login': typeof LoginRouteWithChildren
+  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -130,8 +157,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/bim-viewer'
+    | '/docs'
     | '/features'
     | '/login'
+    | '/pricing'
     | '/register'
     | '/dashboard'
     | '/settings'
@@ -143,8 +173,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bim-viewer'
+    | '/docs'
     | '/features'
     | '/login'
+    | '/pricing'
     | '/register'
     | '/dashboard'
     | '/settings'
@@ -157,8 +190,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/bim-viewer'
+    | '/docs'
     | '/features'
     | '/login'
+    | '/pricing'
     | '/register'
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
@@ -172,8 +208,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  BimViewerRoute: typeof BimViewerRoute
+  DocsRoute: typeof DocsRoute
   FeaturesRoute: typeof FeaturesRoute
   LoginRoute: typeof LoginRouteWithChildren
+  PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRouteWithChildren
 }
 
@@ -184,6 +223,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -198,6 +244,20 @@ declare module '@tanstack/react-router' {
       path: '/features'
       fullPath: '/features'
       preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bim-viewer': {
+      id: '/bim-viewer'
+      path: '/bim-viewer'
+      fullPath: '/bim-viewer'
+      preLoaderRoute: typeof BimViewerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -312,8 +372,11 @@ const RegisterRouteWithChildren = RegisterRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  BimViewerRoute: BimViewerRoute,
+  DocsRoute: DocsRoute,
   FeaturesRoute: FeaturesRoute,
   LoginRoute: LoginRouteWithChildren,
+  PricingRoute: PricingRoute,
   RegisterRoute: RegisterRouteWithChildren,
 }
 export const routeTree = rootRouteImport
