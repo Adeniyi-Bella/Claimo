@@ -8,7 +8,7 @@ import InviteModal from "@/components/project/modals/Invite";
 import UploadModelModal from "@/components/project/modals/UploadModel";
 import PaymentItemPanel from "@/components/project/panel/PaymentRighthandPanel";
 import MembersTab from "@/components/project/tabs/Members";
-import ModelsTab from "@/components/project/tabs/Models";
+import ModelsTab from "@/components/project/tabs/ModelsTab";
 import Overview from "@/components/project/tabs/Overview";
 import PaymentItemsTab from "@/components/project/tabs/PaymentItems";
 import { Sheet, SheetContent } from "@/components/common/sheet";

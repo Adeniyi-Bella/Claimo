@@ -10,7 +10,7 @@ export type PaymentStatus =
   | "COMPLETED";
 export type ProjectRole = "ADMIN" | "CONTRACTOR" | "VIEWER" | "APPROVER";
 export type ProjectStatus = "Active" | "Completed" | "Archived";
-export type ModelFileType = "ifc" | "json";
+export type ModelFileType = "ifc";
 
 export type JobStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 export type PaymentStatusType = "NONE" | "PAID" | "REJECTED" | "APPROVED";
@@ -73,33 +73,13 @@ export interface PaymentItem {
   auditTrail: AuditEntry[];
 }
 
-export interface BufferAttribute {
-  itemSize: number;
-  type: string;
-  array: number[];
-}
-
-export interface BufferGeometryJson {
-  metadata?: { type: string; version: number };
-  type: "BufferGeometry";
-  data: {
-    attributes: {
-      position: BufferAttribute;
-      normal?: BufferAttribute;
-      uv?: BufferAttribute;
-    };
-    index?: { type: string; array: number[] };
-  };
-}
-
 export interface ProjectModel {
   id: string;
   name: string;
-  fileType: ModelFileType; // NEW
-  fileUrl?: string; // NEW — blob URL for IFC, undefined for JSON
+  fileType: ModelFileType;
+  fileUrl?: string; 
   uploadedAt: string;
   uploadedBy: string;
-  geometryJson?: BufferGeometryJson; // keep for JSON fallback
   paymentItems: PaymentItem[];
 }
 
@@ -123,8 +103,6 @@ export interface ItemTotals {
   approvedPct: number;
   pendingPct: number;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 export const CATEGORIES = [
   "Foundations",
@@ -151,8 +129,6 @@ export const CATEGORIES = [
 export const COMPANY = {
   name: "Northpeak Build Group",
 };
-
-// ─── Derived helpers ──────────────────────────────────────────────────────────
 
 export function itemTotals(item: PaymentItem): ItemTotals {
   const approved = item.claims

@@ -1,13 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Bell,
+  // Bell,
   ChevronDown,
   FolderKanban,
   LayoutDashboard,
   Plus,
   Search,
   Settings,
-  HelpCircle,
+  // HelpCircle,
   Building2,
   LogOut,
   User,
@@ -32,40 +32,40 @@ const nav = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-const notifications = [
-  {
-    id: "n1",
-    type: "submitted",
-    title: "Priya Shah submitted a claim",
-    body: "Reinforcement · Harbor Tower · €88,200",
-    time: "12m ago",
-    unread: true,
-  },
-  {
-    id: "n2",
-    type: "approved",
-    title: "Your claim was approved",
-    body: "Concrete Works · Harbor Tower · €312,500",
-    time: "2h ago",
-    unread: true,
-  },
-  {
-    id: "n3",
-    type: "rejected",
-    title: "Claim rejected",
-    body: "Plumbing · Harbor Tower · resubmission required",
-    time: "Yesterday",
-    unread: false,
-  },
-  {
-    id: "n4",
-    type: "invite",
-    title: "You were added to Civic Library Renewal",
-    body: "Role: Admin",
-    time: "3d ago",
-    unread: false,
-  },
-];
+// const notifications = [
+//   {
+//     id: "n1",
+//     type: "submitted",
+//     title: "Priya Shah submitted a claim",
+//     body: "Reinforcement · Harbor Tower · €88,200",
+//     time: "12m ago",
+//     unread: true,
+//   },
+//   {
+//     id: "n2",
+//     type: "approved",
+//     title: "Your claim was approved",
+//     body: "Concrete Works · Harbor Tower · €312,500",
+//     time: "2h ago",
+//     unread: true,
+//   },
+//   {
+//     id: "n3",
+//     type: "rejected",
+//     title: "Claim rejected",
+//     body: "Plumbing · Harbor Tower · resubmission required",
+//     time: "Yesterday",
+//     unread: false,
+//   },
+//   {
+//     id: "n4",
+//     type: "invite",
+//     title: "You were added to Civic Library Renewal",
+//     body: "Role: Admin",
+//     time: "3d ago",
+//     unread: false,
+//   },
+// ];
 
 // Reusable user menu dropdown content
 function UserMenuContent({ onSignOut }: { onSignOut: () => void }) {
@@ -105,7 +105,7 @@ function UserMenuContent({ onSignOut }: { onSignOut: () => void }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (r) => r.location.pathname });
-  const [openNotif, setOpenNotif] = useState(false);
+  // const [openNotif, setOpenNotif] = useState(false);
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const [openTopUserMenu, setOpenTopUserMenu] = useState(false);
   const { signOut } = useClerk();
@@ -219,11 +219,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Plus className="h-3.5 w-3.5" /> New project
           </button>
 
-          <button className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition">
+          {/* <button className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition">
             <HelpCircle className="h-4 w-4" />
-          </button>
+          </button> */}
 
-          <Popover open={openNotif} onOpenChange={setOpenNotif}>
+          {/* <Popover open={openNotif} onOpenChange={setOpenNotif}>
             <PopoverTrigger asChild>
               <button className="relative h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition">
                 <Bell className="h-4 w-4" />
@@ -272,7 +272,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ))}
               </div>
             </PopoverContent>
-          </Popover>
+          </Popover> */}
 
           {/* Top bar user menu — shown on mobile where sidebar is hidden */}
           <Popover open={openTopUserMenu} onOpenChange={setOpenTopUserMenu}>

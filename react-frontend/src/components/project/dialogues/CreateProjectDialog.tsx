@@ -6,27 +6,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../common/dialog";
-import { Label } from "../common/label";
-import { Input } from "../common/input";
-import { Textarea } from "../common/textarea";
-import { Button } from "../common/button";
+} from "@/components/common/dialog";
+import { Label } from "@/components/common/label";
+import { Input } from "@/components/common/input";
+import { Textarea } from "@/components/common/textarea";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/common/button";
+import type { CreateProjectDialogProps } from "@/types";
 
 export default function CreateProjectDialog({
   open,
   onOpenChange,
   onCreate,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  onCreate: (data: {
-    name: string;
-    description: string;
-    location: string;
-    startDate: string;
-  }) => void;
-}) {
+}: CreateProjectDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");

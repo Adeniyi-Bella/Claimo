@@ -73,23 +73,18 @@ export default function UploadModelModal({
         const ext = file.name.split(".").pop()?.toLowerCase() as ModelFileType;
         const id = crypto.randomUUID();
 
-        let geometryJson = undefined;
+        // let geometryJson = undefined;
         let fileUrl = undefined;
 
-        if (ext === "json") {
-          const text = await file.text();
-          geometryJson = JSON.parse(text);
-        } else {
-          const buffer = await file.arrayBuffer();
-          await saveModelFile(id, buffer);
-        }
+        const buffer = await file.arrayBuffer();
+        await saveModelFile(id, buffer);
 
         const model: ProjectModel = {
           id,
           name: file.name,
           fileType: ext,
           fileUrl,
-          geometryJson,
+          // geometryJson,
           uploadedAt: new Date().toISOString(),
           uploadedBy: "You",
           paymentItems: [],

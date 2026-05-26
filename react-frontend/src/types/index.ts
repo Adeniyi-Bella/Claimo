@@ -9,3 +9,16 @@ export type FeatureProps = {
   lead?: string;
   children: ReactNode;
 };
+
+export type CreateProjectData = {
+  name: string;
+  description: string;
+  location: string;
+  startDate: string;
+};
+
+export type CreateProjectDialogProps = {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onCreate: (data: CreateProjectData) => void;
+};

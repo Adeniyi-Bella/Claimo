@@ -8,7 +8,6 @@ import {
   FolderKanban,
   Plus,
   Sparkles,
-  // TrendingUp,
   UserPlus,
   Wallet,
   XCircle,
@@ -21,11 +20,12 @@ import {
   projectSummary,
   COMPANY,
 } from "@/lib/mock-data";
-import { RoleBadge, StatusBadge } from "@/components/common/status-badge";
-import CreateProjectDialog from "@/components/project/create";
+import { RoleBadge } from "@/components/common/status-badge";
 import { Button } from "@/components/common/button";
 import { useUser } from "@clerk/react";
 import { useProjectList } from "@/lib/project-storage";
+import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDialog";
+import type { CreateProjectData } from "@/types";
 
 export default function Dashboard() {
   const { projects, setProjects } = useProjectList();
@@ -37,12 +37,7 @@ export default function Dashboard() {
   //   avatarHue: 250, // fixed or derive from email hash
   // };
 
-  const handleCreate = (data: {
-    name: string;
-    description: string;
-    location: string;
-    startDate: string;
-  }) => {
+  const handleCreate = (data: CreateProjectData) => {
     const newProject: Project = {
       id: `proj-${Date.now()}`,
       name: data.name,
@@ -275,7 +270,7 @@ function FilledDashboard({
               </div>
             </div>
             <Link
-              to="/settings"
+              to="/projects"
               className="text-xs font-medium text-primary inline-flex items-center gap-1 hover:underline"
             >
               View all <ArrowUpRight className="h-3.5 w-3.5" />
@@ -337,7 +332,7 @@ function FilledDashboard({
           </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-surface shadow-soft">
+        {/* <section className="rounded-xl border border-border bg-surface shadow-soft">
           <div className="px-5 py-4 border-b border-border">
             <div className="text-sm font-semibold">Activity</div>
             <div className="text-xs text-muted-foreground">
@@ -411,7 +406,7 @@ function FilledDashboard({
               ))}
             </ul>
           )}
-        </section>
+        </section> */}
       </div>
     </>
   );
