@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FEATURES } from "@/types/constants";
 import { HeroSection } from "@/components/HeroSection";
 
-export const Route = createFileRoute("/features")({
+export const Route = createFileRoute("/_navbar/features")({
   head: () => ({
     meta: [
       { title: "Features — Claimo" },

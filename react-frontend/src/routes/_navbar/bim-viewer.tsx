@@ -2,7 +2,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { BIM_CAPABILITIES } from "@/types/constants";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/bim-viewer")({
+export const Route = createFileRoute("/_navbar/bim-viewer")({
   head: () => ({
     meta: [
       { title: "BIM viewer — Claimo" },

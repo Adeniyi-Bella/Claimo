@@ -3,7 +3,7 @@ import { DOC_SECTIONS } from "@/types/constants";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
 
-export const Route = createFileRoute("/docs")({
+export const Route = createFileRoute("/_navbar/docs")({
   head: () => ({
     meta: [
       { title: "Docs — Claimo" },

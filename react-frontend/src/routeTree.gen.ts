@@ -10,15 +10,15 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as FeaturesRouteImport } from './routes/features'
-import { Route as DocsRouteImport } from './routes/docs'
-import { Route as BimViewerRouteImport } from './routes/bim-viewer'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RegisterSsoCallbackRouteImport } from './routes/register/sso-callback'
 import { Route as LoginSsoCallbackRouteImport } from './routes/login/sso-callback'
+import { Route as NavbarPricingRouteImport } from './routes/_navbar/pricing'
+import { Route as NavbarFeaturesRouteImport } from './routes/_navbar/features'
+import { Route as NavbarDocsRouteImport } from './routes/_navbar/docs'
+import { Route as NavbarBimViewerRouteImport } from './routes/_navbar/bim-viewer'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects/index'
@@ -30,29 +30,9 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesRoute = FeaturesRouteImport.update({
-  id: '/features',
-  path: '/features',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DocsRoute = DocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BimViewerRoute = BimViewerRouteImport.update({
-  id: '/bim-viewer',
-  path: '/bim-viewer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -73,6 +53,26 @@ const LoginSsoCallbackRoute = LoginSsoCallbackRouteImport.update({
   id: '/sso-callback',
   path: '/sso-callback',
   getParentRoute: () => LoginRoute,
+} as any)
+const NavbarPricingRoute = NavbarPricingRouteImport.update({
+  id: '/_navbar/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NavbarFeaturesRoute = NavbarFeaturesRouteImport.update({
+  id: '/_navbar/features',
+  path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NavbarDocsRoute = NavbarDocsRouteImport.update({
+  id: '/_navbar/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NavbarBimViewerRoute = NavbarBimViewerRouteImport.update({
+  id: '/_navbar/bim-viewer',
+  path: '/bim-viewer',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -105,14 +105,14 @@ const AuthenticatedViewerProjectIdModelIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/bim-viewer': typeof BimViewerRoute
-  '/docs': typeof DocsRoute
-  '/features': typeof FeaturesRoute
   '/login': typeof LoginRouteWithChildren
-  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/bim-viewer': typeof NavbarBimViewerRoute
+  '/docs': typeof NavbarDocsRoute
+  '/features': typeof NavbarFeaturesRoute
+  '/pricing': typeof NavbarPricingRoute
   '/login/sso-callback': typeof LoginSsoCallbackRoute
   '/register/sso-callback': typeof RegisterSsoCallbackRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -121,14 +121,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/bim-viewer': typeof BimViewerRoute
-  '/docs': typeof DocsRoute
-  '/features': typeof FeaturesRoute
   '/login': typeof LoginRouteWithChildren
-  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/bim-viewer': typeof NavbarBimViewerRoute
+  '/docs': typeof NavbarDocsRoute
+  '/features': typeof NavbarFeaturesRoute
+  '/pricing': typeof NavbarPricingRoute
   '/login/sso-callback': typeof LoginSsoCallbackRoute
   '/register/sso-callback': typeof RegisterSsoCallbackRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -139,14 +139,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/bim-viewer': typeof BimViewerRoute
-  '/docs': typeof DocsRoute
-  '/features': typeof FeaturesRoute
   '/login': typeof LoginRouteWithChildren
-  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_navbar/bim-viewer': typeof NavbarBimViewerRoute
+  '/_navbar/docs': typeof NavbarDocsRoute
+  '/_navbar/features': typeof NavbarFeaturesRoute
+  '/_navbar/pricing': typeof NavbarPricingRoute
   '/login/sso-callback': typeof LoginSsoCallbackRoute
   '/register/sso-callback': typeof RegisterSsoCallbackRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -157,14 +157,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/bim-viewer'
-    | '/docs'
-    | '/features'
     | '/login'
-    | '/pricing'
     | '/register'
     | '/dashboard'
     | '/settings'
+    | '/bim-viewer'
+    | '/docs'
+    | '/features'
+    | '/pricing'
     | '/login/sso-callback'
     | '/register/sso-callback'
     | '/projects/$projectId'
@@ -173,14 +173,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/bim-viewer'
-    | '/docs'
-    | '/features'
     | '/login'
-    | '/pricing'
     | '/register'
     | '/dashboard'
     | '/settings'
+    | '/bim-viewer'
+    | '/docs'
+    | '/features'
+    | '/pricing'
     | '/login/sso-callback'
     | '/register/sso-callback'
     | '/projects/$projectId'
@@ -190,14 +190,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/bim-viewer'
-    | '/docs'
-    | '/features'
     | '/login'
-    | '/pricing'
     | '/register'
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
+    | '/_navbar/bim-viewer'
+    | '/_navbar/docs'
+    | '/_navbar/features'
+    | '/_navbar/pricing'
     | '/login/sso-callback'
     | '/register/sso-callback'
     | '/_authenticated/projects/$projectId'
@@ -208,12 +208,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  BimViewerRoute: typeof BimViewerRoute
-  DocsRoute: typeof DocsRoute
-  FeaturesRoute: typeof FeaturesRoute
   LoginRoute: typeof LoginRouteWithChildren
-  PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRouteWithChildren
+  NavbarBimViewerRoute: typeof NavbarBimViewerRoute
+  NavbarDocsRoute: typeof NavbarDocsRoute
+  NavbarFeaturesRoute: typeof NavbarFeaturesRoute
+  NavbarPricingRoute: typeof NavbarPricingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -225,39 +225,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features': {
-      id: '/features'
-      path: '/features'
-      fullPath: '/features'
-      preLoaderRoute: typeof FeaturesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/docs': {
-      id: '/docs'
-      path: '/docs'
-      fullPath: '/docs'
-      preLoaderRoute: typeof DocsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bim-viewer': {
-      id: '/bim-viewer'
-      path: '/bim-viewer'
-      fullPath: '/bim-viewer'
-      preLoaderRoute: typeof BimViewerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -287,6 +259,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/login/sso-callback'
       preLoaderRoute: typeof LoginSsoCallbackRouteImport
       parentRoute: typeof LoginRoute
+    }
+    '/_navbar/pricing': {
+      id: '/_navbar/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof NavbarPricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_navbar/features': {
+      id: '/_navbar/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof NavbarFeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_navbar/docs': {
+      id: '/_navbar/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof NavbarDocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_navbar/bim-viewer': {
+      id: '/_navbar/bim-viewer'
+      path: '/bim-viewer'
+      fullPath: '/bim-viewer'
+      preLoaderRoute: typeof NavbarBimViewerRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -372,12 +372,12 @@ const RegisterRouteWithChildren = RegisterRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  BimViewerRoute: BimViewerRoute,
-  DocsRoute: DocsRoute,
-  FeaturesRoute: FeaturesRoute,
   LoginRoute: LoginRouteWithChildren,
-  PricingRoute: PricingRoute,
   RegisterRoute: RegisterRouteWithChildren,
+  NavbarBimViewerRoute: NavbarBimViewerRoute,
+  NavbarDocsRoute: NavbarDocsRoute,
+  NavbarFeaturesRoute: NavbarFeaturesRoute,
+  NavbarPricingRoute: NavbarPricingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

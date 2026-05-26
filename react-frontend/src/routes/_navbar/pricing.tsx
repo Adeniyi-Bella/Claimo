@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import { HeroSection } from "@/components/HeroSection";
 import { PRICING_PLANS, PRICING_FAQ } from "@/types/constants";
 
-export const Route = createFileRoute("/pricing")({
+export const Route = createFileRoute("/_navbar/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — Claimo" },
