@@ -1,44 +1,23 @@
-// import {
-//   type AccountInfo,
-//   type IPublicClientApplication,
-// } from "@azure/msal-browser";
-// import { buildBearerHeaders } from "./auth/authHeaders";
-// import { requireApiData } from "./response";
-// import { apiClient } from "./clients/axiosClient";
-// import type { CustomApiResponse, UserWithDocumentsResponseDto } from "./dto/responseDto";
+import { apiClient } from "@/api/clients/axiosClient";
+import { requireApiData } from "@/api/response";
+import type { CustomApiResponse } from "@/api/dto/responseDto";
+import type { DashboardResponse } from "@/api/types";
 
-// export class UserApi {
-//   static async authenticate(
-//     instance: IPublicClientApplication,
-//     account: AccountInfo,
-//   ): Promise<{ data: UserWithDocumentsResponseDto }> {
-//     const headers = await buildBearerHeaders(instance, account);
+export class DashboardApi {
+  static async getDashboard(token: string): Promise<DashboardResponse> {
+    const response = await apiClient.get<CustomApiResponse<DashboardResponse>>(
+      "/users/dashboard",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
 
-//     const response = await apiClient.post<
-//       CustomApiResponse<UserWithDocumentsResponseDto>
-//     >("/users/authenticate", undefined, {
-//       headers,
-//     });
-
-//     const data = requireApiData(response.data, {
-//       message: "Authenticate response missing data",
-//       code: "EMPTY_AUTHENTICATE_RESPONSE",
-//       statusCode: response.status,
-//     });
-
-//     return {
-//       data,
-//     };
-//   }
-
-//   static async deleteUser(
-//     instance: IPublicClientApplication,
-//     account: AccountInfo,
-//   ): Promise<void> {
-//     const headers = await buildBearerHeaders(instance, account);
-
-//     await apiClient.delete("/users", {
-//       headers,
-//     });
-//   }
-// }
+    return requireApiData(response.data, {
+      message: "Dashboard response missing data",
+      code: "EMPTY_DASHBOARD_RESPONSE",
+      statusCode: response.status,
+    });
+  }
+}

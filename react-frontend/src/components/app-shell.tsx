@@ -4,7 +4,7 @@ import {
   ChevronDown,
   FolderKanban,
   LayoutDashboard,
-  Plus,
+  // Plus,
   Search,
   Settings,
   // HelpCircle,
@@ -215,9 +215,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1 md:flex-none" />
 
-          <button className="hidden sm:inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition shadow-soft">
+          {/* <button className="hidden sm:inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition shadow-soft">
             <Plus className="h-3.5 w-3.5" /> New project
-          </button>
+          </button> */}
 
           {/* <button className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition">
             <HelpCircle className="h-4 w-4" />

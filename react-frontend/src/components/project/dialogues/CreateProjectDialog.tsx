@@ -18,6 +18,7 @@ export default function CreateProjectDialog({
   open,
   onOpenChange,
   onCreate,
+  isSubmitting = false,
 }: CreateProjectDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -25,16 +26,23 @@ export default function CreateProjectDialog({
   const [startDate, setStartDate] = useState(
     new Date().toISOString().slice(0, 10),
   );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onCreate({ name, description, location, startDate });
-    setName("");
-    setDescription("");
-    setLocation("");
-    setStartDate(new Date().toISOString().slice(0, 10));
-    onOpenChange(false);
+    setErrorMessage(null);
+
+    try {
+      await onCreate({ name, description, location, startDate });
+      setName("");
+      setDescription("");
+      setLocation("");
+      setStartDate(new Date().toISOString().slice(0, 10));
+      onOpenChange(false);
+    } catch {
+      setErrorMessage("Could not create the project.");
+    }
   };
 
   return (
@@ -88,17 +96,22 @@ export default function CreateProjectDialog({
                 />
               </div>
             </div>
+            {errorMessage ? (
+              <p className="text-sm text-destructive">{errorMessage}</p>
+            ) : null}
           </div>
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
+              disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button type="submit">
-              <Plus className="h-4 w-4" /> Create project
+            <Button type="submit" disabled={isSubmitting}>
+              <Plus className="h-4 w-4" />{" "}
+              {isSubmitting ? "Creating..." : "Create project"}
             </Button>
           </DialogFooter>
         </form>

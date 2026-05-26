@@ -1,5 +1,6 @@
-export interface AddTaskToDocumentRequestDto {
-  title: string;
-  dueDate?: string | null;
+export interface CreateProjectRequestDto {
+  name: string;
+  description?: string | null;
   location?: string | null;
+  startDate?: string | null;
 }
