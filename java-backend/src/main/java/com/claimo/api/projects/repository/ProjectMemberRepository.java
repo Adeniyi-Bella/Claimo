@@ -10,12 +10,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, ProjectMemberId> {
-    @EntityGraph(attributePaths = "user")
+    @EntityGraph(attributePaths = {"project", "user"})
     List<ProjectMember> findAllByProjectId(UUID projectId);
-    @EntityGraph(attributePaths = "project")
+    @EntityGraph(attributePaths = {"project", "user"})
     List<ProjectMember> findAllByUserId(UUID userId);
     @EntityGraph(attributePaths = {"project", "user"})
     List<ProjectMember> findAllByProject_Company_Id(UUID companyId);
+    @EntityGraph(attributePaths = {"project", "user"})
+    List<ProjectMember> findAllByProject_IdIn(List<UUID> projectIds);
     Optional<ProjectMember> findByProjectIdAndUserId(UUID projectId, UUID userId);
     boolean existsByProjectIdAndUserId(UUID projectId, UUID userId);
 }

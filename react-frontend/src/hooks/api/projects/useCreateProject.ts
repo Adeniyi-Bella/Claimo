@@ -5,6 +5,7 @@ import { ProjectApi } from "@/api/project.api";
 import { UnauthorizedError } from "@/api/error/customeError";
 import type { CreateProjectData } from "@/types";
 import { dashboardQueryKey } from "@/hooks/api/useDashboard";
+import { projectsQueryKey } from "@/hooks/api/projects/useProjects";
 
 export function useCreateProject() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -26,6 +27,7 @@ export function useCreateProject() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+      await queryClient.invalidateQueries({ queryKey: projectsQueryKey });
     },
   });
 

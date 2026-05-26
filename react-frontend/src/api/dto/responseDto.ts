@@ -1,4 +1,4 @@
-import type { ProjectRole } from "../types";
+import type { DashboardMember, DashboardModel, ProjectStatus } from "../types";
 
 export interface CustomApiErrorResponse {
   status: number;
@@ -12,15 +12,13 @@ export interface CustomApiResponse<T> {
   timestamp: string;
 }
 
-export interface ProjectResponse {
+export interface ProjectsPageResponse {
   id: string;
   name: string;
-  description: string | null;
-  location: string | null;
-  startDate: string | null;
-  companyId: string;
-  createdBy: string;
-  role: ProjectRole | null;
-  createdAt: string;
-  updatedAt: string;
+  description: string;
+  location: string;
+  startDate: string;
+  status: ProjectStatus;
+  members: DashboardMember[];
+  models: DashboardModel[];
 }

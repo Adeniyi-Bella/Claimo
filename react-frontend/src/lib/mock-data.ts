@@ -1,5 +1,7 @@
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+import type { DashboardProject } from "@/api/types";
+
 export type ClaimDecision = "SUBMITTED" | "APPROVED" | "REJECTED";
 export type PaymentStatus =
   | "NOT_STARTED"
@@ -162,7 +164,7 @@ export function derivedStatus(item: PaymentItem): PaymentStatus {
   return "NOT_STARTED";
 }
 
-export function projectSummary(p: Project) {
+export function projectSummary(p: DashboardProject) {
   const items = p.models.flatMap((m) => m.paymentItems);
   const totals = items.reduce(
     (acc, i) => {
@@ -195,4 +197,19 @@ export function modelSummary(m: ProjectModel) {
   );
 }
 
+export function fmtCurrency(n: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+export function fmtDate(s: string) {
+  return new Date(s).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 

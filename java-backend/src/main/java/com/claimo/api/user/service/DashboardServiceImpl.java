@@ -46,20 +46,44 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProjectModelRepository projectModelRepository;
     private final PaymentItemRepository paymentItemRepository;
 
+    /**
+     * Builds the full dashboard response for the authenticated user.
+     *
+     * it resolves a single company context for the user
+     * and returns everything scoped to that company.
+     *
+     * Data is batched to avoid N+1 queries:
+     * - Members are fetched once per company
+     * - Models and payment items are fetched with IN-clause queries across all project IDs
+     *
+     * @param jwt the JWT token of the authenticated user
+     * @return a fully populated DashboardResponse
+     */
     @Override
     @Transactional(readOnly = true)
     public DashboardResponse getDashboard(Jwt jwt) {
+        
         User user = getAuthenticatedUser(jwt);
+
+        // Determine which company context to use for this user
+        // Prefers owned company, falls back to first membership
         CompanyContext currentCompany = resolveCompanyContext(user);
         UUID companyId = currentCompany.company().getId();
 
+        // Fetch all projects for this company and sort by creation date descending
+        // Null creation dates are pushed to the end
         List<Project> projects = projectRepository.findAllByCompanyId(companyId);
         projects.sort(Comparator.comparing(Project::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
 
+        // Batch fetch all related data — no N+1
         Map<UUID, List<ProjectMember>> membersByProject = loadMembersByProject(projects);
         Map<UUID, List<ProjectModel>> modelsByProject = loadModelsByProject(projects);
+
+        // Note: payment items are keyed by model ID, not project ID
+        // This is because payment items belong to models, not directly to projects
         Map<UUID, List<PaymentItem>> paymentItemsByModel = loadPaymentItemsByModel(projects);
 
+        // Map each project to a summary, injecting pre-fetched members, models, and payment items
         List<DashboardResponse.ProjectSummary> projectSummaries = projects.stream()
                 .map(project -> new DashboardResponse.ProjectSummary(
                         project.getId(),
@@ -84,12 +108,23 @@ public class DashboardServiceImpl implements DashboardService {
                 projectSummaries);
     }
 
+    /**
+     * Resolves the company context for the given user.
+     *
+     * Priority:
+     * 1. If the user owns a company, they are treated as ACCOUNT_OWNER of that company
+     * 2. Otherwise, the first company membership is used
+     *
+     * Throws ResourceNotFoundException if no company association exists.
+     */
     private CompanyContext resolveCompanyContext(User user) {
+        // Check if the user owns a company — ownership takes priority over membership
         Company ownedCompany = companyRepository.findByOwner_Id(user.getId()).orElse(null);
         if (ownedCompany != null) {
             return new CompanyContext(ownedCompany, CompanyRole.ACCOUNT_OWNER);
         }
 
+        // Fall back to the first company membership if no owned company found
         List<CompanyMember> memberships = companyMemberService.findByUserId(user.getId());
         if (memberships.isEmpty()) {
             throw new AppExceptions.ResourceNotFoundException(
@@ -100,6 +135,11 @@ public class DashboardServiceImpl implements DashboardService {
         return new CompanyContext(membership.getCompany(), membership.getRole());
     }
 
+    /**
+     * Resolves the authenticated user from the JWT subject claim (Clerk user ID).
+     *
+     * Throws ResourceNotFoundException if the user does not exist in the database.
+     */
     private User getAuthenticatedUser(Jwt jwt) {
         String clerkUserId = jwt.getSubject();
         return userService.findByClerkUserId(clerkUserId)
@@ -107,11 +147,19 @@ public class DashboardServiceImpl implements DashboardService {
                         "User not found for clerkUserId: " + clerkUserId));
     }
 
+    /**
+     * Batch fetches all project members for the company in a single query,
+     * then groups them by project ID.
+     *
+     * Uses the company ID from the first project rather than individual project IDs
+     * to avoid a large IN clause when the company has many projects.
+     */
     private Map<UUID, List<ProjectMember>> loadMembersByProject(List<Project> projects) {
         if (projects.isEmpty()) {
             return Map.of();
         }
 
+        // Fetch all members for the company in one query, grouped by project
         return projectMemberRepository.findAllByProject_Company_Id(projects.get(0).getCompany().getId()).stream()
                 .collect(java.util.stream.Collectors.groupingBy(
                         member -> member.getProject().getId(),
@@ -119,6 +167,10 @@ public class DashboardServiceImpl implements DashboardService {
                         java.util.stream.Collectors.toList()));
     }
 
+    /**
+     * Batch fetches all models for the given projects using a single IN-clause query,
+     * then groups them by project ID.
+     */
     private Map<UUID, List<ProjectModel>> loadModelsByProject(List<Project> projects) {
         if (projects.isEmpty()) {
             return Map.of();
@@ -132,6 +184,13 @@ public class DashboardServiceImpl implements DashboardService {
                         java.util.stream.Collectors.toList()));
     }
 
+    /**
+     * Batch fetches all payment items for the given projects using a single IN-clause query,
+     * then groups them by model ID.
+     *
+     * Note: keyed by model ID (not project ID) because payment items are
+     * rendered under their parent model in the dashboard UI.
+     */
     private Map<UUID, List<PaymentItem>> loadPaymentItemsByModel(List<Project> projects) {
         if (projects.isEmpty()) {
             return Map.of();
@@ -145,6 +204,11 @@ public class DashboardServiceImpl implements DashboardService {
                         java.util.stream.Collectors.toList()));
     }
 
+    /**
+     * Maps a list of ProjectMembers to MemberSummary DTOs.
+     * Formats the join date as ISO local date (yyyy-MM-dd).
+     * Generates a deterministic avatar hue from the member's email.
+     */
     private List<DashboardResponse.MemberSummary> toMemberSummaries(List<ProjectMember> members) {
         return members.stream()
                 .map(member -> {
@@ -154,6 +218,7 @@ public class DashboardServiceImpl implements DashboardService {
                             displayName(memberUser),
                             memberUser.getEmail(),
                             member.getRole().name(),
+                            // Format createdAt as a date string, null-safe
                             member.getCreatedAt() == null ? null
                                     : DASHBOARD_DATE.format(member.getCreatedAt().atOffset(java.time.ZoneOffset.UTC)),
                             avatarHue(memberUser.getEmail()));
@@ -161,6 +226,10 @@ public class DashboardServiceImpl implements DashboardService {
                 .toList();
     }
 
+    /**
+     * Maps a list of ProjectModels to ModelSummary DTOs.
+     * Injects pre-fetched payment items for each model to avoid additional queries.
+     */
     private List<DashboardResponse.ModelSummary> toModelSummaries(
             List<ProjectModel> models,
             Map<UUID, List<PaymentItem>> paymentItemsByModel) {
@@ -171,22 +240,33 @@ public class DashboardServiceImpl implements DashboardService {
                         "ifc",
                         model.getFileUrl(),
                         model.getUploadedAt(),
+                        // Null-safe display name for the uploader
                         model.getUploadedBy() == null ? null : displayName(model.getUploadedBy()),
+                        // Look up pre-fetched payment items for this model
                         toPaymentItemSummaries(paymentItemsByModel.getOrDefault(model.getId(), List.of()))))
                 .toList();
     }
 
+    /**
+     * Maps a list of PaymentItems to PaymentItemSummary DTOs.
+     * All nested collections (claims, audit trail) are also mapped inline.
+     * All user references are null-safe.
+     */
     private List<DashboardResponse.PaymentItemSummary> toPaymentItemSummaries(List<PaymentItem> items) {
         return items.stream()
                 .map(item -> new DashboardResponse.PaymentItemSummary(
                         item.getId(),
                         item.getCategory(),
+                        // Null-safe model reference
                         item.getModel() == null ? null : item.getModel().getId().toString(),
                         item.getModel() == null ? null : item.getModel().getFileName(),
+                        // Null-safe contractor reference
                         item.getContractor() == null ? null : item.getContractor().getId().toString(),
                         item.getContractor() == null ? null : displayName(item.getContractor()),
+                        // Null-safe approver reference
                         item.getApprover() == null ? null : item.getApprover().getId().toString(),
                         item.getApprover() == null ? null : displayName(item.getApprover()),
+                        // Default contract value to 0 if null
                         item.getContractValue() == null ? 0d : item.getContractValue().doubleValue(),
                         item.getDescription(),
                         item.getCreatedAt(),
@@ -200,11 +280,16 @@ public class DashboardServiceImpl implements DashboardService {
                 .toList();
     }
 
+    /**
+     * Maps payment item claims to ClaimSummary DTOs.
+     * Returns an empty list if claims is null.
+     */
     private List<DashboardResponse.ClaimSummary> toClaimSummaries(java.util.Collection<PaymentItemClaim> claims) {
         return claims == null ? List.of() : claims.stream()
                         .map(claim -> new DashboardResponse.ClaimSummary(
                                 claim.getId(),
                                 claim.getSequence(),
+                                // Default claim amount to 0 if null
                                 claim.getAmount() == null ? 0d : claim.getAmount().doubleValue(),
                                 claim.getDescription(),
                                 claim.getStatus().name(),
@@ -219,6 +304,10 @@ public class DashboardServiceImpl implements DashboardService {
                         .toList();
     }
 
+    /**
+     * Maps audit trail entries to AuditEntrySummary DTOs.
+     * Returns an empty list if auditTrail is null.
+     */
     private List<DashboardResponse.AuditEntrySummary> toAuditEntrySummaries(java.util.Collection<PaymentItemAuditEntry> auditTrail) {
         return auditTrail == null ? List.of() : auditTrail.stream()
                         .map(entry -> new DashboardResponse.AuditEntrySummary(
@@ -234,11 +323,22 @@ public class DashboardServiceImpl implements DashboardService {
                         .toList();
     }
 
+    /**
+     * Parses a JSON array string of element IDs into a plain List of strings.
+     *
+     * Handles two formats:
+     * - JSON array: ["id1","id2"] → [id1, id2]
+     * - CSV: id1,id2 → [id1, id2]
+     *
+     * Returns an empty list for null or blank input.
+     */
     private List<String> parseAttachedElementIds(String raw) {
         if (raw == null || raw.isBlank()) {
             return List.of();
         }
         String trimmed = raw.trim();
+
+        // Handle JSON array format
         if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
             String body = trimmed.substring(1, trimmed.length() - 1).trim();
             if (body.isEmpty())
@@ -246,16 +346,24 @@ public class DashboardServiceImpl implements DashboardService {
             String[] parts = body.split(",");
             return java.util.Arrays.stream(parts)
                     .map(String::trim)
+                    // Strip surrounding quotes from JSON string values
                     .map(s -> s.replaceAll("^\"|\"$", ""))
                     .filter(s -> !s.isBlank())
                     .toList();
         }
+
+        // Fall back to CSV format
         return java.util.Arrays.stream(trimmed.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .toList();
     }
 
+    /**
+     * Builds a display name from first and last name, falling back to email.
+     *
+     * Priority: "First Last" → "First" → "Last" → email
+     */
     private String displayName(User user) {
         String firstName = user.getFirstName();
         String lastName = user.getLastName();
@@ -268,9 +376,15 @@ public class DashboardServiceImpl implements DashboardService {
         if (lastName != null && !lastName.isBlank()) {
             return lastName;
         }
+        // Last resort fallback
         return user.getEmail();
     }
 
+    /**
+     * Generates a deterministic HSL hue value (0–359) from the user's email.
+     * Used to assign a consistent avatar background color per user.
+     * Defaults to 250 (blue) for null or blank emails.
+     */
     private int avatarHue(String email) {
         if (email == null || email.isBlank()) {
             return 250;
@@ -278,6 +392,10 @@ public class DashboardServiceImpl implements DashboardService {
         return Math.floorMod(email.toLowerCase().hashCode(), 360);
     }
 
+    /**
+     * Internal record holding a resolved company and the user's role within it.
+     * Used to avoid passing company and role as separate parameters through the call chain.
+     */
     private record CompanyContext(Company company, CompanyRole role) {
     }
 }

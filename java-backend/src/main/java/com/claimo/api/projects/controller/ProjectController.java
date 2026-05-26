@@ -28,83 +28,78 @@ import java.util.UUID;
 @Tag(name = "Projects", description = "Project management")
 public class ProjectController {
 
-    private final ProjectService projectService;
+        private final ProjectService projectService;
 
-    @PostMapping
-    @Operation(summary = "Create a new project",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Project created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request body"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> createProject(
-            @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody ProjectRequests.CreateProject request) {
-        ProjectResponses.Project response = projectService.createProject(jwt, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CustomApiResponse.success(response));
-    }
+        @PostMapping
+        @Operation(summary = "Create a new project", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "201", description = "Project created successfully"),
+                        @ApiResponse(responseCode = "400", description = "Invalid request body"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> createProject(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @Valid @RequestBody ProjectRequests.CreateProject request) {
+                ProjectResponses.Project response = projectService.createProject(jwt, request);
+                return ResponseEntity.status(HttpStatus.CREATED).body(CustomApiResponse.success(response));
+        }
 
-    @GetMapping
-    @Operation(summary = "Get all projects for authenticated user's company",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Projects returned successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    public ResponseEntity<CustomApiResponse<List<ProjectResponses.Project>>> getProjects(
-            @AuthenticationPrincipal Jwt jwt) {
-        List<ProjectResponses.Project> response = projectService.getProjects(jwt);
-        return ResponseEntity.ok(CustomApiResponse.success(response));
-    }
+        @GetMapping
+        @Operation(summary = "Get all projects for authenticated user's company", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Projects returned successfully"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+        public ResponseEntity<CustomApiResponse<List<ProjectResponses.ProjectDetails>>> getProjects(
+                        @AuthenticationPrincipal Jwt jwt) {
+                List<ProjectResponses.ProjectDetails> response = projectService.getProjects(jwt);
+                return ResponseEntity.ok(CustomApiResponse.success(response));
+        }
 
-    @GetMapping("/{projectId}")
-    @Operation(summary = "Get a project by ID",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Project returned successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Access denied"),
-            @ApiResponse(responseCode = "404", description = "Project not found")
-    })
-    public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> getProjectById(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID projectId) {
-        ProjectResponses.Project response = projectService.getProjectById(jwt, projectId);
-        return ResponseEntity.ok(CustomApiResponse.success(response));
-    }
+        @GetMapping("/{projectId}")
+        @Operation(summary = "Get a project by ID", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Project returned successfully"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @ApiResponse(responseCode = "403", description = "Access denied"),
+                        @ApiResponse(responseCode = "404", description = "Project not found")
+        })
+        public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> getProjectById(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @PathVariable UUID projectId) {
+                ProjectResponses.Project response = projectService.getProjectById(jwt, projectId);
+                return ResponseEntity.ok(CustomApiResponse.success(response));
+        }
 
-    @PutMapping("/{projectId}")
-    @Operation(summary = "Update a project",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Project updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request body"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Access denied"),
-            @ApiResponse(responseCode = "404", description = "Project not found")
-    })
-    public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> updateProject(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID projectId,
-            @Valid @RequestBody ProjectRequests.UpdateProject request) {
-        ProjectResponses.Project response = projectService.updateProject(jwt, projectId, request);
-        return ResponseEntity.ok(CustomApiResponse.success(response));
-    }
+        @PutMapping("/{projectId}")
+        @Operation(summary = "Update a project", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Project updated successfully"),
+                        @ApiResponse(responseCode = "400", description = "Invalid request body"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @ApiResponse(responseCode = "403", description = "Access denied"),
+                        @ApiResponse(responseCode = "404", description = "Project not found")
+        })
+        public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> updateProject(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @PathVariable UUID projectId,
+                        @Valid @RequestBody ProjectRequests.UpdateProject request) {
+                ProjectResponses.Project response = projectService.updateProject(jwt, projectId, request);
+                return ResponseEntity.ok(CustomApiResponse.success(response));
+        }
 
-    @DeleteMapping("/{projectId}")
-    @Operation(summary = "Delete a project",
-            security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Project deleted successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Access denied"),
-            @ApiResponse(responseCode = "404", description = "Project not found")
-    })
-    public ResponseEntity<Void> deleteProject(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID projectId) {
-        projectService.deleteProject(jwt, projectId);
-        return ResponseEntity.noContent().build();
-    }
+        @DeleteMapping("/{projectId}")
+        @Operation(summary = "Delete a project", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "204", description = "Project deleted successfully"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @ApiResponse(responseCode = "403", description = "Access denied"),
+                        @ApiResponse(responseCode = "404", description = "Project not found")
+        })
+        public ResponseEntity<Void> deleteProject(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @PathVariable UUID projectId) {
+                projectService.deleteProject(jwt, projectId);
+                return ResponseEntity.noContent().build();
+        }
 }

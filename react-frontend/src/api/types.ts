@@ -87,8 +87,8 @@ export interface DashboardProject {
   description: string;
   location: string;
   startDate: string;
-  status: ProjectStatus;
-  members: DashboardMember[];
+  // status: ProjectStatus;
+  // members: DashboardMember[];
   models: DashboardModel[];
 }
 

@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 
 export type FooterLink = { label: string; to: string };
 export type FooterColumn = { heading: string; links: FooterLink[] };
+export type ProjectStatus = "Active" | "Completed" | "Archived";
+export type ProjectRole = "ADMIN" | "CONTRACTOR" | "VIEWER" | "APPROVER";
+export type ModelFileType = "ifc";
 
 export type FeatureProps = {
   eyebrow?: string;
@@ -24,18 +27,32 @@ export type CreateProjectDialogProps = {
   isSubmitting?: boolean;
 };
 
-export function fmtCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(n);
+export interface Member {
+  id: string;
+  name: string;
+  email: string;
+  role: ProjectRole;
+  joined: string;
+  avatarHue: number;
 }
 
-export function fmtDate(s: string) {
-  return new Date(s).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+export interface ProjectModel {
+  id: string;
+  name: string;
+  fileType: ModelFileType;
+  fileUrl?: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  paymentItems: PaymentItem[];
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  startDate: string;
+  status: ProjectStatus;
+  members: Member[];
+  models: ProjectModel[];
 }

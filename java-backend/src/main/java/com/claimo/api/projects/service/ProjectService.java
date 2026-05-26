@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface ProjectService {
     ProjectResponses.Project createProject(Jwt jwt, ProjectRequests.CreateProject request);
 
-    List<ProjectResponses.Project> getProjects(Jwt jwt);
+    List<ProjectResponses.ProjectDetails> getProjects(Jwt jwt);
 
     ProjectResponses.Project getProjectById(Jwt jwt, UUID projectId);
 
