@@ -9,6 +9,7 @@ export enum PendingInviteStatus {
   ACCEPTED = "ACCEPTED",
   REVOKED = "REVOKED",
 }
+
 export type CompanyRole = "ACCOUNT_OWNER" | "ADMIN" | "MEMBER";
 
 
@@ -140,3 +141,18 @@ export interface PendingInvite {
   invitedByName: string;
   createdAt: string;
 }
+
+export interface ICompanyMember {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: CompanyRole;
+}
+
+export interface ICompanyWithMember {
+  companyName: string;
+  role: CompanyRole;
+  members: ICompanyMember[];
+}
+

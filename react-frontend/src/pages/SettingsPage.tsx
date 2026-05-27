@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { COMPANY } from "@/lib/mock-data";
 import { Avatar } from "@/components/common/avatar";
-import { RoleBadge, StatusBadge } from "@/components/common/status-badge";
-import { useCompanyMembers } from "@/lib/session-store";
+import { RoleBadge } from "@/components/common/status-badge";
 import {
   Dialog,
   DialogContent,
@@ -26,16 +24,21 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { useReverification, useUser } from "@clerk/react";
 import { useNavigate } from "@tanstack/react-router";
+import { useGetCompany } from "@/hooks/api/company/useGetCompany";
 
 export default function Settings() {
   const { user } = useUser();
   const navigate = useNavigate();
+  const { data: companyWithMembers, isLoading: companyLoading } =
+    useGetCompany();
+
   const currentUser = {
     name: user?.fullName ?? user?.firstName ?? "User",
     email: user?.primaryEmailAddress?.emailAddress ?? "",
     avatarHue: 250,
   };
-  const { members, invite, remove } = useCompanyMembers();
+
+  // const { members, invite, remove } = useCompanyMembers();
   const [open, setOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
@@ -46,7 +49,7 @@ export default function Settings() {
   const submitInvite = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    invite({ name, email });
+    // invite({ name, email });
     setName("");
     setEmail("");
     setOpen(false);
@@ -128,15 +131,12 @@ export default function Settings() {
         </Section>
 
         {/* Company */}
-        <Section
-          title="Company"
-          subtitle="Manage your workspace and members."
-          badge="Account owner only"
-        >
+        <Section title="Company" subtitle="Manage your workspace and members.">
           <Field
             label="Company name"
             icon={Building2}
-            defaultValue={COMPANY.name}
+            defaultValue={companyWithMembers?.companyName ?? ""}
+            disabled={companyLoading}
           />
 
           <div>
@@ -150,39 +150,30 @@ export default function Settings() {
               </button>
             </div>
             <div className="rounded-lg border border-border bg-surface divide-y divide-border">
-              {/* Account owner — always present */}
-              <div className="flex items-center gap-3 px-4 py-3">
-                <Avatar
-                  name={currentUser.name}
-                  hue={currentUser.avatarHue}
-                  size={32}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">
-                    {currentUser.name}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {currentUser.email}
-                  </div>
-                </div>
-                <RoleBadge role="ACCOUNT_OWNER" />
-              </div>
-
-              {members.map((m) => (
-                <div key={m.id} className="flex items-center gap-3 px-4 py-3">
-                  <Avatar name={m.name} hue={m.avatarHue} size={32} />
+              {companyWithMembers?.members.map((m) => (
+                <div
+                  key={m.userId}
+                  className="flex items-center gap-3 px-4 py-3"
+                >
+                  <Avatar
+                    name={m.firstName + " " + m.lastName}
+                    hue={0}
+                    size={32}
+                  />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium truncate">{m.name}</div>
+                    <div className="text-sm font-medium truncate">
+                      {m.firstName} {m.lastName}
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {m.email}
                     </div>
                   </div>
-                  {m.status === "PENDING_INVITE" && (
+                  {/* {m.status === "PENDING_INVITE" && (
                     <StatusBadge status="PENDING_INVITE" />
-                  )}
+                  )} */}
                   <RoleBadge role={m.role} />
                   <button
-                    onClick={() => remove(m.id)}
+                    // onClick={() => remove(m.id)}
                     className="text-xs text-muted-foreground hover:text-destructive transition"
                   >
                     Remove
@@ -190,7 +181,7 @@ export default function Settings() {
                 </div>
               ))}
 
-              {members.length === 0 && (
+              {!companyLoading && !companyWithMembers?.members.length && (
                 <div className="px-4 py-8 text-center">
                   <Users className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
                   <div className="text-sm font-medium">No teammates yet</div>

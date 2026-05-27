@@ -1,8 +1,8 @@
 package com.claimo.api.company.services;
 
 import com.claimo.api.company.CompanyRepository;
-import com.claimo.api.company.dto.CompanyDto;
-import com.claimo.api.company.dto.response.CompanyResponses;
+import com.claimo.api.company.dto.CompanyMemberDto;
+import com.claimo.api.company.dto.CurrentCompanyDto;
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.membership.CompanyMember;
 import com.claimo.api.company.membership.CompanyMemberService;
@@ -34,15 +34,26 @@ public class CompanyServiceImpl implements CompanyService {
         return companyRepository.save(company);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public CompanyResponses.CurrentCompany getCurrentCompany(Jwt jwt) {
-        User user = getAuthenticatedUser(jwt);
-        Company company = getCurrentCompanyEntity(user);
-        CompanyRole role = getCurrentCompanyRole(company, user);
+   @Override
+@Transactional(readOnly = true)
+public CurrentCompanyDto getCompanyWithMembers(Jwt jwt) {
+    User user = getAuthenticatedUser(jwt);
+    Company company = getCurrentCompanyEntity(user);
+    CompanyRole role = getCurrentCompanyRole(company, user);
 
-        return new CompanyResponses.CurrentCompany(CompanyDto.fromEntity(company), role);
-    }
+    List<CompanyMember> members = companyMemberService.findByCompanyId(company.getId());
+
+    List<CompanyMemberDto> memberSummaries = members.stream()
+            .map(m -> new CompanyMemberDto(
+                    m.getUser().getId(),
+                    m.getUser().getFirstName(),
+                    m.getUser().getLastName(),
+                    m.getUser().getEmail(),
+                    m.getRole()))
+            .toList();
+
+    return new CurrentCompanyDto(company.getName(), role, memberSummaries);
+}
 
     private User getAuthenticatedUser(Jwt jwt) {
         String clerkUserId = jwt.getSubject();

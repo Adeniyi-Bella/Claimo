@@ -1,6 +1,6 @@
 package com.claimo.api.company.services;
 
-import com.claimo.api.company.dto.response.CompanyResponses;
+import com.claimo.api.company.dto.CurrentCompanyDto;
 import com.claimo.api.company.model.Company;
 import com.claimo.api.user.model.User;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -8,5 +8,5 @@ import org.springframework.security.oauth2.jwt.Jwt;
 public interface CompanyService {
     Company createCompany(String name, User owner);
 
-    CompanyResponses.CurrentCompany getCurrentCompany(Jwt jwt);
+    CurrentCompanyDto getCompanyWithMembers(Jwt jwt);
 }
