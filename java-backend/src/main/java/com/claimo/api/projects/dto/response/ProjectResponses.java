@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.claimo.api.company.enums.CompanyRole;
+import com.claimo.api.projects.dto.MemberDto;
 import com.claimo.api.projects.dto.ModelDto;
 import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.enums.ProjectRole;
@@ -18,7 +19,7 @@ public class ProjectResponses {
                         String location,
                         LocalDate startDate,
                         String status,
-                        List<Member> members,
+                        List<MemberDto> members,
                         List<ModelDto> models,
                         List<PendingInvite> pendingInvites,
                         ProjectRole currentUserRole,
@@ -34,12 +35,5 @@ public class ProjectResponses {
                         Instant createdAt) {
         }
 
-        public record Member(
-                        UUID id,
-                        String name,
-                        String email,
-                        ProjectRole role,
-                        String joined,
-                        int avatarHue) {
-        }
+        
 }

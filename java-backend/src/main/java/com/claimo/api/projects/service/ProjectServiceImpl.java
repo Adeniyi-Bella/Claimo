@@ -13,7 +13,7 @@ import com.claimo.api.projects.dto.response.DashboardResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.dto.AuditEntryDto;
 import com.claimo.api.projects.dto.ClaimDto;
-import com.claimo.api.projects.dto.response.ProjectResponses.Member;
+import com.claimo.api.projects.dto.MemberDto;
 import com.claimo.api.projects.dto.ModelDto;
 import com.claimo.api.projects.dto.PaymentItemResponseDto;
 import com.claimo.api.projects.dto.response.ProjectResponses.ProjectDetails;
@@ -38,6 +38,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -309,10 +310,10 @@ public class ProjectServiceImpl implements ProjectService {
                         ProjectRole currentUserRole,
                         CompanyRole currentUserCompanyRole) {
 
-                List<Member> memberDtos = members.stream()
+                List<MemberDto> memberDtos = members.stream()
                                 .map(m -> {
                                         User u = m.getUser();
-                                        return new Member(
+                                        return new MemberDto(
                                                         u.getId(),
                                                         displayName(u),
                                                         u.getEmail(),
@@ -440,15 +441,15 @@ public class ProjectServiceImpl implements ProjectService {
                                 toDashboardModelSummaries(models, paymentItemsByModel));
         }
 
-        private List<DashboardResponse.MemberSummary> toDashboardMemberSummaries(List<ProjectMember> members) {
+        private List<MemberDto> toDashboardMemberSummaries(List<ProjectMember> members) {
                 return members.stream()
                                 .map(m -> {
                                         User u = m.getUser();
-                                        return new DashboardResponse.MemberSummary(
+                                        return new MemberDto(
                                                         u.getId(),
                                                         displayName(u),
                                                         u.getEmail(),
-                                                        m.getRole().name(),
+                                                        m.getRole(),
                                                         m.getCreatedAt() == null ? null
                                                                         : m.getCreatedAt().atOffset(ZoneOffset.UTC)
                                                                                         .toLocalDate().toString(),
@@ -457,11 +458,11 @@ public class ProjectServiceImpl implements ProjectService {
                                 .toList();
         }
 
-        private List<DashboardResponse.ModelSummary> toDashboardModelSummaries(
+        private List<ModelDto> toDashboardModelSummaries(
                         List<ProjectModel> models,
                         Map<UUID, List<PaymentItem>> paymentItemsByModel) {
                 return models.stream()
-                                .map(model -> new DashboardResponse.ModelSummary(
+                                .map(model -> new ModelDto(
                                                 model.getId(),
                                                 model.getFileName(),
                                                 "ifc",
@@ -475,9 +476,9 @@ public class ProjectServiceImpl implements ProjectService {
                                 .toList();
         }
 
-        private List<DashboardResponse.PaymentItemSummary> toDashboardPaymentItemSummaries(List<PaymentItem> items) {
+        private List<PaymentItemResponseDto> toDashboardPaymentItemSummaries(List<PaymentItem> items) {
                 return items.stream()
-                                .map(item -> new DashboardResponse.PaymentItemSummary(
+                                .map(item -> new PaymentItemResponseDto(
                                                 item.getId(),
                                                 item.getCategory(),
                                                 item.getModel() == null ? null : item.getModel().getId().toString(),
@@ -488,30 +489,29 @@ public class ProjectServiceImpl implements ProjectService {
                                                 item.getApprover() == null ? null
                                                                 : item.getApprover().getId().toString(),
                                                 item.getApprover() == null ? null : displayName(item.getApprover()),
-                                                item.getContractValue() == null ? 0d
-                                                                : item.getContractValue().doubleValue(),
+                                                item.getContractValue() == null ? BigDecimal.ZERO
+                                                                : item.getContractValue(),
                                                 item.getDescription(),
                                                 item.getCreatedAt(),
                                                 item.getUpdatedAt(),
                                                 toDashboardClaimSummaries(item.getClaims()),
                                                 parseAttachedElementIds(item.getAttachedElementIdsJson()),
-                                                item.getJobStatus().name(),
-                                                item.getPaymentStatus().name(),
+                                                item.getJobStatus(),
+                                                item.getPaymentStatus(),
                                                 item.isPaymentConfirmationPending(),
                                                 toDashboardAuditEntrySummaries(item.getAuditTrail())))
                                 .toList();
         }
 
-        private List<DashboardResponse.ClaimSummary> toDashboardClaimSummaries(
+        private List<ClaimDto> toDashboardClaimSummaries(
                         Collection<PaymentItemClaim> claims) {
                 return claims == null ? List.of()
                                 : claims.stream()
                                                 .sorted(Comparator.comparing(PaymentItemClaim::getSequence))
-                                                .map(c -> new DashboardResponse.ClaimSummary(
+                                                .map(c -> new ClaimDto(
                                                                 c.getId(), c.getSequence(),
-                                                                c.getAmount() == null ? 0d
-                                                                                : c.getAmount().doubleValue(),
-                                                                c.getDescription(), c.getStatus().name(),
+                                                                c.getAmount() == null ? BigDecimal.ZERO : c.getAmount(),
+                                                                c.getDescription(), c.getStatus(),
                                                                 c.getSubmittedBy(), c.getSubmittedById(),
                                                                 c.getSubmittedAt(),
                                                                 c.getDecidedBy(), c.getDecidedById(), c.getDecidedAt(),
@@ -519,16 +519,16 @@ public class ProjectServiceImpl implements ProjectService {
                                                 .toList();
         }
 
-        private List<DashboardResponse.AuditEntrySummary> toDashboardAuditEntrySummaries(
+        private List<AuditEntryDto> toDashboardAuditEntrySummaries(
                         Collection<PaymentItemAuditEntry> auditTrail) {
                 return auditTrail == null ? List.of()
                                 : auditTrail.stream()
                                                 .sorted(Comparator.comparing(PaymentItemAuditEntry::getTimestamp))
-                                                .map(e -> new DashboardResponse.AuditEntrySummary(
+                                                .map(e -> new AuditEntryDto(
                                                                 e.getId(), e.getTimestamp(), e.getActorId(),
                                                                 e.getActorName(),
-                                                                e.getActorRole().name(), e.getAction(),
-                                                                e.getField().name(),
+                                                                e.getActorRole(), e.getAction(),
+                                                                e.getField(),
                                                                 e.getFromValue(), e.getToValue()))
                                                 .toList();
         }
