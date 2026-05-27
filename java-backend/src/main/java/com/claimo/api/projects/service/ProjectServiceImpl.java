@@ -10,11 +10,11 @@ import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
-import com.claimo.api.projects.dto.response.ProjectResponses.AuditEntry;
-import com.claimo.api.projects.dto.response.ProjectResponses.Claim;
+import com.claimo.api.projects.dto.AuditEntryDto;
+import com.claimo.api.projects.dto.ClaimDto;
 import com.claimo.api.projects.dto.response.ProjectResponses.Member;
-import com.claimo.api.projects.dto.response.ProjectResponses.Model;
-import com.claimo.api.projects.dto.response.ProjectResponses.PaymentItemResponse;
+import com.claimo.api.projects.dto.ModelDto;
+import com.claimo.api.projects.dto.PaymentItemResponseDto;
 import com.claimo.api.projects.dto.response.ProjectResponses.ProjectDetails;
 import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.enums.ProjectRole;
@@ -162,7 +162,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         @Override
         @Transactional
-        public CreateUpdateProjectResponse updateProject(Jwt jwt, UUID projectId, ProjectRequests.UpdateProject request) {
+        public CreateUpdateProjectResponse updateProject(Jwt jwt, UUID projectId,
+                        ProjectRequests.UpdateProject request) {
                 User user = getAuthenticatedUser(jwt);
                 Project project = getProjectForProjectAdmin(projectId, user);
 
@@ -323,10 +324,10 @@ public class ProjectServiceImpl implements ProjectService {
                                 })
                                 .toList();
 
-                List<Model> modelDtos = models.stream()
+                List<ModelDto> modelDtos = models.stream()
                                 .sorted(Comparator.comparing(ProjectModel::getUploadedAt,
                                                 Comparator.nullsLast(Comparator.reverseOrder())))
-                                .map(model -> new Model(
+                                .map(model -> new ModelDto(
                                                 model.getId(),
                                                 model.getFileName(),
                                                 "ifc",
@@ -362,9 +363,9 @@ public class ProjectServiceImpl implements ProjectService {
                                 currentUserCompanyRole);
         }
 
-        private List<PaymentItemResponse> toPaymentItemDtos(List<PaymentItem> items) {
+        private List<PaymentItemResponseDto> toPaymentItemDtos(List<PaymentItem> items) {
                 return items.stream()
-                                .map(item -> new PaymentItemResponse(
+                                .map(item -> new PaymentItemResponseDto(
                                                 item.getId(),
                                                 item.getCategory(),
                                                 item.getModel() == null ? null : item.getModel().getId().toString(),
@@ -388,11 +389,11 @@ public class ProjectServiceImpl implements ProjectService {
                                 .toList();
         }
 
-        private List<Claim> toClaimDtos(Collection<PaymentItemClaim> claims) {
+        private List<ClaimDto> toClaimDtos(Collection<PaymentItemClaim> claims) {
                 return claims == null ? List.of()
                                 : claims.stream()
                                                 .sorted(Comparator.comparing(PaymentItemClaim::getSequence))
-                                                .map(c -> new Claim(
+                                                .map(c -> new ClaimDto(
                                                                 c.getId(), c.getSequence(), c.getAmount(),
                                                                 c.getDescription(),
                                                                 c.getStatus(), c.getSubmittedBy(), c.getSubmittedById(),
@@ -402,11 +403,11 @@ public class ProjectServiceImpl implements ProjectService {
                                                 .toList();
         }
 
-        private List<AuditEntry> toAuditEntryDtos(Collection<PaymentItemAuditEntry> auditTrail) {
+        private List<AuditEntryDto> toAuditEntryDtos(Collection<PaymentItemAuditEntry> auditTrail) {
                 return auditTrail == null ? List.of()
                                 : auditTrail.stream()
                                                 .sorted(Comparator.comparing(PaymentItemAuditEntry::getTimestamp))
-                                                .map(e -> new AuditEntry(
+                                                .map(e -> new AuditEntryDto(
                                                                 e.getId(), e.getTimestamp(), e.getActorId(),
                                                                 e.getActorName(),
                                                                 e.getActorRole(), e.getAction(), e.getField(),
