@@ -15,20 +15,6 @@ import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.enums.ProjectRole;
 
 public class ProjectResponses {
-
-        public record Project(
-                        UUID id,
-                        String name,
-                        String description,
-                        String location,
-                        LocalDate startDate,
-                        UUID companyId,
-                        UUID createdBy,
-                        ProjectRole role,
-                        Instant createdAt,
-                        Instant updatedAt) {
-        }
-
         public record ProjectDetails(
                         UUID id,
                         String name,

@@ -2,6 +2,7 @@ package com.claimo.api.projects.controller;
 
 import com.claimo.api.exceptions.CustomApiResponse;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
+import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.service.ProjectService;
 import com.claimo.api.user.dto.DashboardResponse;
@@ -38,10 +39,10 @@ public class ProjectController {
                         @ApiResponse(responseCode = "400", description = "Invalid request body"),
                         @ApiResponse(responseCode = "401", description = "Unauthorized")
         })
-        public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> createProject(
+        public ResponseEntity<CustomApiResponse<CreateUpdateProjectResponse>> createProject(
                         @AuthenticationPrincipal Jwt jwt,
                         @Valid @RequestBody ProjectRequests.CreateProject request) {
-                ProjectResponses.Project response = projectService.createProject(jwt, request);
+                CreateUpdateProjectResponse response = projectService.createProject(jwt, request);
                 return ResponseEntity.status(HttpStatus.CREATED).body(CustomApiResponse.success(response));
         }
 
@@ -81,11 +82,11 @@ public class ProjectController {
                         @ApiResponse(responseCode = "403", description = "Access denied"),
                         @ApiResponse(responseCode = "404", description = "Project not found")
         })
-        public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> updateProject(
+        public ResponseEntity<CustomApiResponse<CreateUpdateProjectResponse>> updateProject(
                         @AuthenticationPrincipal Jwt jwt,
                         @PathVariable UUID projectId,
                         @Valid @RequestBody ProjectRequests.UpdateProject request) {
-                ProjectResponses.Project response = projectService.updateProject(jwt, projectId, request);
+                CreateUpdateProjectResponse response = projectService.updateProject(jwt, projectId, request);
                 return ResponseEntity.ok(CustomApiResponse.success(response));
         }
 

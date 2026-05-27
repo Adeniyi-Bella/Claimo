@@ -8,6 +8,7 @@ import com.claimo.api.company.membership.CompanyMember;
 import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
+import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.dto.response.ProjectResponses.AuditEntry;
 import com.claimo.api.projects.dto.response.ProjectResponses.Claim;
@@ -62,7 +63,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         @Override
         @Transactional
-        public ProjectResponses.Project createProject(Jwt jwt, ProjectRequests.CreateProject request) {
+        public CreateUpdateProjectResponse createProject(Jwt jwt, ProjectRequests.CreateProject request) {
                 User user = getAuthenticatedUser(jwt);
                 Company company = getOwnedCompany(user);
 
@@ -161,7 +162,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         @Override
         @Transactional
-        public ProjectResponses.Project updateProject(Jwt jwt, UUID projectId, ProjectRequests.UpdateProject request) {
+        public CreateUpdateProjectResponse updateProject(Jwt jwt, UUID projectId, ProjectRequests.UpdateProject request) {
                 User user = getAuthenticatedUser(jwt);
                 Project project = getProjectForProjectAdmin(projectId, user);
 
@@ -614,11 +615,11 @@ public class ProjectServiceImpl implements ProjectService {
                                                 "Company not found for owner userId: " + user.getId()));
         }
 
-        private ProjectResponses.Project toResponse(Project project, User user) {
+        private CreateUpdateProjectResponse toResponse(Project project, User user) {
                 ProjectRole role = projectMemberService.isMember(project.getId(), user.getId())
                                 ? projectMemberService.getRole(project.getId(), user.getId())
                                 : null;
-                return new ProjectResponses.Project(
+                return new CreateUpdateProjectResponse(
                                 project.getId(), project.getName(), project.getDescription(),
                                 project.getLocation(), project.getStartDate(),
                                 project.getCompany().getId(), project.getCreatedBy().getId(),
