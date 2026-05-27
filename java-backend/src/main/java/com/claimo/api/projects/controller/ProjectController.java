@@ -4,6 +4,7 @@ import com.claimo.api.exceptions.CustomApiResponse;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.service.ProjectService;
+import com.claimo.api.user.dto.DashboardResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -101,5 +102,18 @@ public class ProjectController {
                         @PathVariable UUID projectId) {
                 projectService.deleteProject(jwt, projectId);
                 return ResponseEntity.noContent().build();
+        }
+
+        @GetMapping("/dashboard")
+        @Operation(summary = "Get dashboard data for authenticated user", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Dashboard returned successfully"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @ApiResponse(responseCode = "404", description = "User or company not found")
+        })
+        public ResponseEntity<CustomApiResponse<DashboardResponse>> getDashboardData(
+                        @AuthenticationPrincipal Jwt jwt) {
+                DashboardResponse response = projectService.getDashboardData(jwt);
+                return ResponseEntity.ok(CustomApiResponse.success(response));
         }
 }

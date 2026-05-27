@@ -5,7 +5,7 @@ import type { CustomApiResponse, DashboardResponse } from "@/api/dto/responseDto
 export class DashboardApi {
   static async getDashboard(token: string): Promise<DashboardResponse> {
     const response = await apiClient.get<CustomApiResponse<DashboardResponse>>(
-      "/users/dashboard",
+      "/projects/dashboard",
       {
         headers: {
           Authorization: `Bearer ${token}`,

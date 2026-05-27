@@ -2,6 +2,7 @@ package com.claimo.api.projects.service;
 
 import com.claimo.api.company.model.Company;
 import com.claimo.api.company.CompanyRepository;
+import com.claimo.api.company.dto.CompanyDto;
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.membership.CompanyMember;
 import com.claimo.api.company.membership.CompanyMemberService;
@@ -27,6 +28,7 @@ import com.claimo.api.projects.repository.ProjectMemberRepository;
 import com.claimo.api.projects.repository.ProjectModelRepository;
 import com.claimo.api.projects.repository.PaymentItemRepository;
 import com.claimo.api.projects.repository.PendingInviteRepository;
+import com.claimo.api.user.dto.DashboardResponse;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -36,15 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneOffset;
-import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Comparator;
-import java.util.Collection;
-import java.util.Set;
-import java.util.UUID;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,6 +56,10 @@ public class ProjectServiceImpl implements ProjectService {
         private final PaymentItemRepository paymentItemRepository;
         private final PendingInviteRepository pendingInviteRepository;
 
+        // -------------------------------------------------------------------------
+        // Public API
+        // -------------------------------------------------------------------------
+
         @Override
         @Transactional
         public ProjectResponses.Project createProject(Jwt jwt, ProjectRequests.CreateProject request) {
@@ -77,91 +75,43 @@ public class ProjectServiceImpl implements ProjectService {
                 project.setCreatedBy(user);
 
                 Project saved = projectRepository.save(project);
-
                 projectMemberService.addMember(saved, user, ProjectRole.ADMIN);
 
                 log.info("Project created projectId={} companyId={}", saved.getId(), company.getId());
                 return toResponse(saved, user);
         }
 
-        /**
-         * Retrieves all projects visible to the authenticated user.
-         *
-         * Visibility rules:
-         * - Company ACCOUNT_OWNER or ADMIN can see all projects within their company
-         * - Any user can see projects they are explicitly added to as a project member
-         *
-         * Data is batched to avoid N+1 queries:
-         * - Members, models, and payment items are all fetched in single IN-clause
-         * queries
-         *
-         * @param jwt the JWT token of the authenticated user
-         * @return a list of ProjectDetails sorted by creation date descending
-         */
         @Override
+        @Transactional(readOnly = true)
         public List<ProjectDetails> getProjects(Jwt jwt) {
                 User user = getAuthenticatedUser(jwt);
 
-                // Fetch all company memberships for this user to determine elevated access
-                List<CompanyMember> companyMemberships = companyMemberService.findByUserId(user.getId());
+                Set<UUID> elevatedCompanyIds = companyMemberService.findByUserId(user.getId()).stream()
+                                .filter(m -> m.getRole() == CompanyRole.ACCOUNT_OWNER
+                                                || m.getRole() == CompanyRole.ADMIN)
+                                .map(m -> m.getCompany().getId())
+                                .collect(Collectors.toSet());
 
-                // Extract company IDs where the user has elevated roles (ACCOUNT_OWNER or
-                // ADMIN)
-                // These users can see all projects under those companies
-                Set<UUID> elevatedCompanyIds = companyMemberships.stream()
-                                .filter(member -> member.getRole() == CompanyRole.ACCOUNT_OWNER
-                                                || member.getRole() == CompanyRole.ADMIN)
-                                .map(member -> member.getCompany().getId())
-                                .collect(java.util.stream.Collectors.toSet());
-
-                // Use LinkedHashMap to deduplicate projects while preserving insertion order
                 LinkedHashMap<UUID, Project> visibleProjects = new LinkedHashMap<>();
 
-                // Add all projects belonging to companies where the user has elevated access
                 if (!elevatedCompanyIds.isEmpty()) {
                         projectRepository.findAllByCompanyIdIn(List.copyOf(elevatedCompanyIds))
-                                        .forEach(project -> visibleProjects.putIfAbsent(project.getId(), project));
+                                        .forEach(p -> visibleProjects.putIfAbsent(p.getId(), p));
                 }
 
-                // Add projects where the user is an explicit project member
-                // putIfAbsent ensures we don't overwrite projects already added via company
-                // access
-                projectMemberRepository.findAllByUserId(user.getId())
-                                .stream()
+                projectMemberRepository.findAllByUserId(user.getId()).stream()
                                 .map(ProjectMember::getProject)
-                                .forEach(project -> visibleProjects.putIfAbsent(project.getId(), project));
+                                .forEach(p -> visibleProjects.putIfAbsent(p.getId(), p));
 
-                // Early return if user has no projects
                 if (visibleProjects.isEmpty()) {
                         return List.of();
                 }
 
                 List<UUID> projectIds = new ArrayList<>(visibleProjects.keySet());
+                Map<UUID, List<ProjectMember>> membersByProject = loadMembersByProjectIds(projectIds);
+                Map<UUID, List<ProjectModel>> modelsByProject = loadModelsByProjectIds(projectIds);
+                Map<UUID, List<PaymentItem>> paymentItemsByModel = loadPaymentItemsByModelFromProjectIds(projectIds);
 
-                // Fetch all related data in single queries
-                Map<UUID, List<ProjectMember>> membersByProject = projectMemberRepository
-                                .findAllByProject_IdIn(projectIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                member -> member.getProject().getId(),
-                                                LinkedHashMap::new,
-                                                Collectors.toList()));
-
-                Map<UUID, List<ProjectModel>> modelsByProject = projectModelRepository.findAllByProject_IdIn(projectIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                model -> model.getProject().getId(),
-                                                LinkedHashMap::new,
-                                                Collectors.toList()));
-                Map<UUID, List<PaymentItem>> paymentItemsByProject = paymentItemRepository
-                                .findAllByProject_IdIn(projectIds).stream()
-                                .collect(Collectors.groupingBy(
-                                                item -> item.getProject().getId(),
-                                                LinkedHashMap::new,
-                                                Collectors.toList()));
-
-                // Map each project to its full details, sorted by creation date descending
-                // Null creation dates are pushed to the end
                 return visibleProjects.values().stream()
                                 .sorted(Comparator.comparing(Project::getCreatedAt,
                                                 Comparator.nullsLast(Comparator.reverseOrder())))
@@ -169,14 +119,16 @@ public class ProjectServiceImpl implements ProjectService {
                                                 project,
                                                 membersByProject.getOrDefault(project.getId(), List.of()),
                                                 modelsByProject.getOrDefault(project.getId(), List.of()),
-                                                paymentItemsByProject.getOrDefault(project.getId(), List.of()),
-                                                List.of(), null, null))
+                                                paymentItemsByModel,
+                                                List.of(), // no pending invites on list view
+                                                null,
+                                                null))
                                 .toList();
         }
 
         @Override
         @Transactional(readOnly = true)
-        public ProjectResponses.ProjectDetails getProjectById(Jwt jwt, UUID projectId) {
+        public ProjectDetails getProjectById(Jwt jwt, UUID projectId) {
                 User user = getAuthenticatedUser(jwt);
                 Project project = getProjectForView(projectId, user);
                 List<ProjectMember> members = projectMemberRepository.findAllByProjectId(projectId);
@@ -187,18 +139,20 @@ public class ProjectServiceImpl implements ProjectService {
                                 .findFirst()
                                 .orElse(null);
 
-                CompanyRole currentUserCompanyRole = companyMemberService
-                                .findByUserId(user.getId()).stream()
+                CompanyRole currentUserCompanyRole = companyMemberService.findByUserId(user.getId()).stream()
                                 .filter(m -> m.getCompany().getId().equals(project.getCompany().getId()))
                                 .map(CompanyMember::getRole)
                                 .findFirst()
                                 .orElse(null);
 
+                Map<UUID, List<PaymentItem>> paymentItemsByModel = loadPaymentItemsByModelFromProjectIds(
+                                List.of(projectId));
+
                 return toDetails(
                                 project,
                                 members,
                                 projectModelRepository.findAllByProject_IdIn(List.of(projectId)),
-                                paymentItemRepository.findAllByProject_IdIn(List.of(projectId)),
+                                paymentItemsByModel,
                                 pendingInviteRepository.findAllByProjectIdAndStatus(projectId,
                                                 PendingInviteStatus.PENDING),
                                 currentUserRole,
@@ -235,114 +189,136 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         /**
-         * Fetches the authenticated user from the JWT subject claim.
+         * Builds the dashboard response for the authenticated user.
+         * Reuses the same batch-loading and mapping infrastructure as getProjects.
+         *
+         * Company resolution priority:
+         * 1. Owned company (ACCOUNT_OWNER)
+         * 2. First company membership
+         *
+         * Project visibility mirrors getProjects:
+         * - Company admins see all projects in their admin companies
+         * - Others see only projects they are explicitly a member of
          */
-        private User getAuthenticatedUser(Jwt jwt) {
-                String clerkUserId = jwt.getSubject();
-                return userService.findByClerkUserId(clerkUserId)
-                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
-                                                "User not found for clerkUserId: " + clerkUserId));
+        @Override
+        @Transactional(readOnly = true)
+        public DashboardResponse getDashboardData(Jwt jwt) {
+                User user = getAuthenticatedUser(jwt);
+                CompanyContext companyCtx = resolveCompanyContext(user);
+
+                // Collect all company IDs the user is associated with
+                List<UUID> allCompanyIds = new ArrayList<>();
+                allCompanyIds.add(companyCtx.company().getId());
+                companyMemberService.findByUserId(user.getId()).stream()
+                                .map(m -> m.getCompany().getId())
+                                .filter(id -> !allCompanyIds.contains(id))
+                                .forEach(allCompanyIds::add);
+
+                List<Project> projects = projectRepository.findAllByCompanyIdIn(allCompanyIds);
+
+                // Non-admins are restricted to projects they are explicitly a member of
+                Set<UUID> adminCompanyIds = getAdminCompanyIds(user);
+                if (!adminCompanyIds.containsAll(allCompanyIds)) {
+                        Set<UUID> userProjectIds = projectMemberRepository.findAllByUser_Id(user.getId()).stream()
+                                        .map(pm -> pm.getProject().getId())
+                                        .collect(Collectors.toSet());
+                        projects = projects.stream()
+                                        .filter(p -> adminCompanyIds.contains(p.getCompany().getId())
+                                                        || userProjectIds.contains(p.getId()))
+                                        .toList();
+                }
+
+                projects = projects.stream()
+                                .sorted(Comparator.comparing(Project::getCreatedAt,
+                                                Comparator.nullsLast(Comparator.reverseOrder())))
+                                .toList();
+
+                List<UUID> projectIds = projects.stream().map(Project::getId).toList();
+                Map<UUID, List<ProjectMember>> membersByProject = projectIds.isEmpty() ? Map.of()
+                                : loadMembersByProjectIds(projectIds);
+                Map<UUID, List<ProjectModel>> modelsByProject = projectIds.isEmpty() ? Map.of()
+                                : loadModelsByProjectIds(projectIds);
+                Map<UUID, List<PaymentItem>> paymentItemsByModel = projectIds.isEmpty() ? Map.of()
+                                : loadPaymentItemsByModelFromProjectIds(projectIds);
+
+                List<DashboardResponse.ProjectSummary> projectSummaries = projects.stream()
+                                .map(project -> toDashboardProjectSummary(
+                                                project,
+                                                membersByProject.getOrDefault(project.getId(), List.of()),
+                                                modelsByProject.getOrDefault(project.getId(), List.of()),
+                                                paymentItemsByModel))
+                                .toList();
+
+                return new DashboardResponse(
+                                new DashboardResponse.UserSummary(
+                                                user.getId(),
+                                                displayName(user),
+                                                user.getEmail(),
+                                                avatarHue(user.getEmail())),
+                                new DashboardResponse.CompanySummary(
+                                                CompanyDto.fromEntity(companyCtx.company()),
+                                                companyCtx.role()),
+                                projectSummaries);
+        }
+
+        // -------------------------------------------------------------------------
+        // Batch data loaders — shared by getProjects, getProjectById, getDashboardData
+        // -------------------------------------------------------------------------
+
+        private Map<UUID, List<ProjectMember>> loadMembersByProjectIds(List<UUID> projectIds) {
+                return projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
+                                .collect(Collectors.groupingBy(
+                                                m -> m.getProject().getId(),
+                                                LinkedHashMap::new,
+                                                Collectors.toList()));
+        }
+
+        private Map<UUID, List<ProjectModel>> loadModelsByProjectIds(List<UUID> projectIds) {
+                return projectModelRepository.findAllByProject_IdIn(projectIds).stream()
+                                .collect(Collectors.groupingBy(
+                                                m -> m.getProject().getId(),
+                                                LinkedHashMap::new,
+                                                Collectors.toList()));
         }
 
         /**
-         * Fetches a project and validates the authenticated user is a project member.
-         * Returns 404 if not found, 403 if the user is not in project_members.
+         * Returns payment items keyed by model ID (not project ID),
+         * because both toDetails and toDashboardProjectSummary render items under
+         * their parent model.
          */
-        private Project getProjectForView(UUID projectId, User user) {
-                Project project = projectRepository.findById(projectId)
-                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
-                                                "Project not found: " + projectId));
-
-                if (projectMemberService.isMember(projectId, user.getId())) {
-                        return project;
-                }
-
-                if (canViewAllProjectsInCompany(project.getCompany().getId(), user.getId())) {
-                        return project;
-                }
-
-                throw new AppExceptions.ForbiddenException(
-                                "Access denied to project: " + projectId);
+        private Map<UUID, List<PaymentItem>> loadPaymentItemsByModelFromProjectIds(List<UUID> projectIds) {
+                return paymentItemRepository.findAllByProject_IdIn(projectIds).stream()
+                                .collect(Collectors.groupingBy(
+                                                item -> item.getModel().getId(),
+                                                LinkedHashMap::new,
+                                                Collectors.toList()));
         }
 
-        private Project getProjectForProjectAdmin(UUID projectId, User user) {
-                Project project = projectRepository.findById(projectId)
-                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
-                                                "Project not found: " + projectId));
-
-                if (!projectMemberService.isMember(projectId, user.getId())) {
-                        throw new AppExceptions.ForbiddenException(
-                                        "Access denied to project: " + projectId);
-                }
-                ProjectRole role = projectMemberService.getRole(projectId, user.getId());
-                if (role != ProjectRole.ADMIN) {
-                        throw new AppExceptions.ForbiddenException("Only project ADMINs can manage projects");
-                }
-                return project;
-        }
-
-        private boolean canViewAllProjectsInCompany(UUID companyId, UUID userId) {
-                return companyMemberService.findByUserId(userId).stream()
-                                .filter(member -> member.getCompany().getId().equals(companyId))
-                                .anyMatch(member -> member.getRole() == CompanyRole.ACCOUNT_OWNER
-                                                || member.getRole() == CompanyRole.ADMIN);
-        }
-
-        private Company getOwnedCompany(User user) {
-                return companyRepository.findByOwner_Id(user.getId())
-                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
-                                                "Company not found for owner userId: " + user.getId()));
-        }
-
-        /**
-         * Maps a Project entity to a ProjectResponse DTO.
-         */
-        private ProjectResponses.Project toResponse(Project project, User user) {
-                ProjectRole role = null;
-                if (projectMemberService.isMember(project.getId(), user.getId())) {
-                        role = projectMemberService.getRole(project.getId(), user.getId());
-                }
-
-                return new ProjectResponses.Project(
-                                project.getId(),
-                                project.getName(),
-                                project.getDescription(),
-                                project.getLocation(),
-                                project.getStartDate(),
-                                project.getCompany().getId(),
-                                project.getCreatedBy().getId(),
-                                role,
-                                project.getCreatedAt(),
-                                project.getUpdatedAt());
-        }
+        // -------------------------------------------------------------------------
+        // ProjectResponses mappers (used by getProjects / getProjectById)
+        // -------------------------------------------------------------------------
 
         private ProjectDetails toDetails(
                         Project project,
                         List<ProjectMember> members,
                         List<ProjectModel> models,
-                        List<PaymentItem> paymentItems,
+                        Map<UUID, List<PaymentItem>> paymentItemsByModel,
                         List<com.claimo.api.projects.models.PendingInvite> pendingInvites,
                         ProjectRole currentUserRole,
                         CompanyRole currentUserCompanyRole) {
 
-                Map<UUID, List<PaymentItem>> paymentItemsByModel = paymentItems.stream()
-                                .collect(Collectors.groupingBy(
-                                                item -> item.getModel().getId(),
-                                                LinkedHashMap::new,
-                                                Collectors.toList()));
-
                 List<Member> memberDtos = members.stream()
-                                .map(member -> {
-                                        User memberUser = member.getUser();
+                                .map(m -> {
+                                        User u = m.getUser();
                                         return new Member(
-                                                        memberUser.getId(),
-                                                        displayName(memberUser),
-                                                        memberUser.getEmail(),
-                                                        member.getRole(),
-                                                        member.getCreatedAt() == null ? null
-                                                                        : member.getCreatedAt().atOffset(ZoneOffset.UTC)
+                                                        u.getId(),
+                                                        displayName(u),
+                                                        u.getEmail(),
+                                                        m.getRole(),
+                                                        m.getCreatedAt() == null ? null
+                                                                        : m.getCreatedAt().atOffset(ZoneOffset.UTC)
                                                                                         .toString(),
-                                                        avatarHue(memberUser.getEmail()));
+                                                        avatarHue(u.getEmail()));
                                 })
                                 .toList();
 
@@ -415,20 +391,13 @@ public class ProjectServiceImpl implements ProjectService {
                 return claims == null ? List.of()
                                 : claims.stream()
                                                 .sorted(Comparator.comparing(PaymentItemClaim::getSequence))
-                                                .map(claim -> new Claim(
-                                                                claim.getId(),
-                                                                claim.getSequence(),
-                                                                claim.getAmount(),
-                                                                claim.getDescription(),
-                                                                claim.getStatus(),
-                                                                claim.getSubmittedBy(),
-                                                                claim.getSubmittedById(),
-                                                                claim.getSubmittedAt(),
-                                                                claim.getDecidedBy(),
-                                                                claim.getDecidedById(),
-                                                                claim.getDecidedAt(),
-                                                                claim.getDecisionNote(),
-                                                                claim.getPaidAt()))
+                                                .map(c -> new Claim(
+                                                                c.getId(), c.getSequence(), c.getAmount(),
+                                                                c.getDescription(),
+                                                                c.getStatus(), c.getSubmittedBy(), c.getSubmittedById(),
+                                                                c.getSubmittedAt(), c.getDecidedBy(),
+                                                                c.getDecidedById(),
+                                                                c.getDecidedAt(), c.getDecisionNote(), c.getPaidAt()))
                                                 .toList();
         }
 
@@ -436,61 +405,264 @@ public class ProjectServiceImpl implements ProjectService {
                 return auditTrail == null ? List.of()
                                 : auditTrail.stream()
                                                 .sorted(Comparator.comparing(PaymentItemAuditEntry::getTimestamp))
-                                                .map(entry -> new AuditEntry(
-                                                                entry.getId(),
-                                                                entry.getTimestamp(),
-                                                                entry.getActorId(),
-                                                                entry.getActorName(),
-                                                                entry.getActorRole(),
-                                                                entry.getAction(),
-                                                                entry.getField(),
-                                                                entry.getFromValue(),
-                                                                entry.getToValue()))
+                                                .map(e -> new AuditEntry(
+                                                                e.getId(), e.getTimestamp(), e.getActorId(),
+                                                                e.getActorName(),
+                                                                e.getActorRole(), e.getAction(), e.getField(),
+                                                                e.getFromValue(), e.getToValue()))
                                                 .toList();
         }
 
-        private List<String> parseAttachedElementIds(String raw) {
-                if (raw == null || raw.isBlank()) {
-                        return List.of();
+        // -------------------------------------------------------------------------
+        // DashboardResponse mappers (used by getDashboardData)
+        //
+        // Kept separate from ProjectResponses mappers because the record types differ:
+        // DashboardResponse uses double + String for enums;
+        // ProjectResponses uses BigDecimal + typed enums.
+        // -------------------------------------------------------------------------
+
+        private DashboardResponse.ProjectSummary toDashboardProjectSummary(
+                        Project project,
+                        List<ProjectMember> members,
+                        List<ProjectModel> models,
+                        Map<UUID, List<PaymentItem>> paymentItemsByModel) {
+
+                return new DashboardResponse.ProjectSummary(
+                                project.getId(),
+                                project.getName(),
+                                project.getDescription(),
+                                project.getLocation(),
+                                project.getStartDate(),
+                                "Active",
+                                toDashboardMemberSummaries(members),
+                                toDashboardModelSummaries(models, paymentItemsByModel));
+        }
+
+        private List<DashboardResponse.MemberSummary> toDashboardMemberSummaries(List<ProjectMember> members) {
+                return members.stream()
+                                .map(m -> {
+                                        User u = m.getUser();
+                                        return new DashboardResponse.MemberSummary(
+                                                        u.getId(),
+                                                        displayName(u),
+                                                        u.getEmail(),
+                                                        m.getRole().name(),
+                                                        m.getCreatedAt() == null ? null
+                                                                        : m.getCreatedAt().atOffset(ZoneOffset.UTC)
+                                                                                        .toLocalDate().toString(),
+                                                        avatarHue(u.getEmail()));
+                                })
+                                .toList();
+        }
+
+        private List<DashboardResponse.ModelSummary> toDashboardModelSummaries(
+                        List<ProjectModel> models,
+                        Map<UUID, List<PaymentItem>> paymentItemsByModel) {
+                return models.stream()
+                                .map(model -> new DashboardResponse.ModelSummary(
+                                                model.getId(),
+                                                model.getFileName(),
+                                                "ifc",
+                                                model.getFileUrl(),
+                                                model.getUploadedAt(),
+                                                model.getUploadedBy() == null ? null
+                                                                : displayName(model.getUploadedBy()),
+                                                toDashboardPaymentItemSummaries(
+                                                                paymentItemsByModel.getOrDefault(model.getId(),
+                                                                                List.of()))))
+                                .toList();
+        }
+
+        private List<DashboardResponse.PaymentItemSummary> toDashboardPaymentItemSummaries(List<PaymentItem> items) {
+                return items.stream()
+                                .map(item -> new DashboardResponse.PaymentItemSummary(
+                                                item.getId(),
+                                                item.getCategory(),
+                                                item.getModel() == null ? null : item.getModel().getId().toString(),
+                                                item.getModel() == null ? null : item.getModel().getFileName(),
+                                                item.getContractor() == null ? null
+                                                                : item.getContractor().getId().toString(),
+                                                item.getContractor() == null ? null : displayName(item.getContractor()),
+                                                item.getApprover() == null ? null
+                                                                : item.getApprover().getId().toString(),
+                                                item.getApprover() == null ? null : displayName(item.getApprover()),
+                                                item.getContractValue() == null ? 0d
+                                                                : item.getContractValue().doubleValue(),
+                                                item.getDescription(),
+                                                item.getCreatedAt(),
+                                                item.getUpdatedAt(),
+                                                toDashboardClaimSummaries(item.getClaims()),
+                                                parseAttachedElementIds(item.getAttachedElementIdsJson()),
+                                                item.getJobStatus().name(),
+                                                item.getPaymentStatus().name(),
+                                                item.isPaymentConfirmationPending(),
+                                                toDashboardAuditEntrySummaries(item.getAuditTrail())))
+                                .toList();
+        }
+
+        private List<DashboardResponse.ClaimSummary> toDashboardClaimSummaries(
+                        Collection<PaymentItemClaim> claims) {
+                return claims == null ? List.of()
+                                : claims.stream()
+                                                .sorted(Comparator.comparing(PaymentItemClaim::getSequence))
+                                                .map(c -> new DashboardResponse.ClaimSummary(
+                                                                c.getId(), c.getSequence(),
+                                                                c.getAmount() == null ? 0d
+                                                                                : c.getAmount().doubleValue(),
+                                                                c.getDescription(), c.getStatus().name(),
+                                                                c.getSubmittedBy(), c.getSubmittedById(),
+                                                                c.getSubmittedAt(),
+                                                                c.getDecidedBy(), c.getDecidedById(), c.getDecidedAt(),
+                                                                c.getDecisionNote(), c.getPaidAt()))
+                                                .toList();
+        }
+
+        private List<DashboardResponse.AuditEntrySummary> toDashboardAuditEntrySummaries(
+                        Collection<PaymentItemAuditEntry> auditTrail) {
+                return auditTrail == null ? List.of()
+                                : auditTrail.stream()
+                                                .sorted(Comparator.comparing(PaymentItemAuditEntry::getTimestamp))
+                                                .map(e -> new DashboardResponse.AuditEntrySummary(
+                                                                e.getId(), e.getTimestamp(), e.getActorId(),
+                                                                e.getActorName(),
+                                                                e.getActorRole().name(), e.getAction(),
+                                                                e.getField().name(),
+                                                                e.getFromValue(), e.getToValue()))
+                                                .toList();
+        }
+
+        // -------------------------------------------------------------------------
+        // Company resolution (moved from DashboardServiceImpl)
+        // -------------------------------------------------------------------------
+
+        /**
+         * Owned company takes priority; falls back to first membership.
+         * Throws ResourceNotFoundException if no company association exists.
+         */
+        private CompanyContext resolveCompanyContext(User user) {
+                Company owned = companyRepository.findByOwner_Id(user.getId()).orElse(null);
+                if (owned != null) {
+                        return new CompanyContext(owned, CompanyRole.ACCOUNT_OWNER);
                 }
+                List<CompanyMember> memberships = companyMemberService.findByUserId(user.getId());
+                if (memberships.isEmpty()) {
+                        throw new AppExceptions.ResourceNotFoundException(
+                                        "Company not found for userId: " + user.getId());
+                }
+                CompanyMember m = memberships.get(0);
+                return new CompanyContext(m.getCompany(), m.getRole());
+        }
+
+        private Set<UUID> getAdminCompanyIds(User user) {
+                Set<UUID> ids = new HashSet<>();
+                companyRepository.findByOwner_Id(user.getId()).ifPresent(c -> ids.add(c.getId()));
+                companyMemberService.findByUserId(user.getId()).stream()
+                                .filter(m -> m.getRole() == CompanyRole.ACCOUNT_OWNER
+                                                || m.getRole() == CompanyRole.ADMIN)
+                                .map(m -> m.getCompany().getId())
+                                .forEach(ids::add);
+                return ids;
+        }
+
+        private record CompanyContext(Company company, CompanyRole role) {
+        }
+
+        // -------------------------------------------------------------------------
+        // Guards and lookups
+        // -------------------------------------------------------------------------
+
+        private User getAuthenticatedUser(Jwt jwt) {
+                return userService.findByClerkUserId(jwt.getSubject())
+                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                "User not found for clerkUserId: " + jwt.getSubject()));
+        }
+
+        private Project getProjectForView(UUID projectId, User user) {
+                Project project = projectRepository.findById(projectId)
+                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                "Project not found: " + projectId));
+                if (projectMemberService.isMember(projectId, user.getId())
+                                || canViewAllProjectsInCompany(project.getCompany().getId(), user.getId())) {
+                        return project;
+                }
+                throw new AppExceptions.ForbiddenException("Access denied to project: " + projectId);
+        }
+
+        private Project getProjectForProjectAdmin(UUID projectId, User user) {
+                Project project = projectRepository.findById(projectId)
+                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                "Project not found: " + projectId));
+                if (!projectMemberService.isMember(projectId, user.getId())) {
+                        throw new AppExceptions.ForbiddenException("Access denied to project: " + projectId);
+                }
+                if (projectMemberService.getRole(projectId, user.getId()) != ProjectRole.ADMIN) {
+                        throw new AppExceptions.ForbiddenException("Only project ADMINs can manage projects");
+                }
+                return project;
+        }
+
+        private boolean canViewAllProjectsInCompany(UUID companyId, UUID userId) {
+                return companyMemberService.findByUserId(userId).stream()
+                                .filter(m -> m.getCompany().getId().equals(companyId))
+                                .anyMatch(m -> m.getRole() == CompanyRole.ACCOUNT_OWNER
+                                                || m.getRole() == CompanyRole.ADMIN);
+        }
+
+        private Company getOwnedCompany(User user) {
+                return companyRepository.findByOwner_Id(user.getId())
+                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                "Company not found for owner userId: " + user.getId()));
+        }
+
+        private ProjectResponses.Project toResponse(Project project, User user) {
+                ProjectRole role = projectMemberService.isMember(project.getId(), user.getId())
+                                ? projectMemberService.getRole(project.getId(), user.getId())
+                                : null;
+                return new ProjectResponses.Project(
+                                project.getId(), project.getName(), project.getDescription(),
+                                project.getLocation(), project.getStartDate(),
+                                project.getCompany().getId(), project.getCreatedBy().getId(),
+                                role, project.getCreatedAt(), project.getUpdatedAt());
+        }
+
+        // -------------------------------------------------------------------------
+        // Shared utilities
+        // -------------------------------------------------------------------------
+
+        private List<String> parseAttachedElementIds(String raw) {
+                if (raw == null || raw.isBlank())
+                        return List.of();
                 String trimmed = raw.trim();
                 if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
                         String body = trimmed.substring(1, trimmed.length() - 1).trim();
-                        if (body.isEmpty()) {
+                        if (body.isEmpty())
                                 return List.of();
-                        }
-                        String[] parts = body.split(",");
-                        return Arrays.stream(parts)
+                        return Arrays.stream(body.split(","))
                                         .map(String::trim)
-                                        .map(value -> value.replaceAll("^\"|\"$", ""))
-                                        .filter(value -> !value.isBlank())
+                                        .map(s -> s.replaceAll("^\"|\"$", ""))
+                                        .filter(s -> !s.isBlank())
                                         .toList();
                 }
                 return Arrays.stream(trimmed.split(","))
                                 .map(String::trim)
-                                .filter(value -> !value.isBlank())
+                                .filter(s -> !s.isBlank())
                                 .toList();
         }
 
         private String displayName(User user) {
-                String firstName = user.getFirstName();
-                String lastName = user.getLastName();
-                if (firstName != null && !firstName.isBlank() && lastName != null && !lastName.isBlank()) {
-                        return firstName + " " + lastName;
-                }
-                if (firstName != null && !firstName.isBlank()) {
-                        return firstName;
-                }
-                if (lastName != null && !lastName.isBlank()) {
-                        return lastName;
-                }
+                String f = user.getFirstName(), l = user.getLastName();
+                if (f != null && !f.isBlank() && l != null && !l.isBlank())
+                        return f + " " + l;
+                if (f != null && !f.isBlank())
+                        return f;
+                if (l != null && !l.isBlank())
+                        return l;
                 return user.getEmail();
         }
 
         private int avatarHue(String email) {
-                if (email == null || email.isBlank()) {
+                if (email == null || email.isBlank())
                         return 250;
-                }
                 return Math.floorMod(email.toLowerCase().hashCode(), 360);
         }
 }
