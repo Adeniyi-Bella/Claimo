@@ -24,7 +24,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { useUser } from "@clerk/react";
+import { useReverification, useUser } from "@clerk/react";
 import { useNavigate } from "@tanstack/react-router";
 
 export default function Settings() {
@@ -52,7 +52,7 @@ export default function Settings() {
     setOpen(false);
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = useReverification(async () => {
     if (!user || deletePending) return;
 
     setDeletePending(true);
@@ -70,7 +70,7 @@ export default function Settings() {
     } finally {
       setDeletePending(false);
     }
-  };
+  });
 
   return (
     <AppShell>
@@ -115,7 +115,6 @@ export default function Settings() {
               icon={Lock}
               disabled
               defaultValue="••••••••"
-              hint="Managed by Clerk"
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">

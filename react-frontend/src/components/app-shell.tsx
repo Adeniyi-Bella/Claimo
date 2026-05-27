@@ -10,7 +10,7 @@ import {
   // HelpCircle,
   Building2,
   LogOut,
-  User,
+  // User,
 } from "lucide-react";
 import { Avatar } from "./common/avatar";
 import { COMPANY } from "@/lib/mock-data";
@@ -83,14 +83,17 @@ function UserMenuContent({ onSignOut }: { onSignOut: () => void }) {
           {currentUser.email}
         </div>
       </div>
-      <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition">
+      {/* <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition">
         <User className="h-3.5 w-3.5" />
         Profile
-      </button>
-      <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition">
+      </button> */}
+      <Link
+        to="/settings"
+        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition"
+      >
         <Settings className="h-3.5 w-3.5" />
         Settings
-      </button>
+      </Link>
       <div className="my-1 border-t border-border" />
       <button
         onClick={onSignOut}
