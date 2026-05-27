@@ -4,8 +4,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
+import com.claimo.api.projects.dto.response.DashboardResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
-import com.claimo.api.user.dto.DashboardResponse;
 
 import java.util.List;
 import java.util.UUID;

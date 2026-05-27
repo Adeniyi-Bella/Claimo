@@ -3,9 +3,9 @@ package com.claimo.api.projects.controller;
 import com.claimo.api.exceptions.CustomApiResponse;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
+import com.claimo.api.projects.dto.response.DashboardResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.service.ProjectService;
-import com.claimo.api.user.dto.DashboardResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

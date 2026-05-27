@@ -1,4 +1,4 @@
-package com.claimo.api.user.dto;
+package com.claimo.api.projects.dto.response;
 
 import java.time.Instant;
 import java.time.LocalDate;
