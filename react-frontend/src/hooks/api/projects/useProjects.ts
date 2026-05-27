@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import { UnauthorizedError } from "@/api/error/customeError";
 import { ProjectApi } from "@/api/project.api";
-import type { ProjectsPageResponse } from "@/api/dto/responseDto";
+import type { ProjectResponse } from "@/api/dto/responseDto";
 
 export const projectsQueryKey = ["projects"] as const;
 
 export function useProjects() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
-  return useQuery<ProjectsPageResponse[]>({
+  return useQuery<ProjectResponse[]>({
     queryKey: projectsQueryKey,
     queryFn: async () => {
       const token = await getToken();

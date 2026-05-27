@@ -1,5 +1,5 @@
 import type { Member, Project } from "@/lib/mock-data";
-import { RoleBadge, StatusBadge } from "@/components/common/status-badge";
+import { RoleBadge } from "@/components/common/status-badge";
 import { Avatar } from "@/components/common/avatar";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
@@ -80,30 +80,6 @@ export default function MembersTab({
                 </td>
               </tr>
             ))}
-            <tr className="bg-status-invite/30">
-              <td className="px-5 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full border border-dashed border-status-invite-fg/40 inline-flex items-center justify-center text-status-invite-fg">
-                    <UserPlus className="h-3.5 w-3.5" />
-                  </div>
-                  <div>
-                    <div className="font-medium">jonas@stoneworks.dk</div>
-                    <div className="text-xs text-muted-foreground">
-                      Invitation sent 2 days ago
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-5 py-3">
-                <StatusBadge status="PENDING_INVITE" />
-              </td>
-              <td className="px-5 py-3 text-muted-foreground">—</td>
-              <td className="px-5 py-3 text-right">
-                <button className="text-xs text-muted-foreground hover:text-foreground transition">
-                  Resend
-                </button>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>

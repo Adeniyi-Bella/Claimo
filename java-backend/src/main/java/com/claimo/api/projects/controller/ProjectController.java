@@ -64,10 +64,10 @@ public class ProjectController {
                         @ApiResponse(responseCode = "403", description = "Access denied"),
                         @ApiResponse(responseCode = "404", description = "Project not found")
         })
-        public ResponseEntity<CustomApiResponse<ProjectResponses.Project>> getProjectById(
+        public ResponseEntity<CustomApiResponse<ProjectResponses.ProjectDetails>> getProjectById(
                         @AuthenticationPrincipal Jwt jwt,
                         @PathVariable UUID projectId) {
-                ProjectResponses.Project response = projectService.getProjectById(jwt, projectId);
+                ProjectResponses.ProjectDetails response = projectService.getProjectById(jwt, projectId);
                 return ResponseEntity.ok(CustomApiResponse.success(response));
         }
 

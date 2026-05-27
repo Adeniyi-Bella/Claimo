@@ -1,25 +1,26 @@
 import { useAuth } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
 
-import { DashboardApi } from "@/api/dashboard.api";
+import { ProjectApi } from "@/api/project.api";
 import { UnauthorizedError } from "@/api/error/customeError";
-import type { DashboardResponse } from "@/api/dto/responseDto";
+import type { ProjectResponse } from "@/api/dto/responseDto";
 
-export const dashboardQueryKey = ["dashboard"] as const;
+export const projectQueryKey = (projectId: string) =>
+  ["projects", projectId] as const;
 
-export function useDashboard() {
+export function useProject(projectId: string) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
-  return useQuery<DashboardResponse>({
-    queryKey: dashboardQueryKey,
+  return useQuery<ProjectResponse>({
+    queryKey: projectQueryKey(projectId),
     queryFn: async () => {
       const token = await getToken();
       if (!token) {
         throw new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401);
       }
-      return DashboardApi.getDashboard(token);
+      return ProjectApi.getProjectById(token, projectId);
     },
-    enabled: isLoaded && isSignedIn,
+    enabled: isLoaded && isSignedIn && !!projectId,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,

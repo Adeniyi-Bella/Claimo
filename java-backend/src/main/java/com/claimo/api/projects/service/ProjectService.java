@@ -13,7 +13,7 @@ public interface ProjectService {
 
     List<ProjectResponses.ProjectDetails> getProjects(Jwt jwt);
 
-    ProjectResponses.Project getProjectById(Jwt jwt, UUID projectId);
+    ProjectResponses.ProjectDetails getProjectById(Jwt jwt, UUID projectId);
 
     ProjectResponses.Project updateProject(Jwt jwt, UUID projectId, ProjectRequests.UpdateProject request);
 

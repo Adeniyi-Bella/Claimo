@@ -13,7 +13,8 @@ import Overview from "@/components/project/tabs/Overview";
 import PaymentItemsTab from "@/components/project/tabs/PaymentItems";
 import { Sheet, SheetContent } from "@/components/common/sheet";
 import { useProjectDetail } from "@/components/project/useProjectDetail";
-import { fmtDate, projectSummary } from "@/lib/mock-data";
+import { DashboardLoader } from "@/components/common/loader/loader";
+import { fmtDate, projectSummary } from "@/utils";
 
 const TABS = ["Overview", "Models", "Members", "Payment Items"] as const;
 
@@ -43,7 +44,24 @@ export default function ProjectDetail() {
     setOpenAddItem,
     setOpenInvite,
     setOpenUpload,
+    isError,
+    isLoading,
+    refetch,
   } = useProjectDetail(projectId);
+
+  if (isLoading) {
+    return <DashboardLoader />;
+  }
+
+  if (isError) {
+    return (
+      <AppShell>
+        <div className="px-6 lg:px-10 py-8 max-w-[1400px]">
+          <ErrorState onRetry={() => void refetch()} />
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!project) {
     return (
@@ -218,5 +236,22 @@ export default function ProjectDetail() {
         </SheetContent>
       </Sheet>
     </AppShell>
+  );
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-8 shadow-soft">
+      <div className="text-sm font-semibold">Project unavailable</div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        We couldn&apos;t load this project right now.
+      </p>
+      <button
+        onClick={onRetry}
+        className="mt-4 h-9 px-3.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition"
+      >
+        Try again
+      </button>
+    </div>
   );
 }

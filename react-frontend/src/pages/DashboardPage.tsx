@@ -21,8 +21,8 @@ import { RoleBadge } from "@/components/common/status-badge";
 import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDialog";
 import { useCreateProject } from "@/hooks/api/projects/useCreateProject";
 import { useDashboard } from "@/hooks/api/useDashboard";
-import type { DashboardProject } from "@/api/types";
 import { fmtCurrency, fmtDate } from "@/utils";
+import type { ProjectResponse } from "@/api/dto/responseDto";
 
 export default function DashboardPage() {
   const { data, isLoading, isError, refetch } = useDashboard();
@@ -159,7 +159,7 @@ function FilledDashboard({
   companyName: string;
   role: string;
   userName: string;
-  projects: DashboardProject[];
+  projects: ProjectResponse[];
   onCreateClick: () => void;
 }) {
   const totalModels = projects.reduce(
@@ -398,7 +398,7 @@ function Step({
   );
 }
 
-function summarizeProject(project: DashboardProject) {
+function summarizeProject(project: ProjectResponse) {
   const items = project.models.flatMap((model) => model.paymentItems);
   return items.reduce(
     (acc, item) => {

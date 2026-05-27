@@ -1,7 +1,6 @@
 import { apiClient } from "@/api/clients/axiosClient";
 import { requireApiData } from "@/api/response";
-import type { CustomApiResponse } from "@/api/dto/responseDto";
-import type { DashboardResponse } from "@/api/types";
+import type { CustomApiResponse, DashboardResponse } from "@/api/dto/responseDto";
 
 export class DashboardApi {
   static async getDashboard(token: string): Promise<DashboardResponse> {

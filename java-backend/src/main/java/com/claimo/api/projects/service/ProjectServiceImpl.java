@@ -12,12 +12,13 @@ import com.claimo.api.projects.dto.response.ProjectResponses.AuditEntry;
 import com.claimo.api.projects.dto.response.ProjectResponses.Claim;
 import com.claimo.api.projects.dto.response.ProjectResponses.Member;
 import com.claimo.api.projects.dto.response.ProjectResponses.Model;
-import com.claimo.api.projects.dto.response.ProjectResponses.PaymentItem;
+import com.claimo.api.projects.dto.response.ProjectResponses.PaymentItemResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses.ProjectDetails;
 import com.claimo.api.projects.enums.ProjectRole;
 import com.claimo.api.projects.models.Project;
 import com.claimo.api.projects.models.ProjectMember;
 import com.claimo.api.projects.models.ProjectModel;
+import com.claimo.api.projects.models.PaymentItem;
 import com.claimo.api.projects.models.PaymentItemAuditEntry;
 import com.claimo.api.projects.models.PaymentItemClaim;
 import com.claimo.api.projects.repository.ProjectRepository;
@@ -148,7 +149,7 @@ public class ProjectServiceImpl implements ProjectService {
                         model -> model.getProject().getId(),
                         LinkedHashMap::new,
                         Collectors.toList()));
-        Map<UUID, List<com.claimo.api.projects.models.PaymentItem>> paymentItemsByProject = paymentItemRepository
+        Map<UUID, List<PaymentItem>> paymentItemsByProject = paymentItemRepository
                 .findAllByProject_IdIn(projectIds).stream()
                 .collect(Collectors.groupingBy(
                         item -> item.getProject().getId(),
@@ -168,10 +169,15 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponses.Project getProjectById(Jwt jwt, UUID projectId) {
+    @Transactional(readOnly = true)
+    public ProjectResponses.ProjectDetails getProjectById(Jwt jwt, UUID projectId) {
         User user = getAuthenticatedUser(jwt);
         Project project = getProjectForView(projectId, user);
-        return toResponse(project, user);
+        return toDetails(
+                project,
+                projectMemberRepository.findAllByProjectId(projectId),
+                projectModelRepository.findAllByProject_IdIn(List.of(projectId)),
+                paymentItemRepository.findAllByProject_IdIn(List.of(projectId)));
     }
 
     @Override
@@ -289,8 +295,8 @@ public class ProjectServiceImpl implements ProjectService {
             Project project,
             List<ProjectMember> members,
             List<ProjectModel> models,
-            List<com.claimo.api.projects.models.PaymentItem> paymentItems) {
-        Map<UUID, List<com.claimo.api.projects.models.PaymentItem>> paymentItemsByModel = paymentItems.stream()
+            List<PaymentItem> paymentItems) {
+        Map<UUID, List<PaymentItem>> paymentItemsByModel = paymentItems.stream()
                 .collect(Collectors.groupingBy(
                         item -> item.getModel().getId(),
                         LinkedHashMap::new,
@@ -334,9 +340,9 @@ public class ProjectServiceImpl implements ProjectService {
                 modelDtos);
     }
 
-    private List<PaymentItem> toPaymentItemDtos(List<com.claimo.api.projects.models.PaymentItem> items) {
+    private List<PaymentItemResponse> toPaymentItemDtos(List<PaymentItem> items) {
         return items.stream()
-                .map(item -> new PaymentItem(
+                .map(item -> new PaymentItemResponse(
                         item.getId(),
                         item.getCategory(),
                         item.getModel() == null ? null : item.getModel().getId().toString(),

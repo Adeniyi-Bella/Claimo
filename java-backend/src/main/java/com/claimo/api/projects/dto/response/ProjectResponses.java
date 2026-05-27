@@ -63,10 +63,10 @@ public class ProjectResponses {
             String fileUrl,
             Instant uploadedAt,
             String uploadedBy,
-            List<PaymentItem> paymentItems) {
+            List<PaymentItemResponse> paymentItems) {
     }
 
-    public record PaymentItem(
+    public record PaymentItemResponse(
             UUID id,
             String category,
             String modelId,
