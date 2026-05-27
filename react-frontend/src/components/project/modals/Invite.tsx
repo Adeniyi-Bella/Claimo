@@ -3,7 +3,10 @@ import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/common/dialog";
-import type { Member, Project, ProjectRole } from "@/lib/mock-data";
+import type { ProjectResponse, ProjectRole } from "@/api/dto/responseDto";
+import { useInviteMember } from "@/hooks/api/projects/useInviteMember";
+import { ApiError } from "@/api/error/customeError";
+import { toast } from "@/hooks/use-toast";
 
 const ROLE_OPTIONS: { value: ProjectRole; label: string }[] = [
   { value: "CONTRACTOR", label: "Contractor — can submit claims" },
@@ -16,48 +19,48 @@ export default function InviteModal({
   open,
   onOpenChange,
   project,
-  onInvite,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  project: Project;
-  onInvite: (member: Member) => void;
+  project: ProjectResponse;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<ProjectRole>("CONTRACTOR");
   const [error, setError] = useState("");
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      setError("Name and email are required.");
-      return;
-    }
-    if (project.members.some((m) => m.email === email.trim())) {
-      setError("This email is already a member of this project.");
-      return;
-    }
+  const { mutateAsync, isPending } = useInviteMember(project.id);
 
-    const member: Member = {
-      id: `m-${Date.now()}`,
-      name: name.trim(),
-      email: email.trim(),
-      role,
-      joined: new Date().toISOString().slice(0, 10),
-      avatarHue: Math.floor(Math.random() * 360),
-    };
-
-    onInvite(member);
+  const reset = () => {
     setName("");
     setEmail("");
     setRole("CONTRACTOR");
     setError("");
-    onOpenChange(false);
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      await mutateAsync({ fullName: name.trim(), email: email.trim(), role });
+      reset();
+      onOpenChange(false);
+      toast({
+        title: "Invitation sent",
+        description: `${email.trim()} has been invited to the project.`,
+      });
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Failed to send invite. Please try again.";
+      setError(message);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (!isPending) { reset(); onOpenChange(v); } }}>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={submit}>
           <DialogHeader>
@@ -100,23 +103,23 @@ export default function InviteModal({
                 ))}
               </select>
             </div>
-            {error && (
-              <div className="text-xs text-red-500">{error}</div>
-            )}
+            {error && <div className="text-xs text-red-500">{error}</div>}
           </div>
           <DialogFooter>
             <button
               type="button"
-              onClick={() => onOpenChange(false)}
-              className="h-9 px-3 rounded-md border border-border bg-surface text-sm hover:bg-accent transition"
+              disabled={isPending}
+              onClick={() => { reset(); onOpenChange(false); }}
+              className="h-9 px-3 rounded-md border border-border bg-surface text-sm hover:bg-accent transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="h-9 px-3.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition"
+              disabled={isPending}
+              className="h-9 px-3.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition disabled:opacity-50"
             >
-              Add member
+              {isPending ? "Sending…" : "Add member"}
             </button>
           </DialogFooter>
         </form>

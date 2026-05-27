@@ -1,30 +1,66 @@
-import type { Member, Project } from "@/lib/mock-data";
+import { useState } from "react";
+import { UserPlus, Clock } from "lucide-react";
+
+import type {
+  Member,
+  PendingInvite,
+  ProjectResponse,
+} from "@/api/dto/responseDto";
 import { RoleBadge } from "@/components/common/status-badge";
 import { Avatar } from "@/components/common/avatar";
-import { UserPlus } from "lucide-react";
-import { useState } from "react";
 import {
-  Dialog, DialogContent, DialogHeader,
-  DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/common/dialog";
-import { fmtDate } from "@/lib/mock-data";
+import { useRemoveMember } from "@/hooks/api/projects/useRemoveMember";
+import { fmtDate } from "@/utils";
+import { toast } from "@/hooks/use-toast";
+import { ApiError } from "@/api/error/customeError";
 
 export default function MembersTab({
   project,
   onInvite,
-  onRemove,
+  currentUserId,
 }: {
-  project: Project;
+  project: ProjectResponse;
   onInvite: () => void;
-  onRemove: (memberId: string) => void;
+  currentUserId: string;
 }) {
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
+  const { mutateAsync, isPending } = useRemoveMember(project.id);
 
-  const confirmRemove = () => {
-    if (!memberToRemove) return;
-    onRemove(memberToRemove.id);
-    setMemberToRemove(null);
+  const isAccountOwner = project.currentUserCompanyRole === "ACCOUNT_OWNER";
+
+  const canRemove = (m: Member) => {
+    if (isAccountOwner) return m.id !== currentUserId;
+    return m.id === currentUserId;
   };
+
+  const confirmRemove = async () => {
+    if (!memberToRemove) return;
+    try {
+      await mutateAsync(memberToRemove.id);
+      setMemberToRemove(null);
+      toast({
+        title: "Member removed",
+        description: `${memberToRemove.name} has been removed from the project.`,
+      });
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Failed to remove member. Please try again.";
+      toast({ title: "Error", description: message, variant: "destructive" });
+      setMemberToRemove(null);
+    }
+  };
+
+  const totalCount =
+    project.members.length + (project.pendingInvites?.length ?? 0);
 
   return (
     <>
@@ -33,7 +69,7 @@ export default function MembersTab({
           <div>
             <div className="text-sm font-semibold">Project members</div>
             <div className="text-xs text-muted-foreground">
-              {project.members.length} members can access this project
+              {totalCount} members can access this project
             </div>
           </div>
           <button
@@ -60,7 +96,9 @@ export default function MembersTab({
                     <Avatar name={m.name} hue={m.avatarHue} size={32} />
                     <div>
                       <div className="font-medium">{m.name}</div>
-                      <div className="text-xs text-muted-foreground">{m.email}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {m.email}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -71,12 +109,52 @@ export default function MembersTab({
                   {fmtDate(m.joined)}
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <button
-                    onClick={() => setMemberToRemove(m)}
-                    className="text-xs text-muted-foreground hover:text-destructive transition"
-                  >
-                    Remove
-                  </button>
+                  {canRemove(m) && (
+                    <button
+                      onClick={() => setMemberToRemove(m)}
+                      className="text-xs text-muted-foreground hover:text-destructive transition"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+
+            {project.pendingInvites?.map((invite: PendingInvite) => (
+              <tr
+                key={invite.id}
+                className="hover:bg-accent/40 transition opacity-60"
+              >
+                <td className="px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    {/* Generic avatar for pending — no name yet */}
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-muted-foreground">
+                        {invite.email}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Invited by {invite.invitedByName}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-5 py-3">
+                  <RoleBadge role={invite.role} />
+                </td>
+                <td className="px-5 py-3 text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    <Clock className="h-3 w-3" />{" "}
+                    {invite.status.charAt(0) +
+                      invite.status.slice(1).toLowerCase()}{" "}
+                    · {fmtDate(invite.createdAt)}
+                  </span>
+                </td>
+                <td className="px-5 py-3 text-right">
+                  {/* Cancel invite — wire up later if needed */}
                 </td>
               </tr>
             ))}
@@ -84,29 +162,35 @@ export default function MembersTab({
         </table>
       </div>
 
-      {/* Remove confirmation dialog */}
-      <Dialog open={!!memberToRemove} onOpenChange={(v) => !v && setMemberToRemove(null)}>
+      <Dialog
+        open={!!memberToRemove}
+        onOpenChange={(v) => !v && setMemberToRemove(null)}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Remove member</DialogTitle>
             <DialogDescription>
               Are you sure you want to remove{" "}
-              <span className="font-medium text-foreground">{memberToRemove?.name}</span>{" "}
+              <span className="font-medium text-foreground">
+                {memberToRemove?.name}
+              </span>{" "}
               from this project? They will lose access immediately.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <button
               onClick={() => setMemberToRemove(null)}
-              className="h-9 px-3 rounded-md border border-border bg-surface text-sm hover:bg-accent transition"
+              disabled={isPending}
+              className="h-9 px-3 rounded-md border border-border bg-surface text-sm hover:bg-accent transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
-              onClick={confirmRemove}
-              className="h-9 px-3.5 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition"
+              onClick={() => void confirmRemove()}
+              disabled={isPending}
+              className="h-9 px-3.5 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition disabled:opacity-50"
             >
-              Remove member
+              {isPending ? "Removing…" : "Remove member"}
             </button>
           </DialogFooter>
         </DialogContent>

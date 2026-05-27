@@ -1,10 +1,13 @@
 package com.claimo.api.user.service;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.claimo.api.company.CompanyRepository;
@@ -54,7 +57,8 @@ public class DashboardServiceImpl implements DashboardService {
      *
      * Data is batched to avoid N+1 queries:
      * - Members are fetched once per company
-     * - Models and payment items are fetched with IN-clause queries across all project IDs
+     * - Models and payment items are fetched with IN-clause queries across all
+     * project IDs
      *
      * @param jwt the JWT token of the authenticated user
      * @return a fully populated DashboardResponse
@@ -62,28 +66,46 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public DashboardResponse getDashboard(Jwt jwt) {
-        
+
         User user = getAuthenticatedUser(jwt);
 
-        // Determine which company context to use for this user
-        // Prefers owned company, falls back to first membership
         CompanyContext currentCompany = resolveCompanyContext(user);
-        UUID companyId = currentCompany.company().getId();
 
-        // Fetch all projects for this company and sort by creation date descending
-        // Null creation dates are pushed to the end
-        List<Project> projects = projectRepository.findAllByCompanyId(companyId);
-        projects.sort(Comparator.comparing(Project::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+        // Collect all company IDs the user is associated with
+        List<UUID> allCompanyIds = new ArrayList<>();
+        allCompanyIds.add(currentCompany.company().getId());
 
-        // Batch fetch all related data — no N+1
+        // Add any additional company memberships
+        companyMemberService.findByUserId(user.getId()).stream()
+                .map(m -> m.getCompany().getId())
+                .filter(id -> !allCompanyIds.contains(id))
+                .forEach(allCompanyIds::add);
+
+        // Fetch projects across all companies
+        List<Project> projects = projectRepository.findAllByCompanyIdIn(allCompanyIds);
+
+        // If not an admin in ALL companies, filter down to only assigned projects
+        Set<UUID> adminCompanyIds = getAdminCompanyIds(user);
+        if (!adminCompanyIds.containsAll(allCompanyIds)) {
+            Set<UUID> userProjectIds = projectMemberRepository.findAllByUser_Id(user.getId())
+                    .stream()
+                    .map(pm -> pm.getProject().getId())
+                    .collect(java.util.stream.Collectors.toSet());
+
+            projects = projects.stream()
+                    .filter(p -> adminCompanyIds.contains(p.getCompany().getId())
+                            || userProjectIds.contains(p.getId()))
+                    .toList();
+        }
+
+        projects = projects.stream()
+                .sorted(Comparator.comparing(Project::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+
         Map<UUID, List<ProjectMember>> membersByProject = loadMembersByProject(projects);
         Map<UUID, List<ProjectModel>> modelsByProject = loadModelsByProject(projects);
-
-        // Note: payment items are keyed by model ID, not project ID
-        // This is because payment items belong to models, not directly to projects
         Map<UUID, List<PaymentItem>> paymentItemsByModel = loadPaymentItemsByModel(projects);
 
-        // Map each project to a summary, injecting pre-fetched members, models, and payment items
         List<DashboardResponse.ProjectSummary> projectSummaries = projects.stream()
                 .map(project -> new DashboardResponse.ProjectSummary(
                         project.getId(),
@@ -93,7 +115,8 @@ public class DashboardServiceImpl implements DashboardService {
                         project.getStartDate(),
                         "Active",
                         toMemberSummaries(membersByProject.getOrDefault(project.getId(), List.of())),
-                        toModelSummaries(modelsByProject.getOrDefault(project.getId(), List.of()), paymentItemsByModel)))
+                        toModelSummaries(modelsByProject.getOrDefault(project.getId(), List.of()),
+                                paymentItemsByModel)))
                 .toList();
 
         return new DashboardResponse(
@@ -108,11 +131,32 @@ public class DashboardServiceImpl implements DashboardService {
                 projectSummaries);
     }
 
+    private Set<UUID> getAdminCompanyIds(User user) {
+        Set<UUID> adminIds = new HashSet<>();
+
+        // Owned company — always admin
+        companyRepository.findByOwner_Id(user.getId())
+                .ifPresent(c -> adminIds.add(c.getId()));
+
+        // Company memberships with admin role
+        companyMemberService.findByUserId(user.getId()).stream()
+                .filter(m -> isCompanyAdmin(m.getRole()))
+                .map(m -> m.getCompany().getId())
+                .forEach(adminIds::add);
+
+        return adminIds;
+    }
+
+    private boolean isCompanyAdmin(CompanyRole role) {
+    return role == CompanyRole.ACCOUNT_OWNER || role == CompanyRole.ADMIN;
+}
+
     /**
      * Resolves the company context for the given user.
      *
      * Priority:
-     * 1. If the user owns a company, they are treated as ACCOUNT_OWNER of that company
+     * 1. If the user owns a company, they are treated as ACCOUNT_OWNER of that
+     * company
      * 2. Otherwise, the first company membership is used
      *
      * Throws ResourceNotFoundException if no company association exists.
@@ -168,7 +212,8 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     /**
-     * Batch fetches all models for the given projects using a single IN-clause query,
+     * Batch fetches all models for the given projects using a single IN-clause
+     * query,
      * then groups them by project ID.
      */
     private Map<UUID, List<ProjectModel>> loadModelsByProject(List<Project> projects) {
@@ -185,7 +230,8 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     /**
-     * Batch fetches all payment items for the given projects using a single IN-clause query,
+     * Batch fetches all payment items for the given projects using a single
+     * IN-clause query,
      * then groups them by model ID.
      *
      * Note: keyed by model ID (not project ID) because payment items are
@@ -285,7 +331,8 @@ public class DashboardServiceImpl implements DashboardService {
      * Returns an empty list if claims is null.
      */
     private List<DashboardResponse.ClaimSummary> toClaimSummaries(java.util.Collection<PaymentItemClaim> claims) {
-        return claims == null ? List.of() : claims.stream()
+        return claims == null ? List.of()
+                : claims.stream()
                         .map(claim -> new DashboardResponse.ClaimSummary(
                                 claim.getId(),
                                 claim.getSequence(),
@@ -308,8 +355,10 @@ public class DashboardServiceImpl implements DashboardService {
      * Maps audit trail entries to AuditEntrySummary DTOs.
      * Returns an empty list if auditTrail is null.
      */
-    private List<DashboardResponse.AuditEntrySummary> toAuditEntrySummaries(java.util.Collection<PaymentItemAuditEntry> auditTrail) {
-        return auditTrail == null ? List.of() : auditTrail.stream()
+    private List<DashboardResponse.AuditEntrySummary> toAuditEntrySummaries(
+            java.util.Collection<PaymentItemAuditEntry> auditTrail) {
+        return auditTrail == null ? List.of()
+                : auditTrail.stream()
                         .map(entry -> new DashboardResponse.AuditEntrySummary(
                                 entry.getId(),
                                 entry.getTimestamp(),
@@ -394,7 +443,8 @@ public class DashboardServiceImpl implements DashboardService {
 
     /**
      * Internal record holding a resolved company and the user's role within it.
-     * Used to avoid passing company and role as separate parameters through the call chain.
+     * Used to avoid passing company and role as separate parameters through the
+     * call chain.
      */
     private record CompanyContext(Company company, CompanyRole role) {
     }

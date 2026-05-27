@@ -4,6 +4,13 @@ export type ModelFileType = "ifc";
 export type ClaimDecision = "SUBMITTED" | "APPROVED" | "REJECTED";
 export type JobStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 export type PaymentStatusType = "NONE" | "PAID" | "REJECTED" | "APPROVED";
+export enum PendingInviteStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REVOKED = "REVOKED",
+}
+export type CompanyRole = "ACCOUNT_OWNER" | "ADMIN" | "MEMBER";
+
 
 export interface CustomApiErrorResponse {
   status: number;
@@ -26,6 +33,9 @@ export interface ProjectResponse {
   status: ProjectStatus;
   members: Member[];
   models: ProjectModel[];
+  pendingInvites: PendingInvite[];
+  currentUserRole: ProjectRole | null;
+   currentUserCompanyRole: CompanyRole | null;
 }
 
 export interface Member {
@@ -120,4 +130,13 @@ export interface DashboardResponse {
   user: DashboardUser;
   company: DashboardCompany;
   projects: ProjectResponse[];
+}
+
+export interface PendingInvite {
+  id: string;
+  email: string;
+  role: ProjectRole;
+  status: PendingInviteStatus;
+  invitedByName: string;
+  createdAt: string;
 }

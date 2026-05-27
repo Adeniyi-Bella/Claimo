@@ -7,7 +7,7 @@ import {
   saveProjectThumbs,
   updateProjects,
 } from "@/lib/project-storage";
-import type { ProjectResponse, PaymentItem, Member, ProjectModel } from "@/api/dto/responseDto";
+import type { ProjectResponse, PaymentItem, ProjectModel } from "@/api/dto/responseDto";
 
 export function useProjectDetail(projectId: string) {
   const { data, isLoading, isError, refetch } = useProject(projectId);
@@ -37,22 +37,22 @@ export function useProjectDetail(projectId: string) {
     });
   }, [project]);
 
-  const handleInvite = useCallback((member: Member) => {
-    setProject((current) =>
-      current ? { ...current, members: [...current.members, member] } : current,
-    );
-  }, []);
+  // const handleInvite = useCallback((member: Member) => {
+  //   setProject((current) =>
+  //     current ? { ...current, members: [...current.members, member] } : current,
+  //   );
+  // }, []);
 
-  const handleRemoveMember = useCallback((memberId: string) => {
-    setProject((current) =>
-      current
-        ? {
-            ...current,
-            members: current.members.filter((member) => member.id !== memberId),
-          }
-        : current,
-    );
-  }, []);
+  // const handleRemoveMember = useCallback((memberId: string) => {
+  //   setProject((current) =>
+  //     current
+  //       ? {
+  //           ...current,
+  //           members: current.members.filter((member) => member.id !== memberId),
+  //         }
+  //       : current,
+  //   );
+  // }, []);
 
   const handleUploadModel = useCallback((model: ProjectModel, thumb: string) => {
     setProject((current) =>
@@ -96,8 +96,8 @@ export function useProjectDetail(projectId: string) {
     activeItem,
     handleAddPaymentItem,
     handleDeleteModel,
-    handleInvite,
-    handleRemoveMember,
+    // handleInvite,
+    // handleRemoveMember,
     handleUploadModel,
     isError,
     isLoading,

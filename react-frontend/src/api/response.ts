@@ -21,3 +21,16 @@ export function requireApiData<T>(
 
   return response.data as NonNullable<T>;
 }
+
+export function requireApiSuccess(
+  response: CustomApiResponse<unknown>,
+  options: RequireApiDataOptions,
+): void {
+  if (!response.success) {
+    throw new ApiError(
+      options.message,
+      options.code,
+      options.statusCode ?? 502,
+    );
+  }
+}

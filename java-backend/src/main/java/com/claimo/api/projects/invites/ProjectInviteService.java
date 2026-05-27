@@ -9,6 +9,8 @@ import com.claimo.api.projects.service.ProjectMemberService;
 import com.claimo.api.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,6 +94,11 @@ public class ProjectInviteService {
 
     @Transactional
     public void logInvitationRevoked(String email, String clerkInvitationId) {
+        List<PendingInvite> invites = findInvites(clerkInvitationId, email);
+        for (PendingInvite invite : invites) {
+            invite.setStatus(PendingInviteStatus.REVOKED);
+            pendingInviteRepository.save(invite);
+        }
         log.info("Processed project invitation revoked event email={} invitationId={}", email, clerkInvitationId);
     }
 
@@ -123,12 +130,22 @@ public class ProjectInviteService {
     }
 
     private void finalizeInvite(PendingInvite invite, User user) {
-        if (!companyMemberService.isMemberOfCompany(user.getId(), invite.getCompany().getId())) {
-            companyMemberService.addMember(invite.getCompany(), user, CompanyRole.MEMBER);
-        }
+        log.info("Finalizing invite for email={} projectId={} userId={}",
+                invite.getEmail(), invite.getProject().getId(), user.getId());
 
-        if (!projectMemberService.isMember(invite.getProject().getId(), user.getId())) {
-            projectMemberService.addMember(invite.getProject(), user, invite.getRole());
+        try {
+            if (!companyMemberService.isMemberOfCompany(user.getId(), invite.getCompany().getId())) {
+                companyMemberService.addMember(invite.getCompany(), user, CompanyRole.MEMBER);
+                log.info("Added user to company companyId={}", invite.getCompany().getId());
+            }
+
+            if (!projectMemberService.isMember(invite.getProject().getId(), user.getId())) {
+                projectMemberService.addMember(invite.getProject(), user, invite.getRole());
+                log.info("Added user to project projectId={}", invite.getProject().getId());
+            }
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Duplicate finalize attempt ignored for email={} projectId={} — likely concurrent webhook",
+                    invite.getEmail(), invite.getProject().getId());
         }
     }
 }

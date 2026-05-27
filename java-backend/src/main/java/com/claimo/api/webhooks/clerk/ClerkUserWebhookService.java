@@ -55,12 +55,14 @@ public class ClerkUserWebhookService {
 
     private User createUserAndCompany(JsonNode data, String clerkUserId, String email,
             String firstName, String lastName, String fullName) {
-        boolean hasPendingInvites = companyInviteService.hasPendingInvites(email)
-                || projectInviteService.hasPendingInvites(email);
 
         User user = userService.createUser(clerkUserId, email, firstName, lastName);
 
-        if (!hasPendingInvites) {
+        boolean hasCompanyInvite = companyInviteService.hasPendingInvites(email);
+
+        // Only skip own company creation if they're joining an existing company
+        // Project-only invites should still get their own company
+        if (!hasCompanyInvite) {
             String companyName = data
                     .path("unsafe_metadata")
                     .path("company_name")
@@ -76,13 +78,12 @@ public class ClerkUserWebhookService {
 
             var company = companyService.createCompany(companyName, user);
             companyMemberService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
-
         }
 
         companyInviteService.markUserCreatedInvitesAccepted(email, user);
         projectInviteService.markUserCreatedInvitesAccepted(email, user);
 
-        log.info("Created company and user for clerkUserId={}", clerkUserId);
+        log.info("Created user and company (if applicable) for clerkUserId={}", clerkUserId);
 
         return user;
     }

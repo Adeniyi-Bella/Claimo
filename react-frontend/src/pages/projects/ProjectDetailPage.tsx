@@ -15,6 +15,7 @@ import { Sheet, SheetContent } from "@/components/common/sheet";
 import { useProjectDetail } from "@/components/project/useProjectDetail";
 import { DashboardLoader } from "@/components/common/loader/loader";
 import { fmtDate, projectSummary } from "@/utils";
+import { useDashboard } from "@/hooks/api/useDashboard";
 
 const TABS = ["Overview", "Models", "Members", "Payment Items"] as const;
 
@@ -27,13 +28,15 @@ export default function ProjectDetail() {
   const [tab, setTab] = useState<(typeof TABS)[number]>(
     (search as { tab?: (typeof TABS)[number] })?.tab ?? "Overview",
   );
+  const { data } = useDashboard();
+
 
   const {
     activeItem,
     handleAddPaymentItem,
     handleDeleteModel,
-    handleInvite,
-    handleRemoveMember,
+    // handleInvite,
+    // handleRemoveMember,
     handleUploadModel,
     modelThumbs,
     openAddItem,
@@ -191,7 +194,7 @@ export default function ProjectDetail() {
           <MembersTab
             project={project}
             onInvite={() => setOpenInvite(true)}
-            onRemove={handleRemoveMember}
+            currentUserId={data!.user?.id}
           />
         )}
         {tab === "Payment Items" && (
@@ -207,7 +210,7 @@ export default function ProjectDetail() {
         open={openInvite}
         onOpenChange={setOpenInvite}
         project={project}
-        onInvite={handleInvite}
+        // onInvite={handleInvite}
       />
       <UploadModelModal
         open={openUpload}

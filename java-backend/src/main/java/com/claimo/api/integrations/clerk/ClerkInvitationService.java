@@ -12,10 +12,13 @@ import com.claimo.api.exceptions.AppExceptions;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClerkInvitationService {
 
     private static final URI INVITATIONS_URI = URI.create("https://api.clerk.com/v1/invitations");
@@ -31,6 +34,8 @@ public class ClerkInvitationService {
             ObjectNode bodyNode = objectMapper.createObjectNode();
             bodyNode.put("email_address", emailAddress);
             bodyNode.put("redirect_url", clerkProperties.invitationRedirectUrl());
+            bodyNode.put("ignore_existing", true);
+
             String body = objectMapper.writeValueAsString(bodyNode);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -53,13 +58,32 @@ public class ClerkInvitationService {
                 return invitationId;
             }
 
-            if (statusCode == 409) {
+            log.error("Clerk invitation failed status={} body={}", statusCode, response.body());
+
+            String clerkError = "";
+            try {
+                clerkError = objectMapper.readTree(response.body())
+                        .path("errors").path(0).path("long_message").asText("");
+            } catch (Exception ignored) {
+            }
+
+            if (statusCode == 400) {
+                throw new AppExceptions.BadRequestException(
+                        clerkError.isBlank()
+                                ? "Invalid invitation request for email: " + emailAddress
+                                : clerkError);
+            }
+
+            if (statusCode == 409 || statusCode == 422) {
                 throw new AppExceptions.ConflictException(
-                        "Clerk already has an invitation or account for email: " + emailAddress);
+                        clerkError.isBlank()
+                                ? "Clerk already has an invitation or account for email: " + emailAddress
+                                : clerkError);
             }
 
             throw new AppExceptions.BadGatewayException(
                     "Clerk invitation request failed with status " + statusCode);
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new AppExceptions.GatewayTimeoutException(

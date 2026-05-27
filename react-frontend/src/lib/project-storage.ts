@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SetStateAction } from "react";
 
-import type {
-  Member,
-  PaymentItem,
-  Project,
-  ProjectModel,
-} from "@/lib/mock-data";
+import type { Member, PaymentItem, ProjectModel } from "@/lib/mock-data";
+import type { ProjectResponse } from "@/api/dto/responseDto";
 
 export const PROJECTS_SESSION_KEY = "claimo:projects";
 export const PROJECT_THUMBS_SESSION_KEY = "claimo:thumbs";
@@ -32,30 +28,33 @@ function notifyProjectsChanged() {
   window.dispatchEvent(new CustomEvent(PROJECTS_STORAGE_EVENT));
 }
 
-export function loadProjects(): Project[] {
-  return readSessionValue<Project[]>(PROJECTS_SESSION_KEY, []);
+export function loadProjects(): ProjectResponse[] {
+  return readSessionValue<ProjectResponse[]>(PROJECTS_SESSION_KEY, []);
 }
 
-export function saveProjects(projects: Project[]) {
+export function saveProjects(projects: ProjectResponse[]) {
   writeSessionValue(PROJECTS_SESSION_KEY, projects);
   notifyProjectsChanged();
 }
 
 export function loadProjectThumbs(): Record<string, string> {
-  return readSessionValue<Record<string, string>>(PROJECT_THUMBS_SESSION_KEY, {});
+  return readSessionValue<Record<string, string>>(
+    PROJECT_THUMBS_SESSION_KEY,
+    {},
+  );
 }
 
 export function saveProjectThumbs(thumbs: Record<string, string>) {
   writeSessionValue(PROJECT_THUMBS_SESSION_KEY, thumbs);
 }
 
-export function getProjectById(projectId: string): Project | null {
+export function getProjectById(projectId: string): ProjectResponse | null {
   return loadProjects().find((project) => project.id === projectId) ?? null;
 }
 
 export function updateProjects(
-  updater: (projects: Project[]) => Project[],
-): Project[] {
+  updater: (projects: ProjectResponse[]) => ProjectResponse[],
+): ProjectResponse[] {
   const next = updater(loadProjects());
   saveProjects(next);
   return next;
@@ -63,8 +62,8 @@ export function updateProjects(
 
 export function updateProjectById(
   projectId: string,
-  updater: (project: Project) => Project,
-): Project[] {
+  updater: (project: ProjectResponse) => ProjectResponse,
+): ProjectResponse[] {
   return updateProjects((projects) =>
     projects.map((project) =>
       project.id === projectId ? updater(project) : project,
@@ -112,7 +111,9 @@ export function addProjectPaymentItem(projectId: string, item: PaymentItem) {
 }
 
 export function useProjectList() {
-  const [projects, setProjectsState] = useState<Project[]>(() => loadProjects());
+  const [projects, setProjectsState] = useState<ProjectResponse[]>(() =>
+    loadProjects(),
+  );
 
   const refreshProjects = useCallback(() => {
     setProjectsState(loadProjects());
@@ -130,7 +131,7 @@ export function useProjectList() {
     };
   }, [refreshProjects]);
 
-  const setProjects = useCallback((next: SetStateAction<Project[]>) => {
+  const setProjects = useCallback((next: SetStateAction<ProjectResponse[]>) => {
     setProjectsState((current) => {
       const resolved = typeof next === "function" ? next(current) : next;
       saveProjects(resolved);

@@ -1,7 +1,10 @@
 import { apiClient } from "@/api/clients/axiosClient";
-import { requireApiData } from "@/api/response";
+import { requireApiData, requireApiSuccess } from "@/api/response";
 import type { CustomApiResponse, ProjectResponse } from "@/api/dto/responseDto";
-import type { CreateProjectRequestDto } from "@/api/dto/requestDto";
+import type {
+  CreateProjectRequestDto,
+  InviteMemberRequestDto,
+} from "@/api/dto/requestDto";
 
 export class ProjectApi {
   static async createProject(
@@ -59,6 +62,34 @@ export class ProjectApi {
       message: "Project response missing data",
       code: "EMPTY_PROJECT_RESPONSE",
       statusCode: response.status,
+    });
+  }
+
+  static async inviteMember(
+    token: string,
+    projectId: string,
+    data: InviteMemberRequestDto,
+  ): Promise<void> {
+    const response = await apiClient.post<CustomApiResponse<void>>(
+      `/projects/${projectId}/members`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+
+    return requireApiSuccess(response.data, {
+      message: "Failed to invite member",
+      code: "INVITE_MEMBER_FAILED",
+      statusCode: response.status,
+    });
+  }
+
+  static async removeMember(
+    token: string,
+    projectId: string,
+    userId: string,
+  ): Promise<void> {
+    await apiClient.delete(`/projects/${projectId}/members/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 }
