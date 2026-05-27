@@ -8,8 +8,8 @@ import com.claimo.api.integrations.clerk.ClerkInvitationService;
 import com.claimo.api.projects.models.PendingInvite;
 import com.claimo.api.projects.models.Project;
 import com.claimo.api.projects.models.ProjectMember;
+import com.claimo.api.projects.dto.ProjectMemberDto;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
-import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.enums.ProjectRole;
 import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.repository.PendingInviteRepository;
@@ -88,7 +88,7 @@ public class ProjectMemberInviteServiceImpl implements ProjectMemberInviteServic
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProjectResponses.ProjectMember> getMembers(Jwt jwt, UUID projectId) {
+    public List<ProjectMemberDto> getMembers(Jwt jwt, UUID projectId) {
         User user = getAuthenticatedUser(jwt);
         getProjectForMember(projectId, user);
 
@@ -166,8 +166,8 @@ public class ProjectMemberInviteServiceImpl implements ProjectMemberInviteServic
     /**
      * Maps ProjectMember entity to ProjectMember response DTO.
      */
-    private ProjectResponses.ProjectMember toResponse(ProjectMember member) {
-        return new ProjectResponses.ProjectMember(
+    private ProjectMemberDto toResponse(ProjectMember member) {
+        return new ProjectMemberDto(
                 member.getUser().getId(),
                 member.getUser().getEmail(),
                 member.getUser().getFirstName(),

@@ -52,15 +52,6 @@ public class ProjectResponses {
                         Instant createdAt) {
         }
 
-        public record ProjectMember(
-                        UUID userId,
-                        String email,
-                        String firstName,
-                        String lastName,
-                        ProjectRole role,
-                        Instant createdAt) {
-        }
-
         public record Member(
                         UUID id,
                         String name,
