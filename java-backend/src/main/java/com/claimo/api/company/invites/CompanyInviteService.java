@@ -8,12 +8,18 @@ import com.claimo.api.company.model.CompanyInvite;
 import com.claimo.api.company.CompanyRepository;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.integrations.clerk.ClerkInvitationService;
+import com.claimo.api.projects.enums.ProjectRole;
+import com.claimo.api.projects.models.Project;
+import com.claimo.api.projects.repository.ProjectMemberRepository;
+import com.claimo.api.projects.repository.ProjectRepository;
+import com.claimo.api.projects.service.ProjectMemberService;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -31,6 +37,9 @@ public class CompanyInviteService {
     private final CompanyInviteRepository companyInviteRepository;
     private final ClerkInvitationService clerkInvitationService;
     private final UserService userService;
+    private final ProjectRepository projectRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectMemberService projectMemberService;
 
     /**
      * Invites a user to a company by email.
@@ -188,8 +197,9 @@ public class CompanyInviteService {
      * Only processes PENDING invites — ACCEPTED and REVOKED invites are skipped
      * to avoid duplicate membership additions.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markUserCreatedInvitesAccepted(String email, User user) {
+        log.info("Checking pending invites for email={}", email);
         List<CompanyInvite> invites = companyInviteRepository.findAllByEmail(email).stream()
                 .filter(invite -> invite.getStatus() != CompanyInviteStatus.REVOKED)
                 .toList();
@@ -233,11 +243,23 @@ public class CompanyInviteService {
 
     /**
      * Adds the user as a company member if they are not already one.
+     * Adds them to all projects in the company with ADMIN role if the invite role
+     * is ADMIN.
      * Idempotent — safe to call multiple times on the same invite and user.
      */
     private void finalizeInvite(CompanyInvite invite, User user) {
         if (!companyMemberService.isMemberOfCompany(user.getId(), invite.getCompany().getId())) {
             companyMemberService.addMember(invite.getCompany(), user, invite.getRole());
+        }
+
+        if (invite.getRole() == CompanyRole.ADMIN) {
+            List<Project> companyProjects = projectRepository.findAllByCompanyIdIn(
+                    List.of(invite.getCompany().getId()));
+            for (Project project : companyProjects) {
+                if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), user.getId())) {
+                    projectMemberService.addMember(project, user, ProjectRole.ADMIN);
+                }
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import com.claimo.api.company.model.Company;
 import com.claimo.api.company.CompanyRepository;
 import com.claimo.api.company.dto.CompanyDto;
 import com.claimo.api.company.enums.CompanyRole;
+import com.claimo.api.company.invites.CompanyInviteService;
 import com.claimo.api.company.membership.CompanyMember;
 import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.exceptions.AppExceptions;
@@ -57,6 +58,7 @@ public class ProjectServiceImpl implements ProjectService {
         private final ProjectModelRepository projectModelRepository;
         private final PaymentItemRepository paymentItemRepository;
         private final PendingInviteRepository pendingInviteRepository;
+        private final CompanyInviteService companyInviteService;
 
         // -------------------------------------------------------------------------
         // Public API
@@ -207,6 +209,9 @@ public class ProjectServiceImpl implements ProjectService {
         @Transactional(readOnly = true)
         public DashboardResponse getDashboardData(Jwt jwt) {
                 User user = getAuthenticatedUser(jwt);
+
+                companyInviteService.markUserCreatedInvitesAccepted(user.getEmail(), user);
+
                 CompanyContext companyCtx = resolveCompanyContext(user);
 
                 // Collect all company IDs the user is associated with
