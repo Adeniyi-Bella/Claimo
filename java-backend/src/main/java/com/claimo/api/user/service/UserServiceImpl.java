@@ -3,9 +3,9 @@ package com.claimo.api.user.service;
 import java.util.List;
 import java.util.Optional;
 
-import com.claimo.api.company.membership.CompanyMember;
-import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.model.Company;
+import com.claimo.api.company.model.CompanyMember;
+import com.claimo.api.company.repository.CompanyMemberRepository;
 import com.claimo.api.exceptions.AppExceptions.ResourceNotFoundException;
 import com.claimo.api.user.UserRepository;
 import com.claimo.api.user.dto.UserProfileResponse;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final CompanyMemberService companyMemberService;
+    private final CompanyMemberRepository companyMemberRepository;
 
     @Override
     @Transactional
@@ -41,8 +41,8 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found for clerkUserId: " + clerkUserId));
 
-        List<UserProfileResponse.CompanyMembershipResponse> companies = companyMemberService
-                .findByUserId(user.getId())
+        List<UserProfileResponse.CompanyMembershipResponse> companies = companyMemberRepository
+                .findAllByUser_Id(user.getId())
                 .stream()
                 .map(this::toCompanyMembershipResponse)
                 .toList();

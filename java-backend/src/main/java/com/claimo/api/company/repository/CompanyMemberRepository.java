@@ -1,4 +1,4 @@
-package com.claimo.api.company.membership;
+package com.claimo.api.company.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -6,6 +6,9 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.claimo.api.company.model.CompanyMember;
+import com.claimo.api.company.model.CompanyMemberId;
 
 public interface CompanyMemberRepository extends JpaRepository<CompanyMember, CompanyMemberId> {
     @EntityGraph(attributePaths = "company")

@@ -1,7 +1,7 @@
 package com.claimo.api.projects.service;
 
 import com.claimo.api.company.model.Company;
-import com.claimo.api.company.membership.CompanyMemberService;
+import com.claimo.api.company.repository.CompanyMemberRepository;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.integrations.clerk.ClerkInvitationService;
 
@@ -36,7 +36,7 @@ public class ProjectMemberInviteServiceImpl implements ProjectMemberInviteServic
     private final ProjectMemberRepository projectMemberRepository;
     private final PendingInviteRepository pendingInviteRepository;
     private final UserService userService;
-    private final CompanyMemberService companyMemberService;
+    private final CompanyMemberRepository companyMemberRepository;
     private final ProjectMemberService projectMemberService;
     private final ClerkInvitationService clerkInvitationService;
 
@@ -62,7 +62,7 @@ public class ProjectMemberInviteServiceImpl implements ProjectMemberInviteServic
                 throw new AppExceptions.ConflictException("User is already a member of this project");
             }
 
-            if (companyMemberService.isMemberOfCompany(target.getId(), company.getId())) {
+            if (companyMemberRepository.existsByUser_IdAndCompany_Id(target.getId(), company.getId())) {
                 projectMemberService.addMember(project, target, role);
                 log.info("Added existing company member directly to project email={} projectId={}", email, projectId);
                 return;
@@ -173,7 +173,6 @@ public class ProjectMemberInviteServiceImpl implements ProjectMemberInviteServic
                 member.getUser().getFirstName(),
                 member.getUser().getLastName(),
                 member.getRole(),
-                member.getCreatedAt()
-        );
+                member.getCreatedAt());
     }
 }

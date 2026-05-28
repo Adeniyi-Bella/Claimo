@@ -1,4 +1,4 @@
-package com.claimo.api.company.membership;
+package com.claimo.api.company.model;
 
 import java.io.Serializable;
 import java.util.Objects;

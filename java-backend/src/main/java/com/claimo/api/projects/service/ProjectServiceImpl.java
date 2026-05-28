@@ -1,12 +1,12 @@
 package com.claimo.api.projects.service;
 
 import com.claimo.api.company.model.Company;
-import com.claimo.api.company.CompanyRepository;
+import com.claimo.api.company.model.CompanyMember;
+import com.claimo.api.company.repository.CompanyMemberRepository;
+import com.claimo.api.company.repository.CompanyRepository;
+import com.claimo.api.company.services.CompanyInviteService;
 import com.claimo.api.company.dto.CompanyDto;
 import com.claimo.api.company.enums.CompanyRole;
-import com.claimo.api.company.invites.CompanyInviteService;
-import com.claimo.api.company.membership.CompanyMember;
-import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
@@ -52,13 +52,13 @@ public class ProjectServiceImpl implements ProjectService {
         private final ProjectRepository projectRepository;
         private final CompanyRepository companyRepository;
         private final UserService userService;
-        private final CompanyMemberService companyMemberService;
         private final ProjectMemberService projectMemberService;
         private final ProjectMemberRepository projectMemberRepository;
         private final ProjectModelRepository projectModelRepository;
         private final PaymentItemRepository paymentItemRepository;
         private final PendingInviteRepository pendingInviteRepository;
         private final CompanyInviteService companyInviteService;
+        private final CompanyMemberRepository companyMemberRepository;
 
         // -------------------------------------------------------------------------
         // Public API
@@ -90,7 +90,7 @@ public class ProjectServiceImpl implements ProjectService {
         public List<ProjectDetails> getProjects(Jwt jwt) {
                 User user = getAuthenticatedUser(jwt);
 
-                Set<UUID> elevatedCompanyIds = companyMemberService.findByUserId(user.getId()).stream()
+                Set<UUID> elevatedCompanyIds = companyMemberRepository.findAllByUser_Id(user.getId()).stream()
                                 .filter(m -> m.getRole() == CompanyRole.ACCOUNT_OWNER
                                                 || m.getRole() == CompanyRole.ADMIN)
                                 .map(m -> m.getCompany().getId())
@@ -143,7 +143,7 @@ public class ProjectServiceImpl implements ProjectService {
                                 .findFirst()
                                 .orElse(null);
 
-                CompanyRole currentUserCompanyRole = companyMemberService.findByUserId(user.getId()).stream()
+                CompanyRole currentUserCompanyRole = companyMemberRepository.findAllByUser_Id(user.getId()).stream()
                                 .filter(m -> m.getCompany().getId().equals(project.getCompany().getId()))
                                 .map(CompanyMember::getRole)
                                 .findFirst()
@@ -217,7 +217,7 @@ public class ProjectServiceImpl implements ProjectService {
                 // Collect all company IDs the user is associated with
                 List<UUID> allCompanyIds = new ArrayList<>();
                 allCompanyIds.add(companyCtx.company().getId());
-                companyMemberService.findByUserId(user.getId()).stream()
+                companyMemberRepository.findAllByUser_Id(user.getId()).stream()
                                 .map(m -> m.getCompany().getId())
                                 .filter(id -> !allCompanyIds.contains(id))
                                 .forEach(allCompanyIds::add);
@@ -551,7 +551,7 @@ public class ProjectServiceImpl implements ProjectService {
                 if (owned != null) {
                         return new CompanyContext(owned, CompanyRole.ACCOUNT_OWNER);
                 }
-                List<CompanyMember> memberships = companyMemberService.findByUserId(user.getId());
+                List<CompanyMember> memberships = companyMemberRepository.findAllByUser_Id(user.getId());
                 if (memberships.isEmpty()) {
                         throw new AppExceptions.ResourceNotFoundException(
                                         "Company not found for userId: " + user.getId());
@@ -563,7 +563,7 @@ public class ProjectServiceImpl implements ProjectService {
         private Set<UUID> getAdminCompanyIds(User user) {
                 Set<UUID> ids = new HashSet<>();
                 companyRepository.findByOwner_Id(user.getId()).ifPresent(c -> ids.add(c.getId()));
-                companyMemberService.findByUserId(user.getId()).stream()
+                companyMemberRepository.findAllByUser_Id(user.getId()).stream()
                                 .filter(m -> m.getRole() == CompanyRole.ACCOUNT_OWNER
                                                 || m.getRole() == CompanyRole.ADMIN)
                                 .map(m -> m.getCompany().getId())
@@ -609,7 +609,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         private boolean canViewAllProjectsInCompany(UUID companyId, UUID userId) {
-                return companyMemberService.findByUserId(userId).stream()
+                return companyMemberRepository.findAllByUser_Id(userId).stream()
                                 .filter(m -> m.getCompany().getId().equals(companyId))
                                 .anyMatch(m -> m.getRole() == CompanyRole.ACCOUNT_OWNER
                                                 || m.getRole() == CompanyRole.ADMIN);

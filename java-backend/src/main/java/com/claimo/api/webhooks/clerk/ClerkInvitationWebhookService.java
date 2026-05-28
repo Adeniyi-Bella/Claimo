@@ -1,7 +1,6 @@
 package com.claimo.api.webhooks.clerk;
 
-import com.claimo.api.company.invites.CompanyInviteService;
-import com.claimo.api.company.services.CompanyInviteWebhookService;
+import com.claimo.api.company.services.CompanyInviteService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,7 +11,6 @@ public class ClerkInvitationWebhookService {
 
     private final ClerkWebhookPayloadService payloadService;
     private final CompanyInviteService companyInviteService;
-    private final CompanyInviteWebhookService companyInviteWebhookService;
     private final ProjectInviteWebhookService projectInviteWebhookService;
 
     public void handleInvitationCreated(String payload) {
@@ -45,9 +43,9 @@ public class ClerkInvitationWebhookService {
 
     private void routeCompany(InvitationEventType eventType, String payload) {
         switch (eventType) {
-            case CREATED -> companyInviteWebhookService.handleInvitationCreated(payload);
-            case ACCEPTED -> companyInviteWebhookService.handleInvitationAccepted(payload);
-            case REVOKED -> companyInviteWebhookService.handleInvitationRevoked(payload);
+            case CREATED -> companyInviteService.handleInvitationCreated(payload);
+            case ACCEPTED -> companyInviteService.handleInvitationAccepted(payload);
+            case REVOKED -> companyInviteService.handleInvitationRevoked(payload);
         }
     }
 

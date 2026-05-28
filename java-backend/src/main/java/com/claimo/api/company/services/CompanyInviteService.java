@@ -1,11 +1,13 @@
-package com.claimo.api.company.invites;
+package com.claimo.api.company.services;
 
+import com.claimo.api.auth.AuthHelper;
 import com.claimo.api.company.enums.CompanyInviteStatus;
 import com.claimo.api.company.enums.CompanyRole;
-import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.model.Company;
 import com.claimo.api.company.model.CompanyInvite;
-import com.claimo.api.company.CompanyRepository;
+import com.claimo.api.company.repository.CompanyInviteRepository;
+import com.claimo.api.company.repository.CompanyMemberRepository;
+import com.claimo.api.company.repository.CompanyRepository;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.integrations.clerk.ClerkInvitationService;
 import com.claimo.api.projects.enums.ProjectRole;
@@ -21,6 +23,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import com.claimo.api.webhooks.clerk.ClerkWebhookPayloadService;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,13 +37,16 @@ import java.util.UUID;
 public class CompanyInviteService {
 
     private final CompanyRepository companyRepository;
-    private final CompanyMemberService companyMemberService;
     private final CompanyInviteRepository companyInviteRepository;
     private final ClerkInvitationService clerkInvitationService;
     private final UserService userService;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectMemberService projectMemberService;
+    private final AuthHelper authHelper;
+    private final CompanyService companyService;
+    private final CompanyMemberRepository companyMemberRepository;
+    private final ClerkWebhookPayloadService payloadService;
 
     /**
      * Invites a user to a company by email.
@@ -54,7 +61,7 @@ public class CompanyInviteService {
 
     @Transactional
     public void inviteMember(Jwt jwt, UUID companyId, String email, CompanyRole role) {
-        User inviter = getAuthenticatedUser(jwt);
+        User inviter = authHelper.getAuthenticatedUser(jwt);
         Company company = getCompanyForAdmin(companyId, inviter);
 
         String normalizedEmail = email.toLowerCase().trim();
@@ -65,7 +72,7 @@ public class CompanyInviteService {
 
         // If the user already exists in our system, check they are not already a member
         Optional<User> existingUser = userService.findByEmail(normalizedEmail);
-        if (existingUser.isPresent() && companyMemberService.isMemberOfCompany(existingUser.get().getId(), companyId)) {
+        if (existingUser.isPresent() && isMemberOfCompany(existingUser.get().getId(), companyId)) {
             throw new AppExceptions.ConflictException("User is already a member of this company");
         }
 
@@ -248,8 +255,8 @@ public class CompanyInviteService {
      * Idempotent — safe to call multiple times on the same invite and user.
      */
     private void finalizeInvite(CompanyInvite invite, User user) {
-        if (!companyMemberService.isMemberOfCompany(user.getId(), invite.getCompany().getId())) {
-            companyMemberService.addMember(invite.getCompany(), user, invite.getRole());
+        if (!isMemberOfCompany(user.getId(), invite.getCompany().getId())) {
+            companyService.addMember(invite.getCompany(), user, invite.getRole());
         }
 
         if (invite.getRole() == CompanyRole.ADMIN) {
@@ -261,17 +268,6 @@ public class CompanyInviteService {
                 }
             }
         }
-    }
-
-    /**
-     * Resolves the authenticated user from the JWT subject (Clerk user ID).
-     * Throws if the user does not exist in our system.
-     */
-    private User getAuthenticatedUser(Jwt jwt) {
-        String clerkUserId = jwt.getSubject();
-        return userService.findByClerkUserId(clerkUserId)
-                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
-                        "User not found for clerkUserId: " + clerkUserId));
     }
 
     /**
@@ -289,11 +285,11 @@ public class CompanyInviteService {
             return company;
         }
 
-        if (!companyMemberService.isMemberOfCompany(user.getId(), companyId)) {
+        if (!isMemberOfCompany(user.getId(), companyId)) {
             throw new AppExceptions.ForbiddenException("You are not a member of this company");
         }
 
-        CompanyRole role = companyMemberService.getRole(companyId, user.getId());
+        CompanyRole role = companyService.getRole(companyId, user.getId());
         if (role != CompanyRole.ADMIN) {
             throw new AppExceptions.ForbiddenException("Only company ADMINs can invite members");
         }
@@ -303,7 +299,7 @@ public class CompanyInviteService {
 
     @Transactional
     public void cancelInvitation(Jwt jwt, UUID companyId, UUID inviteId) {
-        User user = getAuthenticatedUser(jwt);
+        User user = authHelper.getAuthenticatedUser(jwt);
         getCompanyForAdmin(companyId, user);
 
         CompanyInvite invite = companyInviteRepository.findById(inviteId)
@@ -319,5 +315,46 @@ public class CompanyInviteService {
         companyInviteRepository.save(invite);
 
         log.info("Cancelled company invite inviteId={} companyId={}", inviteId, companyId);
+    }
+
+    public boolean isMemberOfCompany(UUID userId, UUID companyId) {
+        return companyMemberRepository.existsByUser_IdAndCompany_Id(userId, companyId);
+    }
+
+    @Transactional
+    public void handleInvitationCreated(String payload) {
+        JsonNode root = payloadService.parse(payload);
+        JsonNode data = root.path("data");
+
+        String email = payloadService.requiredEmail(data);
+        String clerkInvitationId = payloadService.requiredText(
+                data, "id", "Clerk invitation id is missing from the webhook payload");
+
+        recordInvitationCreated(email, clerkInvitationId);
+    }
+
+    @Transactional
+    public void handleInvitationAccepted(String payload) {
+        JsonNode root = payloadService.parse(payload);
+        JsonNode data = root.path("data");
+
+        String email = payloadService.requiredEmail(data);
+        String clerkInvitationId = payloadService.extractOptionalText(data, "id");
+
+        userService.findByEmail(email)
+                .ifPresentOrElse(
+                        user -> acceptAndFinalizeInvitation(email, clerkInvitationId, user),
+                        () -> acceptInvitation(email, clerkInvitationId));
+    }
+
+    @Transactional
+    public void handleInvitationRevoked(String payload) {
+        JsonNode root = payloadService.parse(payload);
+        JsonNode data = root.path("data");
+
+        String email = payloadService.requiredEmail(data);
+        String clerkInvitationId = payloadService.extractOptionalText(data, "id");
+
+        revokeInvitation(email, clerkInvitationId);
     }
 }

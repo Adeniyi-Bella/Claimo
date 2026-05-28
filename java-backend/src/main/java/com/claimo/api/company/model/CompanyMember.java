@@ -1,10 +1,9 @@
-package com.claimo.api.company.membership;
+package com.claimo.api.company.model;
 
 import java.time.Instant;
 import java.util.UUID;
 
 import com.claimo.api.company.enums.CompanyRole;
-import com.claimo.api.company.model.Company;
 import com.claimo.api.user.model.User;
 import org.hibernate.annotations.CreationTimestamp;
 

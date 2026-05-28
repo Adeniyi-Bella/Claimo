@@ -1,14 +1,13 @@
 package com.claimo.api.webhooks.clerk;
 
 import com.claimo.api.company.enums.CompanyRole;
-import com.claimo.api.company.membership.CompanyMemberService;
+import com.claimo.api.company.services.CompanyInviteService;
 import com.claimo.api.company.services.CompanyService;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.notifications.WelcomeEmailService;
 import com.claimo.api.projects.invites.ProjectInviteService;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
-import com.claimo.api.company.invites.CompanyInviteService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ public class ClerkUserWebhookService {
 
     private final UserService userService;
     private final CompanyService companyService;
-    private final CompanyMemberService companyMemberService;
     private final CompanyInviteService companyInviteService;
     private final ClerkWebhookPayloadService payloadService;
     private final ProjectInviteService projectInviteService;
@@ -73,7 +71,7 @@ public class ClerkUserWebhookService {
         }
 
         var company = companyService.createCompany(companyName, user);
-        companyMemberService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
+        companyService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
 
         // Then add to any invited companies
         companyInviteService.markUserCreatedInvitesAccepted(email, user);

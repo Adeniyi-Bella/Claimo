@@ -1,4 +1,4 @@
-package com.claimo.api.company.invites;
+package com.claimo.api.company.repository;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;

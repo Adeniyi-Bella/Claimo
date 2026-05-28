@@ -1,7 +1,8 @@
 package com.claimo.api.projects.invites;
 
 import com.claimo.api.company.enums.CompanyRole;
-import com.claimo.api.company.membership.CompanyMemberService;
+import com.claimo.api.company.repository.CompanyMemberRepository;
+import com.claimo.api.company.services.CompanyService;
 import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.models.PendingInvite;
 import com.claimo.api.projects.repository.PendingInviteRepository;
@@ -24,8 +25,9 @@ import java.util.Optional;
 public class ProjectInviteService {
 
     private final PendingInviteRepository pendingInviteRepository;
-    private final CompanyMemberService companyMemberService;
+    private final CompanyService companyService;
     private final ProjectMemberService projectMemberService;
+    private final CompanyMemberRepository companyMemberRepository;
 
     @Transactional
     public void recordInvitationCreated(String email, String clerkInvitationId) {
@@ -134,8 +136,8 @@ public class ProjectInviteService {
                 invite.getEmail(), invite.getProject().getId(), user.getId());
 
         try {
-            if (!companyMemberService.isMemberOfCompany(user.getId(), invite.getCompany().getId())) {
-                companyMemberService.addMember(invite.getCompany(), user, CompanyRole.MEMBER);
+            if (!companyMemberRepository.existsByUser_IdAndCompany_Id(user.getId(), invite.getCompany().getId())) {
+                companyService.addMember(invite.getCompany(), user, CompanyRole.MEMBER);
                 log.info("Added user to company companyId={}", invite.getCompany().getId());
             }
 

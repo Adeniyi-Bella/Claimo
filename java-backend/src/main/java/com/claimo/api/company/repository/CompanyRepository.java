@@ -1,4 +1,4 @@
-package com.claimo.api.company;
+package com.claimo.api.company.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
