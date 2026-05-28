@@ -54,4 +54,14 @@ export class CompanyApi {
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
+
+  static async removeMember(
+    token: string,
+    companyId: string,
+    userId: string,
+  ): Promise<void> {
+    await apiClient.delete(`/companies/${companyId}/members/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
 }

@@ -2,6 +2,7 @@ package com.claimo.api.company.controller;
 
 import com.claimo.api.company.dto.requests.CompanyRequests;
 import com.claimo.api.company.invites.CompanyInviteService;
+import com.claimo.api.company.services.CompanyService;
 import com.claimo.api.exceptions.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,6 +26,7 @@ import java.util.UUID;
 public class CompanyMemberController {
 
     private final CompanyInviteService companyInviteService;
+    private final CompanyService companyService;
 
     @PostMapping
     @Operation(summary = "Invite a member to a company", security = @SecurityRequirement(name = "bearerAuth"))
@@ -58,6 +60,23 @@ public class CompanyMemberController {
             @PathVariable UUID companyId,
             @PathVariable UUID inviteId) {
         companyInviteService.cancelInvitation(jwt, companyId, inviteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{userId}")
+    @Operation(summary = "Remove a member from a company", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Member removed successfully"),
+            @ApiResponse(responseCode = "400", description = "Cannot remove yourself"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Member not found")
+    })
+    public ResponseEntity<Void> removeMemberFromCompany(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID companyId,
+            @PathVariable UUID userId) {
+        companyService.removeMemberFromCompany(jwt, companyId, userId);
         return ResponseEntity.noContent().build();
     }
 }

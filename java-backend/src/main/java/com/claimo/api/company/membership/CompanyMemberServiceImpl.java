@@ -5,8 +5,11 @@ import java.util.UUID;
 
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.model.Company;
+import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.user.model.User;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,5 +52,14 @@ public class CompanyMemberServiceImpl implements CompanyMemberService {
                 .map(CompanyMember::getRole)
                 .orElseThrow(() -> new IllegalStateException(
                         "Company member not found for companyId=" + companyId + " userId=" + userId));
+    }
+
+    @Override
+    @Transactional
+    public void removeMember(UUID companyId, UUID userId) {
+        CompanyMember member = companyMemberRepository.findByCompany_IdAndUser_Id(companyId, userId)
+                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                        "Member not found for companyId=" + companyId + " userId=" + userId));
+        companyMemberRepository.delete(member);
     }
 }

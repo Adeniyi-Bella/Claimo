@@ -58,32 +58,28 @@ public class ClerkUserWebhookService {
 
         User user = userService.createUser(clerkUserId, email, firstName, lastName);
 
-        boolean hasCompanyInvite = companyInviteService.hasPendingInvites(email);
+        // Always create own company
+        String companyName = data
+                .path("unsafe_metadata")
+                .path("company_name")
+                .asText(fullName);
 
-        // Only skip own company creation if they're joining an existing company
-        // Project-only invites should still get their own company
-        if (!hasCompanyInvite) {
-            String companyName = data
-                    .path("unsafe_metadata")
-                    .path("company_name")
-                    .asText(fullName);
-
-            if (companyName.isBlank()) {
-                if (fullName.isBlank()) {
-                    throw new AppExceptions.BadRequestException(
-                            "Clerk webhook payload must include a company name or user name");
-                }
-                companyName = fullName;
+        if (companyName.isBlank()) {
+            if (fullName.isBlank()) {
+                throw new AppExceptions.BadRequestException(
+                        "Clerk webhook payload must include a company name or user name");
             }
-
-            var company = companyService.createCompany(companyName, user);
-            companyMemberService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
+            companyName = fullName;
         }
 
+        var company = companyService.createCompany(companyName, user);
+        companyMemberService.addMember(company, user, CompanyRole.ACCOUNT_OWNER);
+
+        // Then add to any invited companies
         companyInviteService.markUserCreatedInvitesAccepted(email, user);
         projectInviteService.markUserCreatedInvitesAccepted(email, user);
 
-        log.info("Created user and company (if applicable) for clerkUserId={}", clerkUserId);
+        log.info("Created user and company for clerkUserId={}", clerkUserId);
 
         return user;
     }

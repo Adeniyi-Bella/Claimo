@@ -29,15 +29,21 @@ import { useGetCompanyWithMember } from "@/hooks/api/company/useGetCompanyWithMe
 import type { CompanyRole } from "@/api/dto/responseDto";
 import { useInviteMemberToCompany } from "@/hooks/api/company/useInviteMemberToCompany";
 import { useCancelCompanyInvite } from "@/hooks/api/company/useCancelCompanyInvite";
+import { useRemoveCompanyMember } from "@/hooks/api/company/useRemoveCompanyMember";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const { user } = useUser();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { data: companyWithMembers, isLoading: companyLoading } =
     useGetCompanyWithMember();
   const { mutateAsync: inviteMemberToCompany, isPending: inviteMemberPending } =
     useInviteMemberToCompany(companyWithMembers?.companyId);
   const { mutateAsync: cancelInvite } = useCancelCompanyInvite(
+    companyWithMembers?.companyId,
+  );
+  const { mutateAsync: removeMember } = useRemoveCompanyMember(
     companyWithMembers?.companyId,
   );
 
@@ -58,6 +64,7 @@ export default function Settings() {
   const [cancellingInviteId, setCancellingInviteId] = useState<string | null>(
     null,
   );
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
   const submitInvite = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -106,6 +113,13 @@ export default function Settings() {
     setCancellingInviteId(inviteId);
     try {
       await cancelInvite(inviteId);
+    } catch (error) {
+      toast({
+        title: "Failed to cancel invite",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setCancellingInviteId(null);
     }
@@ -130,6 +144,22 @@ export default function Settings() {
       setDeletePending(false);
     }
   });
+
+  const handleRemoveMember = async (userId: string) => {
+    setRemovingMemberId(userId);
+    try {
+      await removeMember(userId);
+    } catch (error) {
+      toast({
+        title: "Failed to remove member",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRemovingMemberId(null);
+    }
+  };
 
   return (
     <AppShell>
@@ -231,8 +261,14 @@ export default function Settings() {
                     </div>
                     <RoleBadge role={m.role} />
                     {canRemove && (
-                      <button className="text-xs text-muted-foreground hover:text-destructive transition">
-                        Remove
+                      <button
+                        onClick={() => void handleRemoveMember(m.userId)}
+                        disabled={removingMemberId === m.userId}
+                        className="text-xs text-muted-foreground hover:text-destructive transition disabled:opacity-50"
+                      >
+                        {removingMemberId === m.userId
+                          ? "Removing..."
+                          : "Remove"}
                       </button>
                     )}
                   </div>

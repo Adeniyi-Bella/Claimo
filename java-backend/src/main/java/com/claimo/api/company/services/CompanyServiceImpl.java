@@ -11,6 +11,8 @@ import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.model.Company;
 import com.claimo.api.company.model.CompanyInvite;
 import com.claimo.api.exceptions.AppExceptions;
+import com.claimo.api.projects.models.ProjectMember;
+import com.claimo.api.projects.repository.ProjectMemberRepository;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyMemberService companyMemberService;
     private final UserService userService;
     private final CompanyInviteRepository companyInviteRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     @Override
     @Transactional
@@ -86,6 +90,31 @@ public class CompanyServiceImpl implements CompanyService {
                     return memberships.get(0).getCompany();
                 });
     }
+
+    // CompanyServiceImpl
+@Override
+@Transactional
+public void removeMemberFromCompany(Jwt jwt, UUID companyId, UUID userId) {
+    User requester = getAuthenticatedUser(jwt);
+    Company company = getCurrentCompanyEntity(requester);
+
+    if (company.getOwner() == null || !company.getOwner().getId().equals(requester.getId())) {
+        throw new AppExceptions.ForbiddenException("Only the account owner can remove members");
+    }
+
+    if (requester.getId().equals(userId)) {
+        throw new AppExceptions.BadRequestException("You cannot remove yourself from the company");
+    }
+
+    List<ProjectMember> projectMemberships = projectMemberRepository
+            .findAllByProject_Company_Id(companyId)
+            .stream()
+            .filter(pm -> pm.getUser().getId().equals(userId))
+            .toList();
+    projectMemberRepository.deleteAll(projectMemberships);
+
+    companyMemberService.removeMember(companyId, userId);
+}
 
     private CompanyRole getCurrentCompanyRole(Company company, User user) {
         if (company.getOwner() != null && company.getOwner().getId().equals(user.getId())) {

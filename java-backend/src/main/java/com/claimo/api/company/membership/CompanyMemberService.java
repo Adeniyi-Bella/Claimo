@@ -17,4 +17,7 @@ public interface CompanyMemberService {
     boolean isMemberOfCompany(UUID userId, UUID companyId);
 
     CompanyRole getRole(UUID companyId, UUID userId);
+
+    void removeMember(UUID companyId, UUID userId);
+
 }
