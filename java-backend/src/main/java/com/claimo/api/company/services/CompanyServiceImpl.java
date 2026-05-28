@@ -34,26 +34,26 @@ public class CompanyServiceImpl implements CompanyService {
         return companyRepository.save(company);
     }
 
-   @Override
-@Transactional(readOnly = true)
-public CurrentCompanyDto getCompanyWithMembers(Jwt jwt) {
-    User user = getAuthenticatedUser(jwt);
-    Company company = getCurrentCompanyEntity(user);
-    CompanyRole role = getCurrentCompanyRole(company, user);
+    @Override
+    @Transactional(readOnly = true)
+    public CurrentCompanyDto getCompanyWithMembers(Jwt jwt) {
+        User user = getAuthenticatedUser(jwt);
+        Company company = getCurrentCompanyEntity(user);
+        CompanyRole role = getCurrentCompanyRole(company, user);
 
-    List<CompanyMember> members = companyMemberService.findByCompanyId(company.getId());
+        List<CompanyMember> members = companyMemberService.findByCompanyId(company.getId());
 
-    List<CompanyMemberDto> memberSummaries = members.stream()
-            .map(m -> new CompanyMemberDto(
-                    m.getUser().getId(),
-                    m.getUser().getFirstName(),
-                    m.getUser().getLastName(),
-                    m.getUser().getEmail(),
-                    m.getRole()))
-            .toList();
+        List<CompanyMemberDto> memberSummaries = members.stream()
+                .map(m -> new CompanyMemberDto(
+                        m.getUser().getId(),
+                        m.getUser().getFirstName(),
+                        m.getUser().getLastName(),
+                        m.getUser().getEmail(),
+                        m.getRole()))
+                .toList();
 
-    return new CurrentCompanyDto(company.getName(), role, memberSummaries);
-}
+        return new CurrentCompanyDto(company.getId(), company.getName(), role, memberSummaries);
+    }
 
     private User getAuthenticatedUser(Jwt jwt) {
         String clerkUserId = jwt.getSubject();

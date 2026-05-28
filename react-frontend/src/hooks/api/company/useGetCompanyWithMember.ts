@@ -5,9 +5,9 @@ import { CompanyApi } from "@/api/company.api";
 import { UnauthorizedError } from "@/api/error/customeError";
 import type { ICompanyWithMember } from "@/api/dto/responseDto";
 
-export const companyQueryKey = ["company", "me"] as const;
+export const companyQueryKey = ["company", "profile"] as const;
 
-export function useGetCompany() {
+export function useGetCompanyWithMember() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
   return useQuery<ICompanyWithMember>({

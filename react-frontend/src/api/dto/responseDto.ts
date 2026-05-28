@@ -12,7 +12,6 @@ export enum PendingInviteStatus {
 
 export type CompanyRole = "ACCOUNT_OWNER" | "ADMIN" | "MEMBER";
 
-
 export interface CustomApiErrorResponse {
   status: number;
   message: string;
@@ -36,7 +35,7 @@ export interface ProjectResponse {
   models: ProjectModel[];
   pendingInvites: PendingInvite[];
   currentUserRole: ProjectRole | null;
-   currentUserCompanyRole: CompanyRole | null;
+  currentUserCompanyRole: CompanyRole | null;
 }
 
 export interface Member {
@@ -151,8 +150,8 @@ export interface ICompanyMember {
 }
 
 export interface ICompanyWithMember {
+  companyId: string;
   companyName: string;
   role: CompanyRole;
   members: ICompanyMember[];
 }
-

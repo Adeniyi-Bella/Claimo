@@ -7,7 +7,7 @@ import { UnauthorizedError } from "@/api/error/customeError";
 import type { InviteMemberRequestDto } from "@/api/dto/requestDto";
 import { dashboardQueryKey } from "../useDashboard";
 
-export function useInviteMember(projectId: string) {
+export function useInviteMemberToProject(projectId: string) {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
 

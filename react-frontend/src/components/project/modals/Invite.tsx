@@ -1,10 +1,14 @@
 import { useState } from "react";
 import {
-  Dialog, DialogContent, DialogHeader,
-  DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/common/dialog";
 import type { ProjectResponse, ProjectRole } from "@/api/dto/responseDto";
-import { useInviteMember } from "@/hooks/api/projects/useInviteMember";
+import { useInviteMemberToProject } from "@/hooks/api/projects/useInviteMemberToProject";
 import { ApiError } from "@/api/error/customeError";
 import { toast } from "@/hooks/use-toast";
 
@@ -29,7 +33,7 @@ export default function InviteModal({
   const [role, setRole] = useState<ProjectRole>("CONTRACTOR");
   const [error, setError] = useState("");
 
-  const { mutateAsync, isPending } = useInviteMember(project.id);
+  const { mutateAsync: inviteMemberToProject, isPending } = useInviteMemberToProject(project.id);
 
   const reset = () => {
     setName("");
@@ -43,7 +47,7 @@ export default function InviteModal({
     setError("");
 
     try {
-      await mutateAsync({ fullName: name.trim(), email: email.trim(), role });
+      await inviteMemberToProject({ fullName: name.trim(), email: email.trim(), role });
       reset();
       onOpenChange(false);
       toast({
@@ -60,13 +64,22 @@ export default function InviteModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!isPending) { reset(); onOpenChange(v); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!isPending) {
+          reset();
+          onOpenChange(v);
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>Add member to project</DialogTitle>
             <DialogDescription>
-              Add a team member directly to this project with the appropriate role.
+              Add a team member directly to this project with the appropriate
+              role.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-4">
@@ -99,7 +112,9 @@ export default function InviteModal({
                 className="mt-1.5 w-full h-9 rounded-md border border-input bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
               >
                 {ROLE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -109,7 +124,10 @@ export default function InviteModal({
             <button
               type="button"
               disabled={isPending}
-              onClick={() => { reset(); onOpenChange(false); }}
+              onClick={() => {
+                reset();
+                onOpenChange(false);
+              }}
               className="h-9 px-3 rounded-md border border-border bg-surface text-sm hover:bg-accent transition disabled:opacity-50"
             >
               Cancel

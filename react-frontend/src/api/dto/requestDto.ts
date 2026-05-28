@@ -1,4 +1,4 @@
-import type { ProjectRole } from "./responseDto";
+import type { CompanyRole, ProjectRole } from "./responseDto";
 
 export interface CreateProjectRequestDto {
   name: string;
@@ -11,4 +11,10 @@ export interface InviteMemberRequestDto {
   fullName: string;
   email: string;
   role: ProjectRole;
+}
+
+export interface InviteCompanyMemberRequestDto {
+  name: string;
+  email: string;
+  role: CompanyRole;
 }

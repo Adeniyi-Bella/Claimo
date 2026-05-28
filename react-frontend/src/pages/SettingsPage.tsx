@@ -24,13 +24,17 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { useReverification, useUser } from "@clerk/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useGetCompany } from "@/hooks/api/company/useGetCompany";
+import { useGetCompanyWithMember } from "@/hooks/api/company/useGetCompanyWithMember";
+import type { CompanyRole } from "@/api/dto/responseDto";
+import { useInviteMemberToCompany } from "@/hooks/api/company/useInviteMemberToCompany";
 
 export default function Settings() {
   const { user } = useUser();
   const navigate = useNavigate();
   const { data: companyWithMembers, isLoading: companyLoading } =
-    useGetCompany();
+    useGetCompanyWithMember();
+  const { mutateAsync: inviteMemberToCompany, isPending } =
+    useInviteMemberToCompany(companyWithMembers?.companyId);
 
   const currentUser = {
     name: user?.fullName ?? user?.firstName ?? "User",
@@ -38,18 +42,18 @@ export default function Settings() {
     avatarHue: 250,
   };
 
-  // const { members, invite, remove } = useCompanyMembers();
   const [open, setOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<CompanyRole>("MEMBER");
 
-  const submitInvite = (e: React.FormEvent) => {
+  const submitInvite = async (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    // invite({ name, email });
+    await inviteMemberToCompany({ name, email, role });
     setName("");
     setEmail("");
     setOpen(false);
@@ -216,7 +220,17 @@ export default function Settings() {
         </Section>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!isPending) {
+            setName("");
+            setEmail("");
+            setRole("MEMBER");
+            setOpen(v);
+          }
+        }}
+      >
         <DialogContent>
           <form onSubmit={submitInvite}>
             <DialogHeader>
@@ -248,17 +262,43 @@ export default function Settings() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label>Role</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["MEMBER", "ADMIN"] as CompanyRole[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={`h-9 rounded-md border text-sm font-medium transition ${
+                        role === r
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-surface text-muted-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {r === "ADMIN" ? "Admin" : "Member"}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {role === "ADMIN"
+                    ? "Admins can manage members and view all projects."
+                    : "Members can only access projects they're assigned to."}
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button
+                disabled={isPending}
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                <UserPlus className="h-4 w-4" /> Send invite
+              <Button type="submit" disabled={isPending}>
+                <UserPlus className="h-4 w-4" />{" "}
+                {isPending ? "Sending…" : "Add member"}
               </Button>
             </DialogFooter>
           </form>
