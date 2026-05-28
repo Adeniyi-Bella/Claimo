@@ -43,4 +43,15 @@ export class CompanyApi {
       statusCode: response.status,
     });
   }
+
+  static async cancelInvite(
+    token: string,
+    companyId: string,
+    inviteId: string,
+  ): Promise<void> {
+    await apiClient.delete(
+      `/companies/${companyId}/members/invites/${inviteId}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 }

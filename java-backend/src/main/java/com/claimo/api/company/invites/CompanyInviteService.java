@@ -60,6 +60,14 @@ public class CompanyInviteService {
             throw new AppExceptions.ConflictException("User is already a member of this company");
         }
 
+        boolean hasPendingInvite = companyInviteRepository.findAllByCompany_Id(companyId).stream()
+                .anyMatch(i -> i.getEmail().equalsIgnoreCase(normalizedEmail)
+                        && i.getStatus() == CompanyInviteStatus.PENDING);
+
+        if (hasPendingInvite) {
+            throw new AppExceptions.ConflictException("A pending invite already exists for email: " + normalizedEmail);
+        }
+
         // Send invitation via Clerk first — if this fails, nothing is saved to DB.
         // This avoids an orphaned invite record with no clerkInvitationId.
         String clerkInvitationId = clerkInvitationService.sendInvitation(normalizedEmail);
@@ -269,5 +277,25 @@ public class CompanyInviteService {
         }
 
         return company;
+    }
+
+    @Transactional
+    public void cancelInvitation(Jwt jwt, UUID companyId, UUID inviteId) {
+        User user = getAuthenticatedUser(jwt);
+        getCompanyForAdmin(companyId, user);
+
+        CompanyInvite invite = companyInviteRepository.findById(inviteId)
+                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException("Invite not found: " + inviteId));
+
+        if (invite.getStatus() != CompanyInviteStatus.PENDING) {
+            throw new AppExceptions.BadRequestException("Invite is not pending");
+        }
+
+        clerkInvitationService.revokeInvitation(invite.getClerkInvitationId());
+
+        invite.setStatus(CompanyInviteStatus.REVOKED);
+        companyInviteRepository.save(invite);
+
+        log.info("Cancelled company invite inviteId={} companyId={}", inviteId, companyId);
     }
 }

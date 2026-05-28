@@ -1,7 +1,8 @@
-package com.claimo.api.webhooks.clerk;
+package com.claimo.api.company.services;
 
 import com.claimo.api.company.invites.CompanyInviteService;
 import com.claimo.api.user.service.UserService;
+import com.claimo.api.webhooks.clerk.ClerkWebhookPayloadService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

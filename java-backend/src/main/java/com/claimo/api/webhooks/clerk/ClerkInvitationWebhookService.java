@@ -1,6 +1,7 @@
 package com.claimo.api.webhooks.clerk;
 
 import com.claimo.api.company.invites.CompanyInviteService;
+import com.claimo.api.company.services.CompanyInviteWebhookService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

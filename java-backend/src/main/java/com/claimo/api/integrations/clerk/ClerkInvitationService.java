@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class ClerkInvitationService {
 
-    private static final URI INVITATIONS_URI = URI.create("https://api.clerk.com/v1/invitations");
+    private static final String INVITATIONS_URL = "https://api.clerk.com/v1/invitations";
 
     private final ClerkConfigProperties clerkProperties;
     private final ObjectMapper objectMapper;
@@ -36,17 +36,15 @@ public class ClerkInvitationService {
             bodyNode.put("redirect_url", clerkProperties.invitationRedirectUrl());
             bodyNode.put("ignore_existing", true);
 
-            String body = objectMapper.writeValueAsString(bodyNode);
-
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(INVITATIONS_URI)
+                    .uri(URI.create(INVITATIONS_URL))
                     .timeout(Duration.ofSeconds(15))
                     .header("Authorization", "Bearer " + clerkProperties.secretKey())
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(bodyNode)))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = executeRequest(request);
             int statusCode = response.statusCode();
 
             if (statusCode >= 200 && statusCode < 300) {
@@ -59,38 +57,70 @@ public class ClerkInvitationService {
             }
 
             log.error("Clerk invitation failed status={} body={}", statusCode, response.body());
-
-            String clerkError = "";
-            try {
-                clerkError = objectMapper.readTree(response.body())
-                        .path("errors").path(0).path("long_message").asText("");
-            } catch (Exception ignored) {
-            }
+            String clerkError = parseClerkError(response.body());
 
             if (statusCode == 400) {
                 throw new AppExceptions.BadRequestException(
-                        clerkError.isBlank()
-                                ? "Invalid invitation request for email: " + emailAddress
-                                : clerkError);
+                        clerkError.isBlank() ? "Invalid invitation request for email: " + emailAddress : clerkError);
             }
-
             if (statusCode == 409 || statusCode == 422) {
                 throw new AppExceptions.ConflictException(
-                        clerkError.isBlank()
-                                ? "Clerk already has an invitation or account for email: " + emailAddress
+                        clerkError.isBlank() ? "Clerk already has an invitation or account for email: " + emailAddress
                                 : clerkError);
             }
 
-            throw new AppExceptions.BadGatewayException(
-                    "Clerk invitation request failed with status " + statusCode);
+            throw new AppExceptions.BadGatewayException("Clerk invitation request failed with status " + statusCode);
 
+        } catch (IOException e) {
+            throw new AppExceptions.BadGatewayException("Failed to send Clerk invitation for email: " + emailAddress);
+        }
+    }
+
+    public void revokeInvitation(String invitationId) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(INVITATIONS_URL + "/" + invitationId + "/revoke"))
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + clerkProperties.secretKey())
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+
+        HttpResponse<String> response = executeRequest(request);
+        int statusCode = response.statusCode();
+
+        if (statusCode >= 200 && statusCode < 300) {
+            log.info("Clerk invitation revoked invitationId={}", invitationId);
+            return;
+        }
+
+        log.error("Clerk revoke invitation failed status={} body={}", statusCode, response.body());
+        String clerkError = parseClerkError(response.body());
+
+        if (statusCode == 404) {
+            throw new AppExceptions.ResourceNotFoundException("Clerk invitation not found: " + invitationId);
+        }
+
+        throw new AppExceptions.BadGatewayException(
+                clerkError.isBlank() ? "Clerk revoke invitation failed with status " + statusCode : clerkError);
+    }
+
+    private HttpResponse<String> executeRequest(HttpRequest request) {
+        try {
+            return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new AppExceptions.GatewayTimeoutException(
-                    "Interrupted while sending Clerk invitation for email: " + emailAddress);
+            throw new AppExceptions.GatewayTimeoutException("Request interrupted: " + request.uri());
         } catch (IOException e) {
-            throw new AppExceptions.BadGatewayException(
-                    "Failed to send Clerk invitation for email: " + emailAddress);
+            throw new AppExceptions.BadGatewayException("Request failed: " + request.uri());
+        }
+    }
+
+    private String parseClerkError(String responseBody) {
+        try {
+            return objectMapper.readTree(responseBody)
+                    .path("errors").path(0).path("long_message").asText("");
+        } catch (Exception ignored) {
+            return "";
         }
     }
 }

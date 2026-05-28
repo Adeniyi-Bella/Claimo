@@ -1,9 +1,7 @@
 package com.claimo.api.company.controller;
 
 import com.claimo.api.company.dto.requests.CompanyRequests;
-import com.claimo.api.company.dto.response.CompanyMemberResponses;
 import com.claimo.api.company.invites.CompanyInviteService;
-import com.claimo.api.company.membership.CompanyMemberViewService;
 import com.claimo.api.exceptions.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,7 +17,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/companies/{companyId}/members")
@@ -28,7 +25,6 @@ import java.util.List;
 public class CompanyMemberController {
 
     private final CompanyInviteService companyInviteService;
-    private final CompanyMemberViewService companyMemberViewService;
 
     @PostMapping
     @Operation(summary = "Invite a member to a company", security = @SecurityRequirement(name = "bearerAuth"))
@@ -48,18 +44,20 @@ public class CompanyMemberController {
         return ResponseEntity.status(HttpStatus.CREATED).body(CustomApiResponse.success(null));
     }
 
-    @GetMapping
-    @Operation(summary = "Get all members of a company with project memberships", security = @SecurityRequirement(name = "bearerAuth"))
+    @DeleteMapping("/invites/{inviteId}")
+    @Operation(summary = "Cancel a pending company invite", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Company members returned successfully"),
+            @ApiResponse(responseCode = "200", description = "Invite cancelled successfully"),
+            @ApiResponse(responseCode = "400", description = "Invite is not pending"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Access denied"),
-            @ApiResponse(responseCode = "404", description = "Company not found")
+            @ApiResponse(responseCode = "404", description = "Invite not found")
     })
-    public ResponseEntity<CustomApiResponse<List<CompanyMemberResponses.CompanyMember>>> getMembers(
+    public ResponseEntity<CustomApiResponse<Void>> cancelInvite(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable UUID companyId) {
-        List<CompanyMemberResponses.CompanyMember> members = companyMemberViewService.getCompanyMembers(jwt, companyId);
-        return ResponseEntity.ok(CustomApiResponse.success(members));
+            @PathVariable UUID companyId,
+            @PathVariable UUID inviteId) {
+        companyInviteService.cancelInvitation(jwt, companyId, inviteId);
+        return ResponseEntity.noContent().build();
     }
 }

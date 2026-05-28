@@ -28,14 +28,18 @@ import { useNavigate } from "@tanstack/react-router";
 import { useGetCompanyWithMember } from "@/hooks/api/company/useGetCompanyWithMember";
 import type { CompanyRole } from "@/api/dto/responseDto";
 import { useInviteMemberToCompany } from "@/hooks/api/company/useInviteMemberToCompany";
+import { useCancelCompanyInvite } from "@/hooks/api/company/useCancelCompanyInvite";
 
 export default function Settings() {
   const { user } = useUser();
   const navigate = useNavigate();
   const { data: companyWithMembers, isLoading: companyLoading } =
     useGetCompanyWithMember();
-  const { mutateAsync: inviteMemberToCompany, isPending } =
+  const { mutateAsync: inviteMemberToCompany, isPending: inviteMemberPending } =
     useInviteMemberToCompany(companyWithMembers?.companyId);
+  const { mutateAsync: cancelInvite } = useCancelCompanyInvite(
+    companyWithMembers?.companyId,
+  );
 
   const currentUser = {
     name: user?.fullName ?? user?.firstName ?? "User",
@@ -50,14 +54,61 @@ export default function Settings() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<CompanyRole>("MEMBER");
+  const [inviteError, setInviteError] = useState("");
+  const [cancellingInviteId, setCancellingInviteId] = useState<string | null>(
+    null,
+  );
 
   const submitInvite = async (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    await inviteMemberToCompany({ name, email, role });
-    setName("");
-    setEmail("");
-    setOpen(false);
+    setInviteError("");
+    // Cannot invite yourself
+    if (email.toLowerCase().trim() === currentUser.email.toLowerCase()) {
+      setInviteError("You cannot invite yourself.");
+      return;
+    }
+
+    // Cannot reinvite a pending user
+    const isPending = companyWithMembers?.companyPendingInviteStatus.some(
+      (i) =>
+        i.email.toLowerCase() === email.toLowerCase().trim() &&
+        i.status === "PENDING",
+    );
+    if (isPending) {
+      setInviteError("This email already has a pending invite.");
+      return;
+    }
+
+    // Cannot invite existing member
+    const isMember = companyWithMembers?.members.some(
+      (m) => m.email.toLowerCase() === email.toLowerCase().trim(),
+    );
+    if (isMember) {
+      setInviteError("This person is already a member.");
+      return;
+    }
+
+    try {
+      await inviteMemberToCompany({ name, email, role });
+      setName("");
+      setEmail("");
+      setRole("MEMBER");
+      setOpen(false);
+    } catch (error) {
+      setInviteError(
+        error instanceof Error ? error.message : "Failed to send invite.",
+      );
+    }
+  };
+
+  const handleCancelInvite = async (inviteId: string) => {
+    setCancellingInviteId(inviteId);
+    try {
+      await cancelInvite(inviteId);
+    } finally {
+      setCancellingInviteId(null);
+    }
   };
 
   const handleDeleteAccount = useReverification(async () => {
@@ -212,8 +263,14 @@ export default function Settings() {
                       </div>
                       <RoleBadge role={i.role} />
                       {isAccountOwner && (
-                        <button className="text-xs text-muted-foreground hover:text-destructive transition">
-                          Cancel
+                        <button
+                          onClick={() => void handleCancelInvite(i.inviteId)}
+                          disabled={cancellingInviteId === i.inviteId}
+                          className="text-xs text-muted-foreground hover:text-destructive transition disabled:opacity-50"
+                        >
+                          {cancellingInviteId === i.inviteId
+                            ? "Cancelling..."
+                            : "Cancel"}
                         </button>
                       )}
                     </div>
@@ -260,10 +317,11 @@ export default function Settings() {
       <Dialog
         open={open}
         onOpenChange={(v) => {
-          if (!isPending) {
+          if (!inviteMemberPending) {
             setName("");
             setEmail("");
             setRole("MEMBER");
+            setInviteError("");
             setOpen(v);
           }
         }}
@@ -277,6 +335,11 @@ export default function Settings() {
                 <span className="font-medium">Pending invite</span> until they
                 accept.
               </DialogDescription>
+              {inviteError && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {inviteError}
+                </div>
+              )}
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-1.5">
@@ -326,16 +389,19 @@ export default function Settings() {
             </div>
             <DialogFooter>
               <Button
-                disabled={isPending}
+                disabled={inviteMemberPending}
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setInviteError("");
+                  setOpen(false);
+                }}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={inviteMemberPending}>
                 <UserPlus className="h-4 w-4" />{" "}
-                {isPending ? "Sending…" : "Add member"}
+                {inviteMemberPending ? "Sending…" : "Add member"}
               </Button>
             </DialogFooter>
           </form>
