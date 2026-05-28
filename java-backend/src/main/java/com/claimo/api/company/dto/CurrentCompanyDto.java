@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.UUID;
 
 public record CurrentCompanyDto(
-        UUID companyId,
-        String companyName,
-        CompanyRole role,
-        List<CompanyMemberDto> members) {
+                UUID companyId,
+                String companyName,
+                CompanyRole role,
+                List<CompanyMemberDto> members,
+                List<CompanyPendingInvites> companyPendingInviteStatus) {
 }
+

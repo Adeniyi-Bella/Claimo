@@ -2,11 +2,14 @@ package com.claimo.api.company.services;
 
 import com.claimo.api.company.CompanyRepository;
 import com.claimo.api.company.dto.CompanyMemberDto;
+import com.claimo.api.company.dto.CompanyPendingInvites;
 import com.claimo.api.company.dto.CurrentCompanyDto;
 import com.claimo.api.company.enums.CompanyRole;
+import com.claimo.api.company.invites.CompanyInviteRepository;
 import com.claimo.api.company.membership.CompanyMember;
 import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.model.Company;
+import com.claimo.api.company.model.CompanyInvite;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
@@ -24,6 +27,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyMemberService companyMemberService;
     private final UserService userService;
+    private final CompanyInviteRepository companyInviteRepository;
 
     @Override
     @Transactional
@@ -42,6 +46,7 @@ public class CompanyServiceImpl implements CompanyService {
         CompanyRole role = getCurrentCompanyRole(company, user);
 
         List<CompanyMember> members = companyMemberService.findByCompanyId(company.getId());
+        List<CompanyInvite> invites = companyInviteRepository.findAllByCompany_Id(company.getId());
 
         List<CompanyMemberDto> memberSummaries = members.stream()
                 .map(m -> new CompanyMemberDto(
@@ -51,8 +56,16 @@ public class CompanyServiceImpl implements CompanyService {
                         m.getUser().getEmail(),
                         m.getRole()))
                 .toList();
+        List<CompanyPendingInvites> pendingInvites = invites.stream()
+                .map(i -> new CompanyPendingInvites(
+                        i.getId(),
+                        i.getEmail(),
+                        i.getRole(),
+                        i.getStatus(),
+                        i.getCreatedAt()))
+                .toList();
 
-        return new CurrentCompanyDto(company.getId(), company.getName(), role, memberSummaries);
+        return new CurrentCompanyDto(company.getId(), company.getName(), role, memberSummaries, pendingInvites);
     }
 
     private User getAuthenticatedUser(Jwt jwt) {

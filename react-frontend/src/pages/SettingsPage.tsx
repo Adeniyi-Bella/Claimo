@@ -15,6 +15,7 @@ import { Label } from "@/components/common/label";
 import {
   AlertTriangle,
   Building2,
+  Clock,
   Lock,
   Mail,
   Trash2,
@@ -154,46 +155,82 @@ export default function Settings() {
               </button>
             </div>
             <div className="rounded-lg border border-border bg-surface divide-y divide-border">
-              {companyWithMembers?.members.map((m) => (
-                <div
-                  key={m.userId}
-                  className="flex items-center gap-3 px-4 py-3"
-                >
-                  <Avatar
-                    name={m.firstName + " " + m.lastName}
-                    hue={0}
-                    size={32}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium truncate">
-                      {m.firstName} {m.lastName}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {m.email}
-                    </div>
-                  </div>
-                  {/* {m.status === "PENDING_INVITE" && (
-                    <StatusBadge status="PENDING_INVITE" />
-                  )} */}
-                  <RoleBadge role={m.role} />
-                  <button
-                    // onClick={() => remove(m.id)}
-                    className="text-xs text-muted-foreground hover:text-destructive transition"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+              {companyWithMembers?.members.map((m) => {
+                const isAccountOwner =
+                  companyWithMembers.role === "ACCOUNT_OWNER";
+                const canRemove = isAccountOwner && m.role !== "ACCOUNT_OWNER";
 
-              {!companyLoading && !companyWithMembers?.members.length && (
-                <div className="px-4 py-8 text-center">
-                  <Users className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
-                  <div className="text-sm font-medium">No teammates yet</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Invite people to collaborate on your projects.
+                return (
+                  <div
+                    key={m.userId}
+                    className="flex items-center gap-3 px-4 py-3"
+                  >
+                    <Avatar
+                      name={m.firstName + " " + m.lastName}
+                      hue={0}
+                      size={32}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">
+                        {m.firstName} {m.lastName}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {m.email}
+                      </div>
+                    </div>
+                    <RoleBadge role={m.role} />
+                    {canRemove && (
+                      <button className="text-xs text-muted-foreground hover:text-destructive transition">
+                        Remove
+                      </button>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })}
+
+              {companyWithMembers?.companyPendingInviteStatus
+                .filter((i) => i.status === "PENDING")
+                .map((i) => {
+                  const isAccountOwner =
+                    companyWithMembers.role === "ACCOUNT_OWNER";
+
+                  return (
+                    <div
+                      key={i.inviteId}
+                      className="flex items-center gap-3 px-4 py-3 opacity-60"
+                    >
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate text-muted-foreground">
+                          {i.email}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Pending invite
+                        </div>
+                      </div>
+                      <RoleBadge role={i.role} />
+                      {isAccountOwner && (
+                        <button className="text-xs text-muted-foreground hover:text-destructive transition">
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+
+              {!companyLoading &&
+                !companyWithMembers?.members.length &&
+                !companyWithMembers?.companyPendingInviteStatus.length && (
+                  <div className="px-4 py-8 text-center">
+                    <Users className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
+                    <div className="text-sm font-medium">No teammates yet</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Invite people to collaborate on your projects.
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
         </Section>

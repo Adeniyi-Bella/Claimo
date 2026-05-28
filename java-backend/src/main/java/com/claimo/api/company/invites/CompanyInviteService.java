@@ -1,12 +1,13 @@
 package com.claimo.api.company.invites;
 
+import com.claimo.api.company.enums.CompanyInviteStatus;
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.membership.CompanyMemberService;
 import com.claimo.api.company.model.Company;
+import com.claimo.api.company.model.CompanyInvite;
 import com.claimo.api.company.CompanyRepository;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.integrations.clerk.ClerkInvitationService;
-import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +69,7 @@ public class CompanyInviteService {
         invite.setEmail(normalizedEmail);
         invite.setCompany(company);
         invite.setRole(role);
-        invite.setStatus(PendingInviteStatus.PENDING);
+        invite.setStatus(CompanyInviteStatus.PENDING);
         invite.setInvitedBy(inviter);
         invite.setClerkInvitationId(clerkInvitationId);
         companyInviteRepository.save(invite);
@@ -80,8 +81,8 @@ public class CompanyInviteService {
     @Transactional
     public void recordInvitationCreated(String email, String clerkInvitationId) {
         companyInviteRepository.findByClerkInvitationId(clerkInvitationId).ifPresent(invite -> {
-            if (invite.getStatus() != PendingInviteStatus.PENDING) {
-                invite.setStatus(PendingInviteStatus.PENDING);
+            if (invite.getStatus() != CompanyInviteStatus.PENDING) {
+                invite.setStatus(CompanyInviteStatus.PENDING);
                 companyInviteRepository.save(invite);
             }
             log.info("Processed company invitation created event email={} invitationId={}", email, clerkInvitationId);
@@ -118,8 +119,8 @@ public class CompanyInviteService {
      * Idempotent — safe to call multiple times on the same invite.
      */
     private void acceptInvite(CompanyInvite invite) {
-        if (invite.getStatus() != PendingInviteStatus.ACCEPTED) {
-            invite.setStatus(PendingInviteStatus.ACCEPTED);
+        if (invite.getStatus() != CompanyInviteStatus.ACCEPTED) {
+            invite.setStatus(CompanyInviteStatus.ACCEPTED);
             invite.setAcceptedAt(Instant.now());
             companyInviteRepository.save(invite);
         }
@@ -158,14 +159,14 @@ public class CompanyInviteService {
     public List<CompanyInvite> findInvites(String clerkInvitationId, String email) {
         if (clerkInvitationId != null && !clerkInvitationId.isBlank()) {
             return companyInviteRepository.findByClerkInvitationId(clerkInvitationId)
-                    .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
+                    .filter(invite -> invite.getStatus() != CompanyInviteStatus.REVOKED)
                     .map(List::of)
                     .orElseGet(() -> companyInviteRepository.findAllByEmail(email).stream()
-                            .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
+                            .filter(invite -> invite.getStatus() != CompanyInviteStatus.REVOKED)
                             .toList());
         }
         return companyInviteRepository.findAllByEmail(email).stream()
-                .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
+                .filter(invite -> invite.getStatus() != CompanyInviteStatus.REVOKED)
                 .toList();
     }
 
@@ -182,7 +183,7 @@ public class CompanyInviteService {
     @Transactional
     public void markUserCreatedInvitesAccepted(String email, User user) {
         List<CompanyInvite> invites = companyInviteRepository.findAllByEmail(email).stream()
-                .filter(invite -> invite.getStatus() != PendingInviteStatus.REVOKED)
+                .filter(invite -> invite.getStatus() != CompanyInviteStatus.REVOKED)
                 .toList();
         if (invites.isEmpty()) {
             return;
@@ -204,7 +205,7 @@ public class CompanyInviteService {
     @Transactional
     public void revokeInvitation(String email, String clerkInvitationId) {
         findInvites(clerkInvitationId, email).forEach(invite -> {
-            invite.setStatus(PendingInviteStatus.REVOKED);
+            invite.setStatus(CompanyInviteStatus.REVOKED);
             companyInviteRepository.save(invite);
         });
         log.info("Processed company invitation revoked event email={} invitationId={}", email, clerkInvitationId);
@@ -219,7 +220,7 @@ public class CompanyInviteService {
      */
     public boolean hasPendingInvites(String email) {
         return companyInviteRepository.findAllByEmail(email).stream()
-                .anyMatch(invite -> invite.getStatus() != PendingInviteStatus.REVOKED);
+                .anyMatch(invite -> invite.getStatus() != CompanyInviteStatus.REVOKED);
     }
 
     /**

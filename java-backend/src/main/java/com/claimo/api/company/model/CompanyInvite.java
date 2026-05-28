@@ -1,8 +1,7 @@
-package com.claimo.api.company.invites;
+package com.claimo.api.company.model;
 
+import com.claimo.api.company.enums.CompanyInviteStatus;
 import com.claimo.api.company.enums.CompanyRole;
-import com.claimo.api.company.model.Company;
-import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.user.model.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -41,7 +40,7 @@ public class CompanyInvite {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private PendingInviteStatus status = PendingInviteStatus.PENDING;
+    private CompanyInviteStatus status = CompanyInviteStatus.PENDING;
 
     @Column(name = "accepted_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private Instant acceptedAt;
