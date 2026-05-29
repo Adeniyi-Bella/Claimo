@@ -1,6 +1,6 @@
 package com.claimo.api.webhooks.clerk;
 
-import com.claimo.api.projects.invites.ProjectInviteService;
+import com.claimo.api.projects.service.ProjectInviteService;
 import com.claimo.api.user.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;

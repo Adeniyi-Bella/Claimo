@@ -5,7 +5,7 @@ import com.claimo.api.company.services.CompanyInviteService;
 import com.claimo.api.company.services.CompanyService;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.notifications.WelcomeEmailService;
-import com.claimo.api.projects.invites.ProjectInviteService;
+import com.claimo.api.projects.service.ProjectInviteService;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;

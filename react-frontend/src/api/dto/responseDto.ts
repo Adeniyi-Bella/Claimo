@@ -1,5 +1,10 @@
 export type ProjectStatus = "Active" | "Completed" | "Archived";
-export type ProjectRole = "ADMIN" | "CONTRACTOR" | "VIEWER" | "APPROVER";
+export type ProjectRole =
+  | "SUPER_ADMIN"
+  | "ADMIN"
+  | "CONTRACTOR"
+  | "VIEWER"
+  | "APPROVER";
 export type ModelFileType = "ifc";
 export type ClaimDecision = "SUBMITTED" | "APPROVED" | "REJECTED";
 export type JobStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";

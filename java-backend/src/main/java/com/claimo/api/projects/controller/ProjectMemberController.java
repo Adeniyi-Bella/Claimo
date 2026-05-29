@@ -3,7 +3,7 @@ package com.claimo.api.projects.controller;
 import com.claimo.api.exceptions.CustomApiResponse;
 import com.claimo.api.projects.dto.ProjectMemberDto;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
-import com.claimo.api.projects.service.ProjectMemberInviteService;
+import com.claimo.api.projects.service.ProjectMemberService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,7 +28,7 @@ import java.util.UUID;
 @Tag(name = "Project Members", description = "Project member management")
 public class ProjectMemberController {
 
-        private final ProjectMemberInviteService projectMemberInviteService;
+        private final ProjectMemberService projectMemberService;
 
         @PostMapping
         @Operation(summary = "Invite a member to a project", security = @SecurityRequirement(name = "bearerAuth"))
@@ -44,7 +44,7 @@ public class ProjectMemberController {
                         @AuthenticationPrincipal Jwt jwt,
                         @PathVariable UUID projectId,
                         @Valid @RequestBody ProjectRequests.InviteMember request) {
-                projectMemberInviteService.inviteMember(jwt, projectId, request);
+                projectMemberService.inviteMember(jwt, projectId, request);
                 return ResponseEntity.status(HttpStatus.CREATED).body(CustomApiResponse.success(null));
         }
 
@@ -59,7 +59,7 @@ public class ProjectMemberController {
         public ResponseEntity<CustomApiResponse<List<ProjectMemberDto>>> getMembers(
                         @AuthenticationPrincipal Jwt jwt,
                         @PathVariable UUID projectId) {
-                List<ProjectMemberDto> members = projectMemberInviteService.getMembers(jwt, projectId);
+                List<ProjectMemberDto> members = projectMemberService.getMembers(jwt, projectId);
                 return ResponseEntity.ok(CustomApiResponse.success(members));
         }
 
@@ -75,7 +75,7 @@ public class ProjectMemberController {
                         @AuthenticationPrincipal Jwt jwt,
                         @PathVariable UUID projectId,
                         @PathVariable UUID userId) {
-                projectMemberInviteService.removeMember(jwt, projectId, userId);
+                projectMemberService.removeMember(jwt, projectId, userId);
                 return ResponseEntity.noContent().build();
         }
 }

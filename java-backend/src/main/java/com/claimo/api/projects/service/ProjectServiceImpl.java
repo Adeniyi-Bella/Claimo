@@ -5,6 +5,7 @@ import com.claimo.api.company.model.CompanyMember;
 import com.claimo.api.company.repository.CompanyMemberRepository;
 import com.claimo.api.company.repository.CompanyRepository;
 import com.claimo.api.company.services.CompanyInviteService;
+import com.claimo.api.auth.AuthHelper;
 import com.claimo.api.company.dto.CompanyDto;
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.exceptions.AppExceptions;
@@ -32,7 +33,6 @@ import com.claimo.api.projects.repository.ProjectModelRepository;
 import com.claimo.api.projects.repository.PaymentItemRepository;
 import com.claimo.api.projects.repository.PendingInviteRepository;
 import com.claimo.api.user.model.User;
-import com.claimo.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -51,7 +51,6 @@ public class ProjectServiceImpl implements ProjectService {
 
         private final ProjectRepository projectRepository;
         private final CompanyRepository companyRepository;
-        private final UserService userService;
         private final ProjectMemberService projectMemberService;
         private final ProjectMemberRepository projectMemberRepository;
         private final ProjectModelRepository projectModelRepository;
@@ -59,6 +58,7 @@ public class ProjectServiceImpl implements ProjectService {
         private final PendingInviteRepository pendingInviteRepository;
         private final CompanyInviteService companyInviteService;
         private final CompanyMemberRepository companyMemberRepository;
+        private final AuthHelper authHelper;
 
         // -------------------------------------------------------------------------
         // Public API
@@ -67,7 +67,7 @@ public class ProjectServiceImpl implements ProjectService {
         @Override
         @Transactional
         public CreateUpdateProjectResponse createProject(Jwt jwt, ProjectRequests.CreateProject request) {
-                User user = getAuthenticatedUser(jwt);
+                User user = authHelper.getAuthenticatedUser(jwt);
                 Company company = getOwnedCompany(user);
 
                 Project project = new Project();
@@ -79,7 +79,7 @@ public class ProjectServiceImpl implements ProjectService {
                 project.setCreatedBy(user);
 
                 Project saved = projectRepository.save(project);
-                projectMemberService.addMember(saved, user, ProjectRole.ADMIN);
+                projectMemberService.addMember(saved, user, ProjectRole.SUPER_ADMIN);
 
                 log.info("Project created projectId={} companyId={}", saved.getId(), company.getId());
                 return toResponse(saved, user);
@@ -88,7 +88,7 @@ public class ProjectServiceImpl implements ProjectService {
         @Override
         @Transactional(readOnly = true)
         public List<ProjectDetails> getProjects(Jwt jwt) {
-                User user = getAuthenticatedUser(jwt);
+                User user = authHelper.getAuthenticatedUser(jwt);
 
                 Set<UUID> elevatedCompanyIds = companyMemberRepository.findAllByUser_Id(user.getId()).stream()
                                 .filter(m -> m.getRole() == CompanyRole.ACCOUNT_OWNER
@@ -133,7 +133,7 @@ public class ProjectServiceImpl implements ProjectService {
         @Override
         @Transactional(readOnly = true)
         public ProjectDetails getProjectById(Jwt jwt, UUID projectId) {
-                User user = getAuthenticatedUser(jwt);
+                User user = authHelper.getAuthenticatedUser(jwt);
                 Project project = getProjectForView(projectId, user);
                 List<ProjectMember> members = projectMemberRepository.findAllByProjectId(projectId);
 
@@ -167,7 +167,7 @@ public class ProjectServiceImpl implements ProjectService {
         @Transactional
         public CreateUpdateProjectResponse updateProject(Jwt jwt, UUID projectId,
                         ProjectRequests.UpdateProject request) {
-                User user = getAuthenticatedUser(jwt);
+                User user = authHelper.getAuthenticatedUser(jwt);
                 Project project = getProjectForProjectAdmin(projectId, user);
 
                 if (request.name() != null)
@@ -187,7 +187,7 @@ public class ProjectServiceImpl implements ProjectService {
         @Override
         @Transactional
         public void deleteProject(Jwt jwt, UUID projectId) {
-                User user = getAuthenticatedUser(jwt);
+                User user = authHelper.getAuthenticatedUser(jwt);
                 Project project = getProjectForProjectAdmin(projectId, user);
                 projectRepository.delete(project);
                 log.info("Project deleted projectId={}", projectId);
@@ -208,7 +208,7 @@ public class ProjectServiceImpl implements ProjectService {
         @Override
         @Transactional(readOnly = true)
         public DashboardResponse getDashboardData(Jwt jwt) {
-                User user = getAuthenticatedUser(jwt);
+                User user = authHelper.getAuthenticatedUser(jwt);
 
                 companyInviteService.markUserCreatedInvitesAccepted(user.getEmail(), user);
 
@@ -572,16 +572,6 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         private record CompanyContext(Company company, CompanyRole role) {
-        }
-
-        // -------------------------------------------------------------------------
-        // Guards and lookups
-        // -------------------------------------------------------------------------
-
-        private User getAuthenticatedUser(Jwt jwt) {
-                return userService.findByClerkUserId(jwt.getSubject())
-                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
-                                                "User not found for clerkUserId: " + jwt.getSubject()));
         }
 
         private Project getProjectForView(UUID projectId, User user) {

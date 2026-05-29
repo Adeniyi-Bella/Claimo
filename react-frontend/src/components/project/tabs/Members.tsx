@@ -33,11 +33,23 @@ export default function MembersTab({
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const { mutateAsync, isPending } = useRemoveMember(project.id);
 
-  const isAccountOwner = project.currentUserCompanyRole === "ACCOUNT_OWNER";
+  const currentUserRole = project.members.find(
+    (m) => m.id === currentUserId,
+  )?.role;
 
   const canRemove = (m: Member) => {
-    if (isAccountOwner) return m.id !== currentUserId;
-    return m.id === currentUserId;
+    if (!currentUserRole) return false;
+
+    const isSelf = m.id === currentUserId;
+
+    switch (currentUserRole) {
+      case "SUPER_ADMIN":
+        return !isSelf;
+      case "ADMIN":
+        return m.role !== "SUPER_ADMIN";
+      default:
+        return isSelf;
+    }
   };
 
   const confirmRemove = async () => {

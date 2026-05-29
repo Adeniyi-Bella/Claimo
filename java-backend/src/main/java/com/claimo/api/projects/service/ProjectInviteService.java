@@ -1,4 +1,4 @@
-package com.claimo.api.projects.invites;
+package com.claimo.api.projects.service;
 
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.repository.CompanyMemberRepository;
@@ -6,7 +6,6 @@ import com.claimo.api.company.services.CompanyService;
 import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.models.PendingInvite;
 import com.claimo.api.projects.repository.PendingInviteRepository;
-import com.claimo.api.projects.service.ProjectMemberService;
 import com.claimo.api.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
