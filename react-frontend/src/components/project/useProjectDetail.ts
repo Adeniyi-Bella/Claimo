@@ -3,11 +3,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useProject } from "@/hooks/api/projects/useProject";
 import { deleteModelFile } from "@/lib/model-storage";
 import {
+  getProjectById,
   loadProjectThumbs,
   saveProjectThumbs,
   updateProjects,
 } from "@/lib/project-storage";
-import type { ProjectResponse, PaymentItem, ProjectModel } from "@/api/dto/responseDto";
+import type {
+  ProjectResponse,
+  PaymentItem,
+  ProjectModel,
+} from "@/api/dto/responseDto";
 
 export function useProjectDetail(projectId: string) {
   const { data, isLoading, isError, refetch } = useProject(projectId);
@@ -17,13 +22,19 @@ export function useProjectDetail(projectId: string) {
   const [openUpload, setOpenUpload] = useState(false);
   const [openAddItem, setOpenAddItem] = useState(false);
   const [activeItem, setActiveItem] = useState<string | null>(null);
-  const [modelThumbs, setModelThumbs] = useState<Record<string, string>>(
-    () => loadProjectThumbs(),
+  const [modelThumbs, setModelThumbs] = useState<Record<string, string>>(() =>
+    loadProjectThumbs(),
   );
 
   useEffect(() => {
     if (!data) return;
-    setProject(data);
+
+    setProject((current) => ({
+      ...data,
+      models: current?.models?.length
+        ? current.models
+        : (getProjectById(data.id)?.models ?? []),
+    }));
   }, [data]);
 
   useEffect(() => {
@@ -54,16 +65,19 @@ export function useProjectDetail(projectId: string) {
   //   );
   // }, []);
 
-  const handleUploadModel = useCallback((model: ProjectModel, thumb: string) => {
-    setProject((current) =>
-      current ? { ...current, models: [...current.models, model] } : current,
-    );
-    setModelThumbs((current) => {
-      const next = { ...current, [model.id]: thumb };
-      saveProjectThumbs(next);
-      return next;
-    });
-  }, []);
+  const handleUploadModel = useCallback(
+    (model: ProjectModel, thumb: string) => {
+      setProject((current) =>
+        current ? { ...current, models: [...current.models, model] } : current,
+      );
+      setModelThumbs((current) => {
+        const next = { ...current, [model.id]: thumb };
+        saveProjectThumbs(next);
+        return next;
+      });
+    },
+    [],
+  );
 
   const handleDeleteModel = useCallback((modelId: string) => {
     void deleteModelFile(modelId);

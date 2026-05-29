@@ -35,8 +35,6 @@ export default function ProjectDetail() {
     activeItem,
     handleAddPaymentItem,
     handleDeleteModel,
-    // handleInvite,
-    // handleRemoveMember,
     handleUploadModel,
     modelThumbs,
     openAddItem,

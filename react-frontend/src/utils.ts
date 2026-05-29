@@ -1,5 +1,8 @@
-import type { ProjectResponse } from "./api/dto/responseDto";
-import type { PaymentItem } from "./types";
+import type {
+  ProjectModel,
+  ProjectResponse,
+  PaymentItem,
+} from "./api/dto/responseDto";
 
 export function fmtCurrency(n: number) {
   return new Intl.NumberFormat("en-US", {
@@ -67,4 +70,26 @@ export function projectSummary(p: ProjectResponse) {
     remaining: totals.total - totals.approved,
     itemCount: items.length,
   };
+}
+
+export function modelSummary(m: ProjectModel) {
+  return m.paymentItems.reduce(
+    (acc, i) => {
+      const t = itemTotals(i);
+      acc.total += t.contract;
+      acc.approved += t.approved;
+      acc.submitted += t.pending;
+      return acc;
+    },
+    { total: 0, approved: 0, submitted: 0 },
+  );
+}
+
+export function getSubmittedOrApprovedAmount(item: PaymentItem) {
+  const totals = itemTotals(item);
+  return totals.pending > 0
+    ? totals.pending
+    : totals.approved > 0
+      ? totals.approved
+      : null;
 }

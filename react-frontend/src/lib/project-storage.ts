@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SetStateAction } from "react";
 
-import type { Member, PaymentItem, ProjectModel } from "@/lib/mock-data";
+import type {  PaymentItem, ProjectModel } from "@/lib/mock-data";
 import type { ProjectResponse } from "@/api/dto/responseDto";
 
 export const PROJECTS_SESSION_KEY = "claimo:projects";
@@ -69,20 +69,6 @@ export function updateProjectById(
       project.id === projectId ? updater(project) : project,
     ),
   );
-}
-
-export function addProjectMember(projectId: string, member: Member) {
-  return updateProjectById(projectId, (project) => ({
-    ...project,
-    members: [...project.members, member],
-  }));
-}
-
-export function removeProjectMember(projectId: string, memberId: string) {
-  return updateProjectById(projectId, (project) => ({
-    ...project,
-    members: project.members.filter((member) => member.id !== memberId),
-  }));
 }
 
 export function addProjectModel(projectId: string, model: ProjectModel) {

@@ -7,10 +7,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/common/dialog";
-import type { PaymentItem, Project } from "@/lib/mock-data";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/common/button";
 import { CATEGORIES } from "@/lib/mock-data";
+import type { ProjectResponse } from "@/api/dto/responseDto";
+import type { PaymentItem } from "@/api/dto/responseDto";
 
 export default function AddPaymentItemModal({
   open,
@@ -20,7 +21,7 @@ export default function AddPaymentItemModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  project: Project;
+  project: ProjectResponse;
   onAdd: (item: PaymentItem) => void;
 }) {
   const contractors = project.members.filter((m) => m.role === "CONTRACTOR");

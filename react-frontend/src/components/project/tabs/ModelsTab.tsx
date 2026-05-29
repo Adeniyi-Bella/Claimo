@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Project } from "@/lib/mock-data";
-import { fmtDate, modelSummary } from "@/lib/mock-data";
 import { Link } from "@tanstack/react-router";
 import { Boxes, Check, Trash2, Upload } from "lucide-react";
+import type { ProjectResponse } from "@/api/dto/responseDto";
+import { fmtDate, modelSummary } from "@/utils";
 
 export default function ModelsTab({
   project,
@@ -11,7 +11,7 @@ export default function ModelsTab({
   onDeleteModel,
   onViewModels,
 }: {
-  project: Project;
+  project: ProjectResponse;
   onUpload: () => void;
   modelThumbs?: Record<string, string>;
   onDeleteModel: (modelId: string) => void;

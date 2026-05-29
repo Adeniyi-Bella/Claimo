@@ -1,16 +1,14 @@
+import type { ProjectResponse } from "@/api/dto/responseDto";
 import { Avatar } from "@/components/common/avatar";
 import { RoleBadge } from "@/components/common/status-badge";
-import {
-  fmtCurrency,
-  type Project,
-  type projectSummary,
-} from "@/lib/mock-data";
+import { type projectSummary } from "@/lib/mock-data";
+import { fmtCurrency } from "@/utils";
 
 export default function Overview({
   project,
   summary,
 }: {
-  project: Project;
+  project: ProjectResponse;
   summary: ReturnType<typeof projectSummary>;
 }) {
   const pct =
@@ -119,7 +117,7 @@ export default function Overview({
                 {pct}% approved ·{" "}
                 {summary.total > 0
                   ? Math.round((summary.submitted / summary.total) * 100)
-                  : 0 }
+                  : 0}
                 % pending review
               </div>
             </div>

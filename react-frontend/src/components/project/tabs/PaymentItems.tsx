@@ -1,17 +1,19 @@
 import { Avatar } from "@/components/common/avatar";
-import {
-  fmtCurrency,
-  fmtDate,
-  type PaymentItem,
-} from "@/lib/mock-data";
+// import {
+//   fmtCurrency,
+//   fmtDate,
+//   type PaymentItem,
+// } from "@/lib/mock-data";
 import {
   getJobStatusClass,
   getJobStatusLabel,
   getPaymentStatusClass,
   getPaymentStatusLabel,
-  getSubmittedOrApprovedAmount,
+  // getSubmittedOrApprovedAmount,
 } from "@/lib/project-display";
 import { Filter, Plus, Search } from "lucide-react";
+import type { PaymentItem } from "@/api/dto/responseDto";
+import { fmtCurrency, fmtDate, getSubmittedOrApprovedAmount } from "@/utils";
 
 export default function PaymentItemsTab({
   items,
