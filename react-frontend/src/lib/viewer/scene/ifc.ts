@@ -1,11 +1,9 @@
 import * as OBC from "@thatopen/components";
 import type { ViewerModelRecord } from "../model";
-import {
-  convertSpatialStructureToIfcTree,
-  type IfcTreeNode,
-} from "../tree";
+import { convertSpatialStructureToIfcTree, type IfcTreeNode } from "../tree";
 import type { ViewerRuntime } from "./bootstrap";
-import { loadModelFile } from "@/lib/model-storage";
+import { loadModelFile, saveModelFile } from "@/lib/model-storage";
+import { ModelApi } from "@/api/model.api";
 
 export interface LoadedIfcViewerData {
   ifcTree: IfcTreeNode[];
@@ -55,9 +53,13 @@ async function alignGridsToGroundFloor(
 export async function loadIfcViewerModel({
   runtime,
   model,
+  projectId,
+  getToken,
 }: {
   runtime: ViewerRuntime;
   model: ViewerModelRecord;
+  projectId: string;
+  getToken: () => Promise<string | null>;
 }): Promise<LoadedIfcViewerData | null> {
   const ifcLoader = runtime.components.get(OBC.IfcLoader);
 
@@ -69,9 +71,23 @@ export async function loadIfcViewerModel({
     },
   });
 
-  const buffer = await loadModelFile(model.id);
+  // Try IndexedDB first
+  let buffer = await loadModelFile(model.id);
+
   if (!buffer) {
-    return null;
+    console.log(
+      `Model ${model.id} not in IndexedDB, downloading from server...`,
+    );
+
+    const token = await getToken();
+    if (!token) {
+      console.error("No active session");
+      return null;
+    }
+
+    buffer = await ModelApi.downloadModel(token, projectId, model.id);
+    await saveModelFile(model.id, buffer);
+    console.log(`Model ${model.id} cached in IndexedDB`);
   }
 
   const data = new Uint8Array(buffer);

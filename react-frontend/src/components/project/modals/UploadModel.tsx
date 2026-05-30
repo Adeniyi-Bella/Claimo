@@ -1,39 +1,36 @@
 import { useEffect, useRef, useState } from "react";
-import type { ProjectModel, ModelFileType } from "@/lib/mock-data";
 import { Upload, X, FileBox } from "lucide-react";
-import { saveModelFile } from "@/lib/model-storage";
+import { useUploadModel } from "@/hooks/api/models/useModel";
 
 interface UploadModelModalProps {
   open: boolean;
+  projectId: string;
   onOpenChange: (open: boolean) => void;
-  onUpload: (model: ProjectModel, thumb: string) => void;
 }
 
 export default function UploadModelModal({
   open,
+  projectId,
   onOpenChange,
-  onUpload,
 }: UploadModelModalProps) {
   const [dragging, setDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { mutateAsync: uploadModel, isPending } = useUploadModel(projectId);
 
   const resetState = () => {
     setDragging(false);
     setFiles([]);
     setError(null);
-    setLoading(false);
     if (inputRef.current) {
       inputRef.current.value = "";
     }
   };
 
   useEffect(() => {
-    if (!open) {
-      resetState();
-    }
+    if (!open) resetState();
   }, [open]);
 
   if (!open) return null;
@@ -66,38 +63,20 @@ export default function UploadModelModal({
 
   const handleSubmit = async () => {
     if (files.length === 0) return;
-    setLoading(true);
 
     try {
       for (const file of files) {
-        const ext = file.name.split(".").pop()?.toLowerCase() as ModelFileType;
-        const id = crypto.randomUUID();
-
-        // let geometryJson = undefined;
-        let fileUrl = undefined;
-
-        const buffer = await file.arrayBuffer();
-        await saveModelFile(id, buffer);
-
-        const model: ProjectModel = {
-          id,
-          name: file.name,
-          fileType: ext,
-          fileUrl,
-          // geometryJson,
-          uploadedAt: new Date().toISOString(),
-          uploadedBy: "You",
-          paymentItems: [],
-        };
-
-        onUpload(model, "");
+        const modelId = crypto.randomUUID();
+        await uploadModel({ modelId, fileName: file.name, file });
       }
-      setFiles([]);
+      resetState();
       onOpenChange(false);
-    } catch (e) {
-      setError("Failed to process file. Please check the format.");
-    } finally {
-      setLoading(false);
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Failed to upload file. Please try again.";
+      setError(message);
     }
   };
 
@@ -117,7 +96,6 @@ export default function UploadModelModal({
           </button>
         </div>
 
-        {/* Drop zone */}
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -167,7 +145,6 @@ export default function UploadModelModal({
 
         {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
 
-        {/* IFC notice */}
         {files.some((file) => file.name.endsWith(".ifc")) && (
           <p className="mt-3 text-xs text-muted-foreground bg-accent rounded-lg px-3 py-2">
             IFC files are converted to Fragments on first load in the viewer.
@@ -187,11 +164,11 @@ export default function UploadModelModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={files.length === 0 || loading}
+            disabled={files.length === 0 || isPending}
             className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading
-              ? "Processing…"
+            {isPending
+              ? "Uploading…"
               : files.length > 1
                 ? `Upload ${files.length} files`
                 : "Upload"}

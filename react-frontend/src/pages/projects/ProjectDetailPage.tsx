@@ -1,6 +1,21 @@
-import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearch,
+} from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Boxes, Calendar, ChevronRight, Edit3, MapPin, Upload, UserPlus, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Boxes,
+  Calendar,
+  ChevronRight,
+  Edit3,
+  MapPin,
+  Upload,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import AddPaymentItemModal from "@/components/project/modals/Payment";
@@ -30,13 +45,10 @@ export default function ProjectDetail() {
   );
   const { data } = useDashboard();
 
-
   const {
     activeItem,
     handleAddPaymentItem,
     handleDeleteModel,
-    handleUploadModel,
-    modelThumbs,
     openAddItem,
     openInvite,
     openUpload,
@@ -183,7 +195,7 @@ export default function ProjectDetail() {
           <ModelsTab
             project={project}
             onUpload={() => setOpenUpload(true)}
-            modelThumbs={modelThumbs}
+            // modelThumbs={modelThumbs}
             onDeleteModel={handleDeleteModel}
             onViewModels={handleViewModels}
           />
@@ -213,10 +225,7 @@ export default function ProjectDetail() {
       <UploadModelModal
         open={openUpload}
         onOpenChange={setOpenUpload}
-        onUpload={(model, thumb) => {
-          handleUploadModel(model, thumb);
-          setTab("Models");
-        }}
+        projectId={project.id}
       />
       <AddPaymentItemModal
         open={openAddItem}

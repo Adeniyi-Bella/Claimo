@@ -1,40 +1,31 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useProject } from "@/hooks/api/projects/useProject";
-import { deleteModelFile } from "@/lib/model-storage";
 import {
-  getProjectById,
+  // getProjectById,
   loadProjectThumbs,
-  saveProjectThumbs,
   updateProjects,
 } from "@/lib/project-storage";
-import type {
-  ProjectResponse,
-  PaymentItem,
-  ProjectModel,
-} from "@/api/dto/responseDto";
+import type { ProjectResponse, PaymentItem } from "@/api/dto/responseDto";
+import { useDeleteModel } from "@/hooks/api/models/useModel";
 
 export function useProjectDetail(projectId: string) {
   const { data, isLoading, isError, refetch } = useProject(projectId);
+  const { mutateAsync: deleteModel } = useDeleteModel(projectId);
 
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [openInvite, setOpenInvite] = useState(false);
   const [openUpload, setOpenUpload] = useState(false);
   const [openAddItem, setOpenAddItem] = useState(false);
   const [activeItem, setActiveItem] = useState<string | null>(null);
-  const [modelThumbs, setModelThumbs] = useState<Record<string, string>>(() =>
+  const [modelThumbs] = useState<Record<string, string>>(() =>
     loadProjectThumbs(),
   );
 
   useEffect(() => {
     if (!data) return;
-
-    setProject((current) => ({
-      ...data,
-      models: current?.models?.length
-        ? current.models
-        : (getProjectById(data.id)?.models ?? []),
-    }));
+    console.log("Project loaded from server:", data.models.length, "models");
+    setProject(data);
   }, [data]);
 
   useEffect(() => {
@@ -48,48 +39,12 @@ export function useProjectDetail(projectId: string) {
     });
   }, [project]);
 
-  // const handleInvite = useCallback((member: Member) => {
-  //   setProject((current) =>
-  //     current ? { ...current, members: [...current.members, member] } : current,
-  //   );
-  // }, []);
-
-  // const handleRemoveMember = useCallback((memberId: string) => {
-  //   setProject((current) =>
-  //     current
-  //       ? {
-  //           ...current,
-  //           members: current.members.filter((member) => member.id !== memberId),
-  //         }
-  //       : current,
-  //   );
-  // }, []);
-
-  const handleUploadModel = useCallback(
-    (model: ProjectModel, thumb: string) => {
-      setProject((current) =>
-        current ? { ...current, models: [...current.models, model] } : current,
-      );
-      setModelThumbs((current) => {
-        const next = { ...current, [model.id]: thumb };
-        saveProjectThumbs(next);
-        return next;
-      });
+  const handleDeleteModel = useCallback(
+    async (modelId: string) => {
+      await deleteModel(modelId);
     },
-    [],
+    [deleteModel],
   );
-
-  const handleDeleteModel = useCallback((modelId: string) => {
-    void deleteModelFile(modelId);
-    setProject((current) =>
-      current
-        ? {
-            ...current,
-            models: current.models.filter((model) => model.id !== modelId),
-          }
-        : current,
-    );
-  }, []);
 
   const handleAddPaymentItem = useCallback((item: PaymentItem) => {
     setProject((current) =>
@@ -110,9 +65,6 @@ export function useProjectDetail(projectId: string) {
     activeItem,
     handleAddPaymentItem,
     handleDeleteModel,
-    // handleInvite,
-    // handleRemoveMember,
-    handleUploadModel,
     isError,
     isLoading,
     modelThumbs,

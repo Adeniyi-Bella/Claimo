@@ -172,8 +172,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<CustomApiResponse<ErrorResponse>> handleFileSize(
             MaxUploadSizeExceededException ex,
             HttpServletRequest request) {
-        logClientError("FILE_TOO_LARGE", request, "File size exceeds the maximum allowed (10MB)");
-        return buildError(HttpStatus.BAD_REQUEST, "File size exceeds the maximum allowed (10MB)");
+        logClientError("FILE_TOO_LARGE", request, "File size exceeds the maximum allowed (1MB)");
+        return buildError(HttpStatus.BAD_REQUEST, "File size exceeds the maximum allowed (1MB)");
     }
 
     @ExceptionHandler(MissingServletRequestPartException.class)

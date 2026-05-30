@@ -10,14 +10,15 @@ import {
 export async function loadViewerModelIntoRuntime({
   runtime,
   model,
+  projectId,
+  getToken,
   onTree,
 }: {
   runtime: ViewerRuntime;
   model: ViewerModelRecord;
-  onTree: (
-    modelId: string,
-    tree: LoadedIfcViewerData["ifcTree"],
-  ) => void;
+  projectId: string;
+  getToken: () => Promise<string | null>;
+  onTree: (modelId: string, tree: LoadedIfcViewerData["ifcTree"]) => void;
 }): Promise<boolean> {
   const cached = await loadFragmentCache(model.id);
   if (cached) {
@@ -41,7 +42,12 @@ export async function loadViewerModelIntoRuntime({
     return true;
   }
 
-  const loaded = await loadIfcViewerModel({ runtime, model });
+  const loaded = await loadIfcViewerModel({
+    runtime,
+    model,
+    projectId,
+    getToken,
+  });
   if (!loaded) return false;
 
   await saveFragmentCache(model.id, {

@@ -6,7 +6,11 @@ import { useViewerStore } from "../state/store";
 export function useModelViewer() {
   const session = useViewerSession();
   const settings = useViewerSettings();
-  const runtime = useViewerRuntime(session.models, settings.canvasBackground);
+  const runtime = useViewerRuntime(
+    session.models,
+    session.projectId,
+    settings.canvasBackground,
+  );
   const modelName = useViewerStore((state) => state.modelName);
 
   return {

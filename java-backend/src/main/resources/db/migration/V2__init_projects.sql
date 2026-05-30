@@ -11,7 +11,7 @@ CREATE TABLE projects (
 );
 
 CREATE TABLE project_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     file_name VARCHAR(255) NOT NULL,
     file_url TEXT NOT NULL,

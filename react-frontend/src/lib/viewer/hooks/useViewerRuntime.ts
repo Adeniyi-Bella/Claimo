@@ -3,12 +3,9 @@ import type { RefObject } from "react";
 import type * as OBC from "@thatopen/components";
 import * as THREE from "three";
 import { useViewerStore } from "../state/store";
-import {
-  createViewerGeometryMesh,
-  createViewerRuntime,
-  loadViewerModelIntoRuntime,
-} from "../scene";
+import { createViewerRuntime, loadViewerModelIntoRuntime } from "../scene";
 import type { ViewerModelRecord } from "../model";
+import { useAuth } from "@clerk/react";
 
 export type ModelViewerStatus =
   | "idle"
@@ -25,16 +22,18 @@ export interface UseViewerRuntimeResult {
 
 export function useViewerRuntime(
   models: ViewerModelRecord[],
+  projectId: string,
   backgroundColor: string,
 ): UseViewerRuntimeResult {
   const containerRef = useRef<HTMLDivElement>(null);
   const componentsRef = useRef<OBC.Components | null>(null);
-  const runtimeRef = useRef<Awaited<ReturnType<typeof createViewerRuntime>> | null>(
-    null,
-  );
+  const runtimeRef = useRef<Awaited<
+    ReturnType<typeof createViewerRuntime>
+  > | null>(null);
   const cameraRef = useRef<any>(null);
   const backgroundColorRef = useRef(backgroundColor);
   const [status, setStatus] = useState<ModelViewerStatus>("idle");
+  const { getToken } = useAuth();
 
   const setIfcTree = useViewerStore((state) => state.setIfcTree);
   const setIfcTreeLoading = useViewerStore((state) => state.setIfcTreeLoading);
@@ -128,6 +127,8 @@ export function useViewerRuntime(
             const ok = await loadViewerModelIntoRuntime({
               runtime,
               model,
+              projectId,
+              getToken,
               onTree: (modelId, tree) => setIfcTree(modelId, tree),
             });
 
@@ -140,17 +141,6 @@ export function useViewerRuntime(
               setStatus("error");
               return;
             }
-            continue;
-          }
-
-          if (model.fileType === "json" && model.geometryJson) {
-            const mesh = createViewerGeometryMesh(model.geometryJson);
-            if (!mesh) {
-              setStatus("error");
-              return;
-            }
-
-            runtime.world.scene.three.add(mesh);
             continue;
           }
 
@@ -180,7 +170,13 @@ export function useViewerRuntime(
       }
       cameraRef.current = null;
     };
-  }, [models, setIfcTree, setIfcTreeLoading, setOBCRefs, setSelectionFromModelMap]);
+  }, [
+    models,
+    setIfcTree,
+    setIfcTreeLoading,
+    setOBCRefs,
+    setSelectionFromModelMap,
+  ]);
 
   return {
     status,
@@ -191,10 +187,7 @@ export function useViewerRuntime(
 
 function cloneModelIdMap(modelIdMap: Record<string, Set<number>>) {
   return Object.fromEntries(
-    Object.entries(modelIdMap).map(([modelId, ids]) => [
-      modelId,
-      new Set(ids),
-    ]),
+    Object.entries(modelIdMap).map(([modelId, ids]) => [modelId, new Set(ids)]),
   );
 }
 

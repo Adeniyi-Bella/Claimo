@@ -1,30 +1,12 @@
 import type { PaymentItemLocal } from "./store";
 
-export type ViewerFileType = "ifc" | "json";
-
-export interface ViewerGeometryJson {
-  data: {
-    attributes: {
-      position: {
-        array: number[];
-        itemSize: number;
-      };
-      normal?: {
-        array: number[];
-        itemSize: number;
-      };
-    };
-    index?: {
-      array: number[];
-    };
-  };
-}
+export type ViewerFileType = "ifc";
 
 export interface ViewerModelRecord {
   id: string;
   name: string;
   fileType: ViewerFileType;
-  geometryJson?: ViewerGeometryJson;
+  fileUrl?: string;
   paymentItems?: PaymentItemLocal[];
 }
 
