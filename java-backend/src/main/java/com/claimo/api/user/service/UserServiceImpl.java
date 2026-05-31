@@ -2,6 +2,7 @@ package com.claimo.api.user.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 
 import com.claimo.api.company.model.Company;
 import com.claimo.api.company.model.CompanyMember;
@@ -11,6 +12,7 @@ import com.claimo.api.user.UserRepository;
 import com.claimo.api.user.dto.UserProfileResponse;
 import com.claimo.api.user.model.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +27,32 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User createUser(String clerkUserId, String email, String firstName, String lastName) {
+        String normalizedEmail = email.toLowerCase(Locale.ROOT).trim();
+
+        Optional<User> existingByClerkUserId = userRepository.findByClerkUserId(clerkUserId);
+        if (existingByClerkUserId.isPresent()) {
+            User existing = existingByClerkUserId.get();
+            updateUserFields(existing, clerkUserId, normalizedEmail, firstName, lastName);
+            return userRepository.save(existing);
+        }
+
+        Optional<User> existingByEmail = userRepository.findByEmail(normalizedEmail);
+        if (existingByEmail.isPresent()) {
+            User existing = existingByEmail.get();
+            updateUserFields(existing, clerkUserId, normalizedEmail, firstName, lastName);
+            return userRepository.save(existing);
+        }
+
         User user = new User();
-        user.setClerkUserId(clerkUserId);
-        user.setEmail(email);
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        return userRepository.save(user);
+        updateUserFields(user, clerkUserId, normalizedEmail, firstName, lastName);
+
+        try {
+            return userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException ex) {
+            return userRepository.findByClerkUserId(clerkUserId)
+                    .or(() -> userRepository.findByEmail(normalizedEmail))
+                    .orElseThrow(() -> ex);
+        }
     }
 
     @Override
@@ -89,5 +111,12 @@ public class UserServiceImpl implements UserService {
                 company.getId(),
                 company.getName(),
                 member.getRole().name());
+    }
+
+    private void updateUserFields(User user, String clerkUserId, String email, String firstName, String lastName) {
+        user.setClerkUserId(clerkUserId);
+        user.setEmail(email);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
     }
 }

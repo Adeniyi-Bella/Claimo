@@ -1,7 +1,15 @@
 import { useAuth as useClerkAuth, useUser } from "@clerk/react";
 
 export const useAuth = () => {
-  const { isLoaded, isSignedIn, userId, sessionId, orgId, orgRole } = useClerkAuth();
+  const {
+    isLoaded,
+    isSignedIn,
+    userId,
+    sessionId,
+    orgId,
+    orgRole,
+    getToken,
+  } = useClerkAuth();
   const { user } = useUser();
 
   return {
@@ -12,6 +20,7 @@ export const useAuth = () => {
     sessionId,
     orgId,
     orgRole,
+    getToken,
     user,
   };
 };

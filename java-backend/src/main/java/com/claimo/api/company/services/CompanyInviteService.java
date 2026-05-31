@@ -197,9 +197,11 @@ public class CompanyInviteService {
     /**
      * Finalizes all PENDING invites for a user who just signed up.
      *
-     * Called from the user.created webhook handler after a new user is persisted.
-     * Finds any PENDING invites for their email, marks them accepted, and adds
-     * them as a member to each invited company.
+     * Called after we know the user exists locally, either from the user.created
+     * webhook or from the authenticated invite sync path.
+     *
+     * Finds any non-revoked invites for their email, marks them accepted, and
+     * adds them as a member to each invited company.
      *
      * Only processes PENDING invites — ACCEPTED and REVOKED invites are skipped
      * to avoid duplicate membership additions.
