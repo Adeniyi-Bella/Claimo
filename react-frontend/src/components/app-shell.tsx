@@ -1,16 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  // Bell,
   ChevronDown,
   FolderKanban,
   LayoutDashboard,
-  // Plus,
   Search,
   Settings,
-  // HelpCircle,
   Building2,
   LogOut,
-  // User,
 } from "lucide-react";
 import { Avatar } from "./common/avatar";
 import { COMPANY } from "@/lib/mock-data";
@@ -31,41 +27,6 @@ const nav = [
   { to: "/projects", label: "Projects", icon: FolderKanban },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
-
-// const notifications = [
-//   {
-//     id: "n1",
-//     type: "submitted",
-//     title: "Priya Shah submitted a claim",
-//     body: "Reinforcement · Harbor Tower · €88,200",
-//     time: "12m ago",
-//     unread: true,
-//   },
-//   {
-//     id: "n2",
-//     type: "approved",
-//     title: "Your claim was approved",
-//     body: "Concrete Works · Harbor Tower · €312,500",
-//     time: "2h ago",
-//     unread: true,
-//   },
-//   {
-//     id: "n3",
-//     type: "rejected",
-//     title: "Claim rejected",
-//     body: "Plumbing · Harbor Tower · resubmission required",
-//     time: "Yesterday",
-//     unread: false,
-//   },
-//   {
-//     id: "n4",
-//     type: "invite",
-//     title: "You were added to Civic Library Renewal",
-//     body: "Role: Admin",
-//     time: "3d ago",
-//     unread: false,
-//   },
-// ];
 
 // Reusable user menu dropdown content
 function UserMenuContent({ onSignOut }: { onSignOut: () => void }) {

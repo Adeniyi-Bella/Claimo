@@ -56,14 +56,8 @@ public class ProjectServiceImpl implements ProjectService {
         private final ProjectModelRepository projectModelRepository;
         private final PaymentItemRepository paymentItemRepository;
         private final PendingInviteRepository pendingInviteRepository;
-        // private final CompanyInviteService companyInviteService;
         private final CompanyMemberRepository companyMemberRepository;
         private final AuthHelper authHelper;
-        // private final ProjectInviteService projectInviteService;
-
-        // -------------------------------------------------------------------------
-        // Public API
-        // -------------------------------------------------------------------------
 
         @Override
         @Transactional

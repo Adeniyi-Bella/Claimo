@@ -16,16 +16,17 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/common/button";
 import { DashboardLoader } from "@/components/common/loader/loader";
 import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDialog";
-import { useCreateProject } from "@/hooks/api/projects/useCreateProject";
-import { useProjects } from "@/hooks/api/projects/useProjects";
-import { projectSummary } from "@/lib/mock-data";
-import { fmtCurrency, fmtDate } from "@/utils";
+import { useCreateProject } from "@/hooks/api/projects/useProject";
+import { useGetProjects } from "@/hooks/api/projects/useProject";
+import { fmtCurrency, fmtDate, projectSummary } from "@/utils";
 
 export default function Projects() {
-  const { data, isLoading, isError, refetch } = useProjects();
+  const { data, isLoading, isError, refetch } = useGetProjects();
   const { createProject, isCreating } = useCreateProject();
   const [view, setView] = useState<"grid" | "table">("grid");
-  const [filter, setFilter] = useState<"All" | "Active" | "Completed" | "Archived">("All");
+  const [filter, setFilter] = useState<
+    "All" | "Active" | "Completed" | "Archived"
+  >("All");
   const [q, setQ] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -58,7 +59,8 @@ export default function Projects() {
             <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {projects.length} projects across{" "}
-              {new Set(projects.map((project) => project.location)).size} locations.
+              {new Set(projects.map((project) => project.location)).size}{" "}
+              locations.
             </p>
           </div>
           <Button
@@ -81,19 +83,21 @@ export default function Projects() {
           </div>
 
           <div className="inline-flex items-center rounded-md border border-border bg-surface p-0.5">
-            {(["All", "Active", "Completed", "Archived"] as const).map((value) => (
-              <button
-                key={value}
-                onClick={() => setFilter(value)}
-                className={`h-7 px-2.5 text-xs rounded-[5px] transition ${
-                  filter === value
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {value}
-              </button>
-            ))}
+            {(["All", "Active", "Completed", "Archived"] as const).map(
+              (value) => (
+                <button
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  className={`h-7 px-2.5 text-xs rounded-[5px] transition ${
+                    filter === value
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {value}
+                </button>
+              ),
+            )}
           </div>
 
           <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition">
@@ -104,7 +108,9 @@ export default function Projects() {
             <button
               onClick={() => setView("grid")}
               className={`h-7 w-7 inline-flex items-center justify-center rounded-[5px] ${
-                view === "grid" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                view === "grid"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground"
               }`}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
@@ -112,7 +118,9 @@ export default function Projects() {
             <button
               onClick={() => setView("table")}
               className={`h-7 w-7 inline-flex items-center justify-center rounded-[5px] ${
-                view === "table" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                view === "table"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground"
               }`}
             >
               <List className="h-3.5 w-3.5" />
@@ -128,7 +136,10 @@ export default function Projects() {
           <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((project) => {
               const summary = projectSummary(project);
-              const pct = summary.total > 0 ? Math.round((summary.approved / summary.total) * 100) : 0;
+              const pct =
+                summary.total > 0
+                  ? Math.round((summary.approved / summary.total) * 100)
+                  : 0;
 
               return (
                 <Link
@@ -149,7 +160,9 @@ export default function Projects() {
                       {project.status}
                     </span>
                   </div>
-                  <div className="mt-4 font-medium tracking-tight">{project.name}</div>
+                  <div className="mt-4 font-medium tracking-tight">
+                    {project.name}
+                  </div>
                   <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
                     {project.description}
                   </div>
@@ -159,19 +172,25 @@ export default function Projects() {
                       <div className="text-muted-foreground inline-flex items-center gap-1">
                         <MapPin className="h-3 w-3" /> Location
                       </div>
-                      <div className="mt-0.5 font-medium truncate">{project.location}</div>
+                      <div className="mt-0.5 font-medium truncate">
+                        {project.location}
+                      </div>
                     </div>
                     <div>
                       <div className="text-muted-foreground inline-flex items-center gap-1">
                         <Boxes className="h-3 w-3" /> Models
                       </div>
-                      <div className="mt-0.5 font-medium">{project.models.length}</div>
+                      <div className="mt-0.5 font-medium">
+                        {project.models.length}
+                      </div>
                     </div>
                     <div>
                       <div className="text-muted-foreground inline-flex items-center gap-1">
                         <Users className="h-3 w-3" /> Members
                       </div>
-                      <div className="mt-0.5 font-medium">{project.members.length}</div>
+                      <div className="mt-0.5 font-medium">
+                        {project.members.length}
+                      </div>
                     </div>
                   </div>
 
@@ -188,7 +207,8 @@ export default function Projects() {
                     </div>
                     <div className="mt-2 flex items-center justify-between text-[11px]">
                       <span className="text-muted-foreground inline-flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Started {fmtDate(project.startDate)}
+                        <Calendar className="h-3 w-3" /> Started{" "}
+                        {fmtDate(project.startDate)}
                       </span>
                       <span className="font-medium tabular-nums">{pct}%</span>
                     </div>
@@ -215,7 +235,10 @@ export default function Projects() {
                 {filtered.map((project) => {
                   const summary = projectSummary(project);
                   return (
-                    <tr key={project.id} className="hover:bg-accent/40 transition">
+                    <tr
+                      key={project.id}
+                      className="hover:bg-accent/40 transition"
+                    >
                       <td className="px-4 py-3">
                         <Link
                           to="/projects/$projectId"
@@ -277,7 +300,8 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
         No projects yet
       </h2>
       <p className="mt-1.5 text-sm text-muted-foreground max-w-md mx-auto">
-        Create your first project to start tracking models, members and payment claims.
+        Create your first project to start tracking models, members and payment
+        claims.
       </p>
       <Button onClick={onCreateClick} className="mt-6">
         <Plus className="h-4 w-4" /> New project
@@ -289,7 +313,9 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
 function EmptyResults({ onCreateClick }: { onCreateClick: () => void }) {
   return (
     <div className="mt-10 rounded-2xl border border-dashed border-border bg-surface p-10 text-center shadow-soft">
-      <h2 className="text-lg font-semibold tracking-tight">No matching projects</h2>
+      <h2 className="text-lg font-semibold tracking-tight">
+        No matching projects
+      </h2>
       <p className="mt-1.5 text-sm text-muted-foreground max-w-md mx-auto">
         Try another search or create a new project.
       </p>

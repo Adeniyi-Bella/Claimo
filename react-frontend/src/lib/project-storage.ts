@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SetStateAction } from "react";
 
-import type {  PaymentItem, ProjectModel } from "@/lib/mock-data";
-import type { ProjectResponse } from "@/api/dto/responseDto";
+import type { ProjectModel, ProjectResponse, PaymentItem } from "@/api/dto/responseDto";
 
 export const PROJECTS_SESSION_KEY = "claimo:projects";
 export const PROJECT_THUMBS_SESSION_KEY = "claimo:thumbs";

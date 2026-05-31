@@ -16,10 +16,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/common/dialog";
-import { useRemoveMember } from "@/hooks/api/projects/useRemoveMember";
 import { fmtDate } from "@/utils";
 import { toast } from "@/hooks/use-toast";
 import { ApiError } from "@/api/error/customeError";
+import { useRemoveMemberFromProject } from "@/hooks/api/projects/useProject";
 
 export default function MembersTab({
   project,
@@ -31,7 +31,7 @@ export default function MembersTab({
   currentUserId: string;
 }) {
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
-  const { mutateAsync, isPending } = useRemoveMember(project.id);
+  const { mutateAsync, isPending } = useRemoveMemberFromProject(project.id);
 
   const currentUserRole = project.members.find(
     (m) => m.id === currentUserId,

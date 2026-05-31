@@ -19,7 +19,7 @@ import { Button } from "@/components/common/button";
 import { DashboardLoader } from "@/components/common/loader/loader";
 import { RoleBadge } from "@/components/common/status-badge";
 import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDialog";
-import { useCreateProject } from "@/hooks/api/projects/useCreateProject";
+import { useCreateProject } from "@/hooks/api/projects/useProject";
 import { useDashboard } from "@/hooks/api/useDashboard";
 import { fmtCurrency, fmtDate } from "@/utils";
 import type { ProjectResponse } from "@/api/dto/responseDto";

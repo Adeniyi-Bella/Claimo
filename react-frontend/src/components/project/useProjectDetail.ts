@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { useProject } from "@/hooks/api/projects/useProject";
+import { useGetProject } from "@/hooks/api/projects/useProject";
 import {
   // getProjectById,
   loadProjectThumbs,
@@ -10,7 +10,7 @@ import type { ProjectResponse, PaymentItem } from "@/api/dto/responseDto";
 import { useDeleteModel } from "@/hooks/api/models/useModel";
 
 export function useProjectDetail(projectId: string) {
-  const { data, isLoading, isError, refetch } = useProject(projectId);
+  const { data, isLoading, isError, refetch } = useGetProject(projectId);
   const { mutateAsync: deleteModel } = useDeleteModel(projectId);
 
   const [project, setProject] = useState<ProjectResponse | null>(null);

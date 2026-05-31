@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import AddPaymentItemModal from "@/components/project/modals/Payment";
+import AddPaymentItemDialogue from "@/components/project/dialogues/AddPaymentItemDialogue";
 import InviteModal from "@/components/project/modals/Invite";
 import UploadModelModal from "@/components/project/modals/UploadModel";
 import PaymentItemPanel from "@/components/project/panel/PaymentRighthandPanel";
@@ -227,7 +227,7 @@ export default function ProjectDetail() {
         onOpenChange={setOpenUpload}
         projectId={project.id}
       />
-      <AddPaymentItemModal
+      <AddPaymentItemDialogue
         open={openAddItem}
         onOpenChange={setOpenAddItem}
         project={project}

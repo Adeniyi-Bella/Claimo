@@ -13,7 +13,7 @@ import { CATEGORIES } from "@/lib/mock-data";
 import type { ProjectResponse } from "@/api/dto/responseDto";
 import type { PaymentItem } from "@/api/dto/responseDto";
 
-export default function AddPaymentItemModal({
+export default function AddPaymentItemDialogue({
   open,
   onOpenChange,
   project,
@@ -242,13 +242,11 @@ export default function AddPaymentItemModal({
                 reset();
                 onOpenChange(false);
               }}
-              // className="h-9 px-3 rounded-md border border-border bg-surface text-sm hover:bg-accent transition"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              // className="h-9 px-3.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition"
             >
               Add item
             </Button>

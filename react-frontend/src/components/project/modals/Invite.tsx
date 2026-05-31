@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/common/dialog";
 import type { ProjectResponse, ProjectRole } from "@/api/dto/responseDto";
-import { useInviteMemberToProject } from "@/hooks/api/projects/useInviteMemberToProject";
+import { useInviteMemberToProject } from "@/hooks/api/projects/useProject";
 import { ApiError } from "@/api/error/customeError";
 import { toast } from "@/hooks/use-toast";
 
