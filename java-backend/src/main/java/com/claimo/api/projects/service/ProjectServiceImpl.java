@@ -4,7 +4,7 @@ import com.claimo.api.company.model.Company;
 import com.claimo.api.company.model.CompanyMember;
 import com.claimo.api.company.repository.CompanyMemberRepository;
 import com.claimo.api.company.repository.CompanyRepository;
-import com.claimo.api.company.services.CompanyInviteService;
+// import com.claimo.api.company.services.CompanyInviteService;
 import com.claimo.api.auth.AuthHelper;
 import com.claimo.api.company.dto.CompanyDto;
 import com.claimo.api.company.enums.CompanyRole;
@@ -56,9 +56,10 @@ public class ProjectServiceImpl implements ProjectService {
         private final ProjectModelRepository projectModelRepository;
         private final PaymentItemRepository paymentItemRepository;
         private final PendingInviteRepository pendingInviteRepository;
-        private final CompanyInviteService companyInviteService;
+        // private final CompanyInviteService companyInviteService;
         private final CompanyMemberRepository companyMemberRepository;
         private final AuthHelper authHelper;
+        // private final ProjectInviteService projectInviteService;
 
         // -------------------------------------------------------------------------
         // Public API
@@ -210,7 +211,17 @@ public class ProjectServiceImpl implements ProjectService {
         public DashboardResponse getDashboardData(Jwt jwt) {
                 User user = authHelper.getAuthenticatedUser(jwt);
 
-                companyInviteService.markUserCreatedInvitesAccepted(user.getEmail(), user);
+                // try {
+                //         if (companyInviteService.hasPendingInvites(user.getEmail())) {
+                //                 companyInviteService.markUserCreatedInvitesAccepted(user.getEmail(), user);
+                //         }
+                //         if (projectInviteService.hasPendingInvites(user.getEmail())) {
+                //                 projectInviteService.markUserCreatedInvitesAccepted(user.getEmail(), user);
+                //         }
+                // } catch (Exception e) {
+                //         log.warn("Failed to finalize pending invites for userId={} error={}", user.getId(),
+                //                         e.getMessage());
+                // }
 
                 CompanyContext companyCtx = resolveCompanyContext(user);
 

@@ -218,7 +218,8 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         }
 
         ProjectRole role = getRole(projectId, user.getId());
-        if (role != ProjectRole.ADMIN) {
+        if (role != ProjectRole.ADMIN && role != ProjectRole.SUPER_ADMIN) {
+            log.info("User is not admin userId={} projectId={} role={}", user.getId(), projectId, role);
             throw new AppExceptions.ForbiddenException("Only project ADMINs can invite members");
         }
 

@@ -10,18 +10,18 @@ import com.claimo.api.company.repository.CompanyMemberRepository;
 import com.claimo.api.company.repository.CompanyRepository;
 import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.integrations.clerk.ClerkInvitationService;
-import com.claimo.api.projects.enums.ProjectRole;
-import com.claimo.api.projects.models.Project;
-import com.claimo.api.projects.repository.ProjectMemberRepository;
-import com.claimo.api.projects.repository.ProjectRepository;
-import com.claimo.api.projects.service.ProjectMemberService;
+// import com.claimo.api.projects.enums.ProjectRole;
+// import com.claimo.api.projects.models.Project;
+// import com.claimo.api.projects.repository.ProjectMemberRepository;
+// import com.claimo.api.projects.repository.ProjectRepository;
+// import com.claimo.api.projects.service.ProjectMemberService;
 import com.claimo.api.user.model.User;
 import com.claimo.api.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
+// import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.claimo.api.webhooks.clerk.ClerkWebhookPayloadService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,9 +40,9 @@ public class CompanyInviteService {
     private final CompanyInviteRepository companyInviteRepository;
     private final ClerkInvitationService clerkInvitationService;
     private final UserService userService;
-    private final ProjectRepository projectRepository;
-    private final ProjectMemberRepository projectMemberRepository;
-    private final ProjectMemberService projectMemberService;
+    // private final ProjectRepository projectRepository;
+    // private final ProjectMemberRepository projectMemberRepository;
+    // private final ProjectMemberService projectMemberService;
     private final AuthHelper authHelper;
     private final CompanyService companyService;
     private final CompanyMemberRepository companyMemberRepository;
@@ -204,7 +204,7 @@ public class CompanyInviteService {
      * Only processes PENDING invites — ACCEPTED and REVOKED invites are skipped
      * to avoid duplicate membership additions.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void markUserCreatedInvitesAccepted(String email, User user) {
         log.info("Checking pending invites for email={}", email);
         List<CompanyInvite> invites = companyInviteRepository.findAllByEmail(email).stream()
@@ -259,15 +259,15 @@ public class CompanyInviteService {
             companyService.addMember(invite.getCompany(), user, invite.getRole());
         }
 
-        if (invite.getRole() == CompanyRole.ADMIN) {
-            List<Project> companyProjects = projectRepository.findAllByCompanyIdIn(
-                    List.of(invite.getCompany().getId()));
-            for (Project project : companyProjects) {
-                if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), user.getId())) {
-                    projectMemberService.addMember(project, user, ProjectRole.ADMIN);
-                }
-            }
-        }
+        // if (invite.getRole() == CompanyRole.ADMIN) {
+        //     List<Project> companyProjects = projectRepository.findAllByCompanyIdIn(
+        //             List.of(invite.getCompany().getId()));
+        //     for (Project project : companyProjects) {
+        //         if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), user.getId())) {
+        //             projectMemberService.addMember(project, user, ProjectRole.ADMIN);
+        //         }
+        //     }
+        // }
     }
 
     /**
