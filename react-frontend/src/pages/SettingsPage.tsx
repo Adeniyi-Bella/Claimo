@@ -48,7 +48,9 @@ export default function Settings() {
   );
 
   const currentUser = {
-    name: user?.fullName ?? user?.firstName ?? "User",
+    name: user?.fullName ?? user?.firstName ?? "",
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
     email: user?.primaryEmailAddress?.emailAddress ?? "",
     avatarHue: 250,
   };
@@ -135,10 +137,18 @@ export default function Settings() {
       await user.delete();
       navigate({ to: "/" });
     } catch (error) {
+      const message =
+        error instanceof Error &&
+        error.message
+          .toLowerCase()
+          .includes("additional verification")
+          ? "Please sign out and sign in again, then try deleting your account."
+          : error instanceof Error
+            ? error.message
+            : "We couldn't delete your account right now.";
+
       setDeleteError(
-        error instanceof Error
-          ? error.message
-          : "We couldn't delete your account right now.",
+        message,
       );
     } finally {
       setDeletePending(false);
@@ -191,8 +201,8 @@ export default function Settings() {
             </button>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="First name" defaultValue="Elena" />
-            <Field label="Last name" defaultValue="Marchetti" />
+            <Field label="First name"  disabled defaultValue={currentUser.firstName} />
+            <Field label="Last name" disabled defaultValue={currentUser.lastName} />
             <Field
               label="Email"
               icon={Mail}
@@ -206,14 +216,14 @@ export default function Settings() {
               defaultValue="••••••••"
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
+          {/* <div className="flex justify-end gap-2 pt-2">
             <button className="h-9 px-3 rounded-md border border-border bg-surface text-sm hover:bg-accent">
               Cancel
             </button>
             <button className="h-9 px-3.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 shadow-soft">
               Save changes
             </button>
-          </div>
+          </div> */}
         </Section>
 
         {/* Company */}
