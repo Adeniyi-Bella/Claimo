@@ -38,10 +38,68 @@ export function useViewerRuntime(
   const setIfcTree = useViewerStore((state) => state.setIfcTree);
   const setIfcTreeLoading = useViewerStore((state) => state.setIfcTreeLoading);
   const setOBCRefs = useViewerStore((state) => state.setOBCRefs);
+  const setSelectedElementInfo = useViewerStore(
+    (state) => state.setSelectedElementInfo,
+  );
   const setSelectionFromModelMap = useViewerStore(
     (state) => state.setSelectionFromModelMap,
   );
   const lastSelectionRef = useRef<Record<string, Set<number>>>({});
+  const selectionRequestIdRef = useRef(0);
+
+  const updateSelectionDetails = useCallback(
+    async (
+      runtimeInstance: Awaited<ReturnType<typeof createViewerRuntime>>,
+      modelIdMap: Record<string, Set<number>>,
+      preferredModelId?: string,
+    ) => {
+      const requestId = ++selectionRequestIdRef.current;
+      const activeModelId =
+        (preferredModelId && modelIdMap[preferredModelId]
+          ? preferredModelId
+          : null) ?? Object.keys(modelIdMap)[0];
+      const localIds = activeModelId
+        ? Array.from(modelIdMap[activeModelId] ?? [])
+        : [];
+
+      if (!activeModelId || localIds.length === 0) {
+        setSelectedElementInfo(null);
+        return;
+      }
+
+      const loadedModel = runtimeInstance.fragments.list.get(activeModelId) as
+        | {
+            getItemsData?: (
+              ids: number[],
+            ) => Promise<Array<Record<string, unknown>>>;
+          }
+        | undefined;
+
+      if (!loadedModel?.getItemsData) {
+        setSelectedElementInfo(null);
+        return;
+      }
+
+      try {
+        const [data = {}] = await loadedModel.getItemsData([localIds[0]]);
+
+        if (requestId !== selectionRequestIdRef.current) return;
+
+        setSelectedElementInfo({
+          modelId: activeModelId,
+          localId: localIds[0],
+          label: inferElementLabel(data, localIds[0]),
+          data,
+        });
+      } catch (error) {
+        console.error("Failed to load selected element properties:", error);
+        if (requestId === selectionRequestIdRef.current) {
+          setSelectedElementInfo(null);
+        }
+      }
+    },
+    [setSelectedElementInfo],
+  );
 
   const handleResetCamera = useCallback(async () => {
     if (!cameraRef.current) return;
@@ -110,10 +168,16 @@ export function useViewerRuntime(
           );
           setSelectionFromModelMap(modelIdMap, preferredModelId);
           lastSelectionRef.current = cloneModelIdMap(modelIdMap);
+          void updateSelectionDetails(
+            runtime,
+            modelIdMap,
+            preferredModelId,
+          );
         });
 
         runtime.highlighter.events.select.onClear.add(() => {
           lastSelectionRef.current = {};
+          selectionRequestIdRef.current += 1;
           useViewerStore.getState().clearSelection();
         });
 
@@ -149,8 +213,8 @@ export function useViewerRuntime(
         }
 
         if (!cancelled) {
-          setStatus("ready");
-        }
+    setStatus("ready");
+      }
       } catch (err) {
         console.error("Viewer init error:", err);
         if (!cancelled) setStatus("error");
@@ -175,6 +239,7 @@ export function useViewerRuntime(
     setIfcTree,
     setIfcTreeLoading,
     setOBCRefs,
+    setSelectedElementInfo,
     setSelectionFromModelMap,
   ]);
 
@@ -183,6 +248,24 @@ export function useViewerRuntime(
     containerRef,
     handleResetCamera,
   };
+}
+
+function inferElementLabel(data: Record<string, unknown>, localId: number) {
+  const candidates = [
+    data["Name"],
+    data["LongName"],
+    data["GlobalId"],
+    data["type"],
+    data["Type"],
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate;
+    }
+  }
+
+  return `Element ${localId}`;
 }
 
 function cloneModelIdMap(modelIdMap: Record<string, Set<number>>) {

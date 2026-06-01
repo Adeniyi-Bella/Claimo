@@ -66,6 +66,12 @@ interface ViewerStore {
   rightPanelWidth: number;
   selectedByModelId: Record<string, Set<number>>;
   selectedIds: Set<string>;
+  selectedElementInfo: {
+    modelId: string;
+    localId: number;
+    label: string;
+    data: Record<string, unknown>;
+  } | null;
   hoveredId: string | null;
   showEdges: boolean;
   colorByStatus: boolean;
@@ -92,6 +98,14 @@ interface ViewerStore {
   setSelectionFromModelMap: (
     modelIdMap: Record<string, Set<number>>,
     preferredModelId?: string,
+  ) => void;
+  setSelectedElementInfo: (
+    info: {
+      modelId: string;
+      localId: number;
+      label: string;
+      data: Record<string, unknown>;
+    } | null,
   ) => void;
   setLeftPanelCollapsed: (v: boolean) => void;
   toggleLeftPanel: () => void;
@@ -125,6 +139,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   rightPanelWidth: VIEWER_RIGHT_PANEL_DEFAULT_WIDTH,
   selectedByModelId: {},
   selectedIds: new Set(),
+  selectedElementInfo: null,
   hoveredId: null,
   showEdges: false,
   colorByStatus: true,
@@ -152,6 +167,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
       leftPanelWidth: VIEWER_LEFT_PANEL_DEFAULT_WIDTH,
       rightPanelWidth: VIEWER_RIGHT_PANEL_DEFAULT_WIDTH,
       selectedByModelId: {},
+      selectedElementInfo: null,
       hiddenModelIds: new Set(),
       _components: null,
       _highlighter: null,
@@ -186,6 +202,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
         paymentItems: normalizePaymentItems(model?.paymentItems),
         ifcTree: state.ifcTreesByModelId[modelId] ?? [],
         selectedIds: new Set(Array.from(activeSelection).map(String)),
+        selectedElementInfo: null,
         hoveredId: null,
         models: refreshedModels,
       };
@@ -206,6 +223,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
         return {
           selectedByModelId: {},
           selectedIds: new Set(),
+          selectedElementInfo: null,
         };
       }
 
@@ -229,6 +247,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
         modelName: model?.name ?? state.modelName,
         paymentItems: normalizePaymentItems(model?.paymentItems),
         ifcTree: state.ifcTreesByModelId[activeModelId] ?? [],
+        selectedElementInfo: null,
         hoveredId: null,
       };
     }),
@@ -301,7 +320,9 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
     set({
       selectedByModelId: {},
       selectedIds: new Set(),
+      selectedElementInfo: null,
     }),
+  setSelectedElementInfo: (info) => set({ selectedElementInfo: info }),
   setHovered: (id) => set({ hoveredId: id }),
   setShowEdges: (v) => set({ showEdges: v }),
   setColorByStatus: (v) => set({ colorByStatus: v }),

@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import type { RefObject } from "react";
+import { useViewerStore } from "../state/store";
 
 export function ViewerViewport({
   containerRef,
@@ -10,6 +11,9 @@ export function ViewerViewport({
   status: "idle" | "loading" | "converting" | "ready" | "error";
   canvasBackground: string;
 }) {
+  const selectedElementInfo = useViewerStore((state) => state.selectedElementInfo);
+  const selectedCount = useViewerStore((state) => state.selectedIds.size);
+
   return (
     <main className="flex-1 relative min-w-0" style={{ background: canvasBackground }}>
       <div
@@ -33,36 +37,64 @@ export function ViewerViewport({
       )}
 
       <div
-        className="absolute bottom-4 left-4 rounded-md border px-3 py-2 text-[10px] font-medium z-10 backdrop-blur"
+        className="absolute bottom-4 left-4 w-[320px] max-w-[calc(100vw-2rem)] rounded-md border px-3 py-2 text-[10px] font-medium z-10 backdrop-blur"
         style={{
           background: "oklch(0.17 0.02 255 / 90%)",
           borderColor: "var(--viewer-panel-border)",
         }}
       >
         <div className="uppercase tracking-wider text-muted-foreground mb-1.5">
-          Claim status
+          Selected element
         </div>
-        {[
-          { label: "Approved", bg: "var(--status-approved-fg)" },
-          { label: "In Progress", bg: "var(--status-submitted-fg)" },
-          { label: "Rejected", bg: "var(--status-rejected-fg)" },
-          { label: "Unclaimed", bg: "var(--status-neutral)" },
-          { label: "Selected", bg: "var(--status-selected)" },
-        ].map((item) => (
-          <div key={item.label} className="flex items-center gap-2 mb-1">
-            <span
-              className="h-2.5 w-2.5 rounded-sm shrink-0"
-              style={{ background: item.bg }}
-            />
-            <span className="text-muted-foreground">{item.label}</span>
+
+        {selectedElementInfo ? (
+          <div className="space-y-2">
+            <div>
+              <div className="text-xs font-semibold text-foreground truncate">
+                {selectedElementInfo.label}
+              </div>
+              <div className="mt-0.5 text-[9px] text-muted-foreground font-mono">
+                {selectedElementInfo.modelId} · #{selectedElementInfo.localId}
+              </div>
+            </div>
+
+            <div className="max-h-48 overflow-auto rounded border" style={{ borderColor: "var(--viewer-panel-border)" }}>
+              <table className="w-full border-collapse">
+                <tbody>
+                  {Object.entries(selectedElementInfo.data)
+                    .slice(0, 10)
+                    .map(([key, value]) => (
+                      <tr key={key} className="border-t first:border-t-0" style={{ borderColor: "var(--viewer-panel-border)" }}>
+                        <td className="w-1/3 px-2 py-1 align-top text-[9px] uppercase tracking-wide text-muted-foreground font-mono">
+                          {key}
+                        </td>
+                        <td className="px-2 py-1 align-top text-[10px] text-foreground wrap-break-word">
+                          {formatValue(value)}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {selectedCount > 1 && (
+              <div className="text-[9px] text-muted-foreground">
+                {selectedCount} elements selected. Showing the most recent one.
+              </div>
+            )}
+
+            <div
+              className="pt-2 border-t text-muted-foreground leading-snug"
+              style={{ borderColor: "var(--viewer-panel-border)" }}
+            >
+              Click · select &nbsp;|&nbsp; Shift · multi
+            </div>
           </div>
-        ))}
-        <div
-          className="mt-2 pt-2 border-t text-muted-foreground leading-snug"
-          style={{ borderColor: "var(--viewer-panel-border)" }}
-        >
-          Click · select &nbsp;|&nbsp; Shift · multi
-        </div>
+        ) : (
+          <div className="text-muted-foreground leading-snug">
+            Click a 3D element to inspect its properties.
+          </div>
+        )}
       </div>
 
       {status === "error" && (
@@ -74,4 +106,20 @@ export function ViewerViewport({
       )}
     </main>
   );
+}
+
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  try {
+    const json = JSON.stringify(value);
+    if (!json) return "—";
+    return json.length > 120 ? `${json.slice(0, 117)}...` : json;
+  } catch {
+    return String(value);
+  }
 }
