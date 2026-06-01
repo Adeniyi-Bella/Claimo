@@ -3,6 +3,7 @@ import type {
   ProjectResponse,
   PaymentItem,
 } from "./api/dto/responseDto";
+import type { PaymentStatus } from "./types";
 
 export function fmtCurrency(n: number) {
   return new Intl.NumberFormat("en-US", {
@@ -92,4 +93,14 @@ export function getSubmittedOrApprovedAmount(item: PaymentItem) {
     : totals.approved > 0
       ? totals.approved
       : null;
+}
+
+export function derivedStatus(item: PaymentItem): PaymentStatus {
+  const t = itemTotals(item);
+  if (t.approved >= item.contractValue) return "COMPLETED";
+  if (item.claims.some((c) => c.status === "SUBMITTED")) return "SUBMITTED";
+  if (t.approved > 0) return "IN_PROGRESS";
+  const last = item.claims[item.claims.length - 1];
+  if (last && last.status === "REJECTED") return "REJECTED";
+  return "NOT_STARTED";
 }

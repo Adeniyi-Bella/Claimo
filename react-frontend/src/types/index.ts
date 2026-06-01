@@ -131,3 +131,11 @@ export type PaymentItemCategory =
   | "DRAINAGE"
   | "FIRE_PROTECTION"
   | "INSULATION";
+
+  export type PaymentStatus =
+  | "NOT_STARTED"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "IN_PROGRESS"
+  | "COMPLETED";

@@ -1,22 +1,23 @@
 import { create } from "zustand";
-import {
-  fmtCurrency,
-  type AuditEntry,
-  type Claim,
-  type JobStatus,
-  type PaymentItem,
-  type PaymentStatusType,
-  type Project,
-} from "@/lib/mock-data";
+
 import { loadProjects, updateProjects } from "@/lib/project-storage";
+import type {
+  ProjectResponse,
+  PaymentItem,
+  AuditEntry,
+  JobStatus,
+  PaymentStatusType,
+  Claim,
+} from "@/api/dto/responseDto";
+import { fmtCurrency } from "@/utils";
 
 export type ActingRole = "CONTRACTOR" | "APPROVER" | "ADMIN" | "VIEWER";
 
 function updateItem(
-  projects: Project[],
+  projects: ProjectResponse[],
   itemId: string,
   updater: (item: PaymentItem) => PaymentItem,
-): Project[] {
+): ProjectResponse[] {
   return projects.map((p) => ({
     ...p,
     models: p.models.map((m) => ({
@@ -29,7 +30,7 @@ function updateItem(
 }
 
 function findItem(
-  projects: Project[],
+  projects: ProjectResponse[],
   itemId: string,
 ): PaymentItem | undefined {
   for (const p of projects) {
@@ -64,7 +65,7 @@ function makeAuditEntry(
 }
 
 interface PaymentState {
-  projects: Project[];
+  projects: ProjectResponse[];
   actingRole: ActingRole;
   setActingRole: (r: ActingRole) => void;
   syncFromSession: () => void;
