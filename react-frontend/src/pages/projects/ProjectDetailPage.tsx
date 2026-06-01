@@ -21,7 +21,6 @@ import { AppShell } from "@/components/app-shell";
 import AddPaymentItemDialogue from "@/components/project/dialogues/AddPaymentItemDialogue";
 import InviteModal from "@/components/project/modals/Invite";
 import UploadModelModal from "@/components/project/modals/UploadModel";
-import PaymentItemPanel from "@/components/project/panel/PaymentRighthandPanel";
 import MembersTab from "@/components/project/tabs/Members";
 import ModelsTab from "@/components/project/tabs/ModelsTab";
 import Overview from "@/components/project/tabs/Overview";
@@ -31,6 +30,7 @@ import { useProjectDetail } from "@/components/project/useProjectDetail";
 import { DashboardLoader } from "@/components/common/loader/loader";
 import { fmtDate, projectSummary } from "@/utils";
 import { useDashboard } from "@/hooks/api/useDashboard";
+import PaymentItemPanel from "@/components/project/panel/PaymentItemPanel";
 
 const TABS = ["Overview", "Models", "Members", "Payment Items"] as const;
 
