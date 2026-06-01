@@ -11,18 +11,21 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/common/button";
 import { CATEGORIES } from "@/lib/mock-data";
 import type { ProjectResponse } from "@/api/dto/responseDto";
-import type { PaymentItem } from "@/api/dto/responseDto";
+import type { CreatePaymentItemRequestDto } from "@/api/dto/requestDto";
+import { CATEGORY_TO_ENUM } from "@/types/constants";
 
 export default function AddPaymentItemDialogue({
   open,
   onOpenChange,
   project,
   onAdd,
+  isSubmitting,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   project: ProjectResponse;
-  onAdd: (item: PaymentItem) => void;
+  onAdd: (data: CreatePaymentItemRequestDto) => Promise<void>;
+  isSubmitting: boolean;
 }) {
   const contractors = project.members.filter((m) => m.role === "CONTRACTOR");
   const approvers = project.members.filter((m) => m.role === "APPROVER");
@@ -34,7 +37,6 @@ export default function AddPaymentItemDialogue({
   const [error, setError] = useState("");
   const [approverId, setApproverId] = useState("");
 
-  // Sync contractorId whenever project.members changes
   useEffect(() => {
     const first = project.members.find((m) => m.role === "CONTRACTOR");
     setContractorId(first?.id ?? "");
@@ -49,9 +51,18 @@ export default function AddPaymentItemDialogue({
     setModelId(project.models[0]?.id ?? "");
   }, [project.models]);
 
-  const selectedModel = project.models.find((m) => m.id === modelId);
+  const reset = () => {
+    setModelId(project.models[0]?.id ?? "");
+    setCategory(CATEGORIES[0]);
+    setContractorId(
+      project.members.find((m) => m.role === "CONTRACTOR")?.id ?? "",
+    );
+    setApproverId(project.members.find((m) => m.role === "APPROVER")?.id ?? "");
+    setContractValue("");
+    setError("");
+  };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!modelId) {
@@ -65,56 +76,24 @@ export default function AddPaymentItemDialogue({
       return;
     }
 
-    const duplicate = selectedModel?.paymentItems.some(
-      (i) => i.category === category,
-    );
-    if (duplicate) {
-      setError(
-        `A payment item for "${category}" already exists on this model.`,
-      );
+    const enumCategory = CATEGORY_TO_ENUM[category];
+    if (!enumCategory) {
+      setError("Invalid category selected.");
       return;
     }
 
-    const contractor = project.members.find((m) => m.id === contractorId)!;
-    const approver = project.members.find((m) => m.id === approverId)!;
-    const model = project.models.find((m) => m.id === modelId)!;
-
-    const item: PaymentItem = {
-      id: `pi-${Date.now()}`,
-      category,
-      modelId,
-      modelName: model.name,
-      contractorId,
-      contractorName: contractor.name,
-      approverId,
-      approverName: approver.name,
-      contractValue: parseFloat(contractValue) || 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      claims: [],
-      attachedElementIds: [],
-      jobStatus: "NOT_STARTED",
-      paymentStatus: "NONE",
-      paymentConfirmationPending: false,
-      auditTrail: [],
-    };
-
-    onAdd(item);
-    setCategory(CATEGORIES[0]);
-    setContractValue("");
-    setError("");
-    onOpenChange(false);
-  };
-
-  const reset = () => {
-    setModelId(project.models[0]?.id ?? "");
-    setCategory(CATEGORIES[0]);
-    setContractorId(
-      project.members.find((m) => m.role === "CONTRACTOR")?.id ?? "",
-    );
-    setApproverId(project.members.find((m) => m.role === "APPROVER")?.id ?? "");
-    setContractValue("");
-    setError("");
+    try {
+      await onAdd({
+        modelId,
+        category: enumCategory,
+        contractorId,
+        approverId,
+        contractValue: parseFloat(contractValue) || 0,
+      });
+      reset();
+    } catch {
+      setError("Failed to create payment item. Please try again.");
+    }
   };
 
   return (
@@ -237,7 +216,8 @@ export default function AddPaymentItemDialogue({
           <DialogFooter>
             <Button
               variant="outline"
-              // type="button"
+              type="button"
+              disabled={isSubmitting}
               onClick={() => {
                 reset();
                 onOpenChange(false);
@@ -245,10 +225,8 @@ export default function AddPaymentItemDialogue({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-            >
-              Add item
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Adding..." : "Add item"}
             </Button>
           </DialogFooter>
         </form>

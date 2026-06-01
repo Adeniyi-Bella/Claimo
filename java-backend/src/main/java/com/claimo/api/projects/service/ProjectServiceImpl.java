@@ -4,7 +4,6 @@ import com.claimo.api.company.model.Company;
 import com.claimo.api.company.model.CompanyMember;
 import com.claimo.api.company.repository.CompanyMemberRepository;
 import com.claimo.api.company.repository.CompanyRepository;
-// import com.claimo.api.company.services.CompanyInviteService;
 import com.claimo.api.auth.AuthHelper;
 import com.claimo.api.company.dto.CompanyDto;
 import com.claimo.api.company.enums.CompanyRole;

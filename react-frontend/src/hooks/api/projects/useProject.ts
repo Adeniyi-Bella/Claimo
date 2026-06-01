@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProjectApi } from "@/api/project.api";
 import { UnauthorizedError } from "@/api/error/customeError";
 import { dashboardQueryKey } from "@/hooks/api/useDashboard";
-import type { InviteMemberRequestDto } from "@/api/dto/requestDto";
+import type { CreatePaymentItemRequestDto, InviteMemberRequestDto } from "@/api/dto/requestDto";
 import type { ProjectResponse } from "@/api/dto/responseDto";
 import type { CreateProjectData } from "@/types";
 
@@ -94,9 +94,9 @@ export function useInviteMemberToProject(projectId: string) {
       }
       return ProjectApi.inviteMember(token, projectId, data);
     },
-    onSuccess: () => {
-      void queryClient.refetchQueries({ queryKey: projectQueryKey(projectId) });
-      void queryClient.refetchQueries({ queryKey: dashboardQueryKey });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
     },
   });
 }
@@ -113,9 +113,30 @@ export function useRemoveMemberFromProject(projectId: string) {
       }
       return ProjectApi.removeMember(token, projectId, userId);
     },
-    onSuccess: () => {
-      void queryClient.refetchQueries({ queryKey: projectQueryKey(projectId) });
-      void queryClient.refetchQueries({ queryKey: dashboardQueryKey });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
     },
+  });
+}
+
+export function useCreatePaymentItem(projectId: string) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreatePaymentItemRequestDto) => {
+      const token = await getToken();
+      if (!token) {
+        throw new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401);
+      }
+      return ProjectApi.createPaymentItem(token, projectId, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
+      await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+    },
+    retry: false,
   });
 }

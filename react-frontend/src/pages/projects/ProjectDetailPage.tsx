@@ -49,6 +49,7 @@ export default function ProjectDetail() {
     activeItem,
     handleAddPaymentItem,
     handleDeleteModel,
+    isCreatingPaymentItem,
     openAddItem,
     openInvite,
     openUpload,
@@ -232,6 +233,7 @@ export default function ProjectDetail() {
         onOpenChange={setOpenAddItem}
         project={project}
         onAdd={handleAddPaymentItem}
+        isSubmitting={isCreatingPaymentItem}
       />
 
       <Sheet

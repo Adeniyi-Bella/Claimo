@@ -1,3 +1,5 @@
+import type { PaymentItemCategory } from "@/types";
+
 export type ProjectStatus = "Active" | "Completed" | "Archived";
 export type ProjectRole =
   | "SUPER_ADMIN"
@@ -65,7 +67,7 @@ export interface ProjectModel {
 
 export interface PaymentItem {
   id: string;
-  category: string;
+  category: PaymentItemCategory;
   modelId: string;
   modelName: string;
   contractorId: string;

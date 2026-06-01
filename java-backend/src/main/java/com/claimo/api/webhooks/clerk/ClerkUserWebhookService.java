@@ -3,7 +3,6 @@ package com.claimo.api.webhooks.clerk;
 import com.claimo.api.company.enums.CompanyRole;
 import com.claimo.api.company.services.CompanyInviteService;
 import com.claimo.api.company.services.CompanyService;
-import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.notifications.WelcomeEmailService;
 import com.claimo.api.projects.service.ProjectInviteService;
 import com.claimo.api.user.model.User;
@@ -56,18 +55,19 @@ public class ClerkUserWebhookService {
 
         User user = userService.createUser(clerkUserId, email, firstName, lastName);
 
-        // Always create own company
+        // Prefer the company name collected during signup, then fall back to the
+        // user's profile/name details, and finally derive a workspace name from email.
         String companyName = data
                 .path("unsafe_metadata")
                 .path("company_name")
-                .asText(fullName);
+                .asText("");
 
         if (companyName.isBlank()) {
-            if (fullName.isBlank()) {
-                throw new AppExceptions.BadRequestException(
-                        "Clerk webhook payload must include a company name or user name");
-            }
-            companyName = fullName;
+            companyName = !fullName.isBlank() ? fullName : emailLocalPart(email);
+        }
+
+        if (companyName.isBlank()) {
+            companyName = "Claimo Workspace";
         }
 
         var company = companyService.createCompany(companyName, user);
@@ -80,6 +80,18 @@ public class ClerkUserWebhookService {
         log.info("Created user and company for clerkUserId={}", clerkUserId);
 
         return user;
+    }
+
+    private String emailLocalPart(String email) {
+        if (email == null) {
+            return "";
+        }
+        String normalizedEmail = email.toLowerCase().trim();
+        int atIndex = normalizedEmail.indexOf('@');
+        if (atIndex <= 0) {
+            return "";
+        }
+        return normalizedEmail.substring(0, atIndex).trim();
     }
 
     @Transactional

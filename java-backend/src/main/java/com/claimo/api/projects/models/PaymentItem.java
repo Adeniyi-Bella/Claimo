@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.claimo.api.projects.enums.JobStatus;
+import com.claimo.api.projects.enums.PaymentItemCategory;
 import com.claimo.api.projects.enums.PaymentStatus;
 import com.claimo.api.user.model.User;
 
@@ -45,8 +46,9 @@ public class PaymentItem {
     @JoinColumn(name = "model_id", nullable = false)
     private ProjectModel model;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String category;
+    private PaymentItemCategory category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contractor_id", nullable = false)

@@ -1,4 +1,5 @@
 import { config } from "@/lib/config/config";
+import type { PaymentItemCategory } from ".";
 
 export const API_BASE_URL = config.VITE_API_URL;
 export const API_TIMEOUT_MS = 15000;
@@ -40,12 +41,24 @@ export const FEATURES = [
 ];
 
 export const BIM_CAPABILITIES = [
-  { title: "IFC support", body: "Upload IFC files from Revit, ArchiCAD or Tekla, or drop in Three.js BufferGeometry JSON for lightweight visualisation." },
-  { title: "Orbit, pan, zoom", body: "Smooth WebGL navigation with gizmo overlay and reset-to-fit on every load." },
-  { title: "Section cuts", body: "Slice the model along any axis to inspect interior elements without leaving the viewer." },
-  { title: "Element inspector", body: "Click any part of the model to see its linked payment items, status and approval history." },
-//   { title: "Multi-tab sync", body: "Pop the viewer into its own tab — the model and selection stay in sync with the project tab via local storage events." },
-//   { title: "Floor plan navigator", body: "Auto-extracted floor plans let you jump to a storey with a single click." },
+  {
+    title: "IFC support",
+    body: "Upload IFC files from Revit, ArchiCAD or Tekla, or drop in Three.js BufferGeometry JSON for lightweight visualisation.",
+  },
+  {
+    title: "Orbit, pan, zoom",
+    body: "Smooth WebGL navigation with gizmo overlay and reset-to-fit on every load.",
+  },
+  {
+    title: "Section cuts",
+    body: "Slice the model along any axis to inspect interior elements without leaving the viewer.",
+  },
+  {
+    title: "Element inspector",
+    body: "Click any part of the model to see its linked payment items, status and approval history.",
+  },
+  //   { title: "Multi-tab sync", body: "Pop the viewer into its own tab — the model and selection stay in sync with the project tab via local storage events." },
+  //   { title: "Floor plan navigator", body: "Auto-extracted floor plans let you jump to a storey with a single click." },
 ];
 
 export const PRICING_PLANS = [
@@ -78,53 +91,89 @@ export const PRICING_PLANS = [
     cta: "Start 14-day trial",
     highlight: true,
   },
-//   {
-//     name: "Enterprise",
-//     price: "Custom",
-//     suffix: "",
-//     description: "For large contractors and developers with custom requirements.",
-//     features: [
-//       "SSO (SAML, Okta, Azure AD)",
-//       "EU data residency & DPA",
-//       "Custom roles & approval chains",
-//       "Dedicated success manager",
-//       "99.95% uptime SLA",
-//     ],
-//     cta: "Talk to sales",
-//     highlight: false,
-//   },
+  //   {
+  //     name: "Enterprise",
+  //     price: "Custom",
+  //     suffix: "",
+  //     description: "For large contractors and developers with custom requirements.",
+  //     features: [
+  //       "SSO (SAML, Okta, Azure AD)",
+  //       "EU data residency & DPA",
+  //       "Custom roles & approval chains",
+  //       "Dedicated success manager",
+  //       "99.95% uptime SLA",
+  //     ],
+  //     cta: "Talk to sales",
+  //     highlight: false,
+  //   },
 ];
 
 export const PRICING_FAQ = [
-  { q: "How is a user counted?", a: "A user is any teammate who can submit, approve or reject claims. Read-only viewers are always free." },
-  { q: "Is there a free trial?", a: "Yes — every Build workspace gets 14 days of full access. No credit card required." },
+  {
+    q: "How is a user counted?",
+    a: "A user is any teammate who can submit, approve or reject claims. Read-only viewers are always free.",
+  },
+  {
+    q: "Is there a free trial?",
+    a: "Yes — every Build workspace gets 14 days of full access. No credit card required.",
+  },
   // { q: "Do you offer annual billing?", a: "Yes, with a 15% discount when paid annually. Contact sales for enterprise terms." },
-  { q: "Where is my data stored?", a: "All customer data is stored in the EU (Frankfurt, Germany) with daily encrypted backups." },
+  {
+    q: "Where is my data stored?",
+    a: "All customer data is stored in the EU (Frankfurt, Germany) with daily encrypted backups.",
+  },
 ];
 
 export const DOC_SECTIONS = [
   {
     heading: "Getting started",
     articles: [
-      { title: "Create your first project", body: "Spin up a workspace, invite your team and configure roles." },
-      { title: "Invite teammates", body: "Send role-based invitations and manage seats." },
-      { title: "Upload a BIM model", body: "Supported formats, size limits and best practices." },
+      {
+        title: "Create your first project",
+        body: "Spin up a workspace, invite your team and configure roles.",
+      },
+      {
+        title: "Invite teammates",
+        body: "Send role-based invitations and manage seats.",
+      },
+      {
+        title: "Upload a BIM model",
+        body: "Supported formats, size limits and best practices.",
+      },
     ],
   },
   {
     heading: "Payment claims",
     articles: [
-      { title: "Create a payment item", body: "Define contract value, link it to model elements and set the approver." },
-      { title: "Submit a partial claim", body: "Claim against work in progress without locking the line item." },
-      { title: "Approve or reject", body: "Decision rules, mandatory reasons and the audit trail." },
+      {
+        title: "Create a payment item",
+        body: "Define contract value, link it to model elements and set the approver.",
+      },
+      {
+        title: "Submit a partial claim",
+        body: "Claim against work in progress without locking the line item.",
+      },
+      {
+        title: "Approve or reject",
+        body: "Decision rules, mandatory reasons and the audit trail.",
+      },
     ],
   },
   {
     heading: "BIM viewer",
     articles: [
-      { title: "Supported file formats", body: "IFC 2x3, IFC 4 and Three.js BufferGeometry JSON." },
-      { title: "Navigation & section cuts", body: "Orbit, pan, zoom and slice along any axis." },
-      { title: "Multi-tab sync", body: "Pop the viewer out and keep it in sync with the project tab." },
+      {
+        title: "Supported file formats",
+        body: "IFC 2x3, IFC 4 and Three.js BufferGeometry JSON.",
+      },
+      {
+        title: "Navigation & section cuts",
+        body: "Orbit, pan, zoom and slice along any axis.",
+      },
+      {
+        title: "Multi-tab sync",
+        body: "Pop the viewer out and keep it in sync with the project tab.",
+      },
     ],
   },
   // {
@@ -188,21 +237,50 @@ export const CHANGELOG = [
 ];
 
 export const ABOUT_VALUES = [
-  { title: "One source of truth", body: "The model and the money belong on the same screen. Every Claimo decision is grounded in that principle." },
-  { title: "Trust through transparency", body: "Audit trails are not an after-thought. Every state change is permanent, attributed and exportable." },
-  { title: "Built with builders", body: "We ship with our customers — contractors, QSs and developers — not for them." },
+  {
+    title: "One source of truth",
+    body: "The model and the money belong on the same screen. Every Claimo decision is grounded in that principle.",
+  },
+  {
+    title: "Trust through transparency",
+    body: "Audit trails are not an after-thought. Every state change is permanent, attributed and exportable.",
+  },
+  {
+    title: "Built with builders",
+    body: "We ship with our customers — contractors, QSs and developers — not for them.",
+  },
 ];
 
 export const ABOUT_TIMELINE = [
-  { year: "2023", title: "Founded in Rotterdam", body: "After a decade in QS and BIM consulting, the founding team set out to fix the spreadsheet sprawl of payment claims." },
-  { year: "2024", title: "First production projects", body: "Three pilot contractors processed €18M of claims through the platform in the first six months." },
-  { year: "2025", title: "Series A", body: "Raised €7M led by Northzone to grow the engineering team and expand across the Benelux and DACH." },
-  { year: "2026", title: "Today", body: "Used by 140+ construction companies on projects from €500K renovations to €400M infrastructure builds." },
+  {
+    year: "2023",
+    title: "Founded in Rotterdam",
+    body: "After a decade in QS and BIM consulting, the founding team set out to fix the spreadsheet sprawl of payment claims.",
+  },
+  {
+    year: "2024",
+    title: "First production projects",
+    body: "Three pilot contractors processed €18M of claims through the platform in the first six months.",
+  },
+  {
+    year: "2025",
+    title: "Series A",
+    body: "Raised €7M led by Northzone to grow the engineering team and expand across the Benelux and DACH.",
+  },
+  {
+    year: "2026",
+    title: "Today",
+    body: "Used by 140+ construction companies on projects from €500K renovations to €400M infrastructure builds.",
+  },
 ];
 
 export const CONTACT_CHANNELS = [
   // { title: "Sales", body: "Pricing, demos and procurement.", email: "sales@claimo.app" },
-  { title: "Support", body: "Existing customers — we reply within one business day.", email: "support@claimo.app" },
+  {
+    title: "Support",
+    body: "Existing customers — we reply within one business day.",
+    email: "support@claimo.app",
+  },
   // { title: "Security", body: "Responsible disclosure and security questionnaires.", email: "security@claimo.app" },
   // { title: "Press", body: "Media enquiries and brand assets.", email: "press@claimo.app" },
 ];
@@ -217,10 +295,48 @@ export const CONTACT_OFFICE = {
 };
 
 export const HELP_CATEGORIES = [
-  { title: "Account", body: "Sign-in, password reset, two-factor auth, profile and notification preferences." },
+  {
+    title: "Account",
+    body: "Sign-in, password reset, two-factor auth, profile and notification preferences.",
+  },
   // { title: "Billing", body: "Invoices, VAT, payment methods, plan upgrades and cancellations." },
-  { title: "Projects", body: "Creating projects, inviting members, archiving and project-level permissions." },
-  { title: "Claims & approvals", body: "Submitting, editing, withdrawing and the rules around partial claims." },
-  { title: "Viewer & models", body: "Supported formats, upload errors and performance tuning for large models." },
-  { title: "Security & data", body: "Encryption, residency, exports, deletion requests and incident reporting." },
+  {
+    title: "Projects",
+    body: "Creating projects, inviting members, archiving and project-level permissions.",
+  },
+  {
+    title: "Claims & approvals",
+    body: "Submitting, editing, withdrawing and the rules around partial claims.",
+  },
+  {
+    title: "Viewer & models",
+    body: "Supported formats, upload errors and performance tuning for large models.",
+  },
+  {
+    title: "Security & data",
+    body: "Encryption, residency, exports, deletion requests and incident reporting.",
+  },
 ];
+
+// Maps display label → enum value
+export const CATEGORY_TO_ENUM: Record<string, PaymentItemCategory> = {
+  Foundations: "FOUNDATIONS",
+  "Concrete Works": "CONCRETE_WORKS",
+  Reinforcement: "REINFORCEMENT",
+  Brickwork: "BRICKWORK",
+  Carpentry: "CARPENTRY",
+  Roofing: "ROOFING",
+  Plumbing: "PLUMBING",
+  Electrical: "ELECTRICAL",
+  HVAC: "HVAC",
+  Plastering: "PLASTERING",
+  Tiling: "TILING",
+  Painting: "PAINTING",
+  Glazing: "GLAZING",
+  Landscaping: "LANDSCAPING",
+  Demolition: "DEMOLITION",
+  Excavation: "EXCAVATION",
+  Drainage: "DRAINAGE",
+  "Fire Protection": "FIRE_PROTECTION",
+  Insulation: "INSULATION",
+};

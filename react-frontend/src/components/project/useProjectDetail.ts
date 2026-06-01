@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useGetProject } from "@/hooks/api/projects/useProject";
-import {
-  // getProjectById,
-  loadProjectThumbs,
-  updateProjects,
-} from "@/lib/project-storage";
-import type { ProjectResponse, PaymentItem } from "@/api/dto/responseDto";
+import { loadProjectThumbs, updateProjects } from "@/lib/project-storage";
 import { useDeleteModel } from "@/hooks/api/models/useModel";
+import { useCreatePaymentItem } from "@/hooks/api/projects/useProject";
+import type { CreatePaymentItemRequestDto } from "@/api/dto/requestDto";
 
 export function useProjectDetail(projectId: string) {
   const { data, isLoading, isError, refetch } = useGetProject(projectId);
   const { mutateAsync: deleteModel } = useDeleteModel(projectId);
+  const { mutateAsync: createPaymentItem, isPending: isCreatingPaymentItem } =
+    useCreatePaymentItem(projectId);
 
-  const [project, setProject] = useState<ProjectResponse | null>(null);
+  const project = data ?? null;
   const [openInvite, setOpenInvite] = useState(false);
   const [openUpload, setOpenUpload] = useState(false);
   const [openAddItem, setOpenAddItem] = useState(false);
@@ -24,20 +23,12 @@ export function useProjectDetail(projectId: string) {
 
   useEffect(() => {
     if (!data) return;
-    console.log("Project loaded from server:", data.models.length, "models");
-    setProject(data);
-  }, [data]);
-
-  useEffect(() => {
-    if (!project) return;
     updateProjects((projects) => {
-      const exists = projects.some((item) => item.id === project.id);
-      if (!exists) {
-        return [...projects, project];
-      }
-      return projects.map((item) => (item.id === project.id ? project : item));
+      const exists = projects.some((item) => item.id === data.id);
+      if (!exists) return [...projects, data];
+      return projects.map((item) => (item.id === data.id ? data : item));
     });
-  }, [project]);
+  }, [data]);
 
   const handleDeleteModel = useCallback(
     async (modelId: string) => {
@@ -46,25 +37,19 @@ export function useProjectDetail(projectId: string) {
     [deleteModel],
   );
 
-  const handleAddPaymentItem = useCallback((item: PaymentItem) => {
-    setProject((current) =>
-      current
-        ? {
-            ...current,
-            models: current.models.map((model) =>
-              model.id === item.modelId
-                ? { ...model, paymentItems: [...model.paymentItems, item] }
-                : model,
-            ),
-          }
-        : current,
-    );
-  }, []);
+  const handleAddPaymentItem = useCallback(
+    async (data: CreatePaymentItemRequestDto) => {
+      await createPaymentItem(data);
+      setOpenAddItem(false);
+    },
+    [createPaymentItem],
+  );
 
   return {
     activeItem,
     handleAddPaymentItem,
     handleDeleteModel,
+    isCreatingPaymentItem,
     isError,
     isLoading,
     modelThumbs,

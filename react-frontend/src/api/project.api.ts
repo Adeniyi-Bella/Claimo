@@ -2,6 +2,7 @@ import { apiClient } from "@/api/clients/axiosClient";
 import { requireApiData, requireApiSuccess } from "@/api/response";
 import type { CustomApiResponse, ProjectResponse } from "@/api/dto/responseDto";
 import type {
+  CreatePaymentItemRequestDto,
   CreateProjectRequestDto,
   InviteMemberRequestDto,
 } from "@/api/dto/requestDto";
@@ -90,6 +91,24 @@ export class ProjectApi {
   ): Promise<void> {
     await apiClient.delete(`/projects/${projectId}/members/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  static async createPaymentItem(
+    token: string,
+    projectId: string,
+    data: CreatePaymentItemRequestDto,
+  ): Promise<PaymentItem> {
+    const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
+      `/projects/${projectId}/payment-items`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+
+    return requireApiData(response.data, {
+      message: "Create payment item response missing data",
+      code: "EMPTY_CREATE_PAYMENT_ITEM_RESPONSE",
+      statusCode: response.status,
     });
   }
 }
