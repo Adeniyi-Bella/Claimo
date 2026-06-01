@@ -1,0 +1,55 @@
+# AWS CodeBuild build specification for Claimo React frontend
+# Official docs: https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
+# IMPORTANT: version 0.2 runs all commands in the same shell instance WITHIN a phase
+# but each phase gets a fresh shell — so cd commands do NOT persist across phases
+version: 0.2
+
+env:
+  # Fetch sensitive environment variables securely from AWS Parameter Store
+  # These are injected at build time and never stored in the repository
+  # Vite requires VITE_ prefix for variables to be accessible in the browser
+  parameter-store:
+    VITE_API_URL: /claimo/frontend/VITE_API_URL                               # Production backend API URL
+    VITE_ENV: /claimo/frontend/VITE_ENV                                       # Environment name e.g. production
+    VITE_CLERK_PUBLISHABLE_KEY: /claimo/frontend/VITE_CLERK_PUBLISHABLE_KEY   # Clerk frontend auth key
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22  # Always pin Node.js version explicitly to avoid unexpected breaking changes
+    commands:
+      - npm install -g pnpm               # Install pnpm globally — not available by default in CodeBuild
+      - cd react-frontend && pnpm install --frozen-lockfile
+      # --frozen-lockfile: equivalent of npm ci — uses exact lockfile versions for reproducible builds
+      # cd + && ensures both commands run in the same shell context within this phase
+
+  build:
+    commands:
+      # cd again — each phase starts with a fresh shell so we must cd into the folder again
+      # pnpm build runs: tsc -b && vite build
+      # Output goes to react-frontend/dist/
+      - cd react-frontend && pnpm build
+
+  post_build:
+    commands:
+      # Sync built files to S3 frontend hosting bucket
+      # --delete removes files in S3 that no longer exist in dist/ (keeps S3 clean)
+      # S3_BUCKET_NAME is set as a plain environment variable in the CodeBuild project (not a secret)
+      - aws s3 sync react-frontend/dist/ s3://${S3_BUCKET_NAME} --delete
+
+      # Invalidate CloudFront cache so users get the latest version immediately after deploy
+      # "/*" invalidates all cached files in the distribution
+      # CLOUDFRONT_DISTRIBUTION_ID is set as a plain environment variable in the CodeBuild project
+      - aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} --paths "/*"
+
+artifacts:
+  # base-directory is relative to CODEBUILD_SRC_DIR (root of the repo)
+  # Only files inside react-frontend/dist/ are included in the artifact
+  base-directory: react-frontend/dist
+  files:
+    - '**/*'  # Include all files and subfolders recursively
+
+cache:
+  paths:
+    # Cache node_modules between builds to speed up the install phase significantly
+    - react-frontend/node_modules/**/*

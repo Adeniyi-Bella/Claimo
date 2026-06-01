@@ -1,0 +1,91 @@
+# AWS CodeBuild build specification for Claimo Spring Boot backend
+# Official docs: https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
+# IMPORTANT: version 0.2 runs all commands in the same shell instance WITHIN a phase
+# but each phase gets a fresh shell — so cd commands do NOT persist across phases
+version: 0.2
+
+env:
+  # Fetch all sensitive environment variables securely from AWS Parameter Store
+  # These are injected at build time and never stored in the repository
+  parameter-store:
+    # Database connection
+    DATABASE_HOST: /claimo/backend/DATABASE_HOST
+    DATABASE_PORT: /claimo/backend/DATABASE_PORT
+    DATABASE_NAME: /claimo/backend/DATABASE_NAME
+    DATABASE_USER: /claimo/backend/DATABASE_USER
+    DATABASE_PASSWORD: /claimo/backend/DATABASE_PASSWORD
+
+    # Clerk authentication
+    CLERK_SECRET_KEY: /claimo/backend/CLERK_SECRET_KEY
+    CLERK_ISSUER_URI: /claimo/backend/CLERK_ISSUER_URI
+    CLERK_INVITATION_REDIRECT_URL: /claimo/backend/CLERK_INVITATION_REDIRECT_URL
+    CLERK_USER_CREATED_WEBHOOK_SECRET: /claimo/backend/CLERK_USER_CREATED_WEBHOOK_SECRET
+    CLERK_USER_DELETED_WEBHOOK_SECRET: /claimo/backend/CLERK_USER_DELETED_WEBHOOK_SECRET
+    CLERK_INVITATION_CREATED_WEBHOOK_SECRET: /claimo/backend/CLERK_INVITATION_CREATED_WEBHOOK_SECRET
+    CLERK_INVITATION_ACCEPTED_WEBHOOK_SECRET: /claimo/backend/CLERK_INVITATION_ACCEPTED_WEBHOOK_SECRET
+    CLERK_INVITATION_REVOKED_WEBHOOK_SECRET: /claimo/backend/CLERK_INVITATION_REVOKED_WEBHOOK_SECRET
+
+    # Azure Blob Storage
+    AZURE_STORAGE_CONNECTION_STRING: /claimo/backend/AZURE_STORAGE_CONNECTION_STRING
+    AZURE_STORAGE_CONTAINER_NAME: /claimo/backend/AZURE_STORAGE_CONTAINER_NAME
+
+    # Email
+    RESEND_API_KEY: /claimo/backend/RESEND_API_KEY
+    RESEND_FROM_EMAIL: /claimo/backend/RESEND_FROM_EMAIL
+    APP_NAME: /claimo/backend/APP_NAME
+
+    # Spring profile
+    ACTIVE_PROFILE: /claimo/backend/ACTIVE_PROFILE
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto21  # Amazon Corretto 21 — AWS's LTS distribution of OpenJDK 21, matches pom.xml java.version
+    commands:
+      - java -version  # Verify correct Java version is active before building
+
+  pre_build:
+    commands:
+      - echo "Pre-build started on $(date)"
+      # cd + && chains the command in the same shell — the only reliable way to run
+      # commands in a subdirectory since cd does not persist across phases
+      - cd java-backend && mvn dependency:resolve --no-transfer-progress
+      # dependency:resolve validates all dependencies can be fetched before the full build
+      # catches missing dependency issues early with a clear error message
+
+  build:
+    commands:
+      - echo "Build started on $(date)"
+      # cd into java-backend again — each phase starts fresh so we must cd again
+      # -B: batch mode, no interactive prompts — cleaner CI logs
+      # clean: removes previous build output for a fresh reproducible build
+      # package: compiles source and packages into a fat JAR including all dependencies
+      # -DskipTests: skips tests since none are written yet
+      #   TODO: remove -DskipTests once tests are written
+      # --no-transfer-progress: suppresses verbose download logs for cleaner output
+      - cd java-backend && mvn -B clean package -DskipTests --no-transfer-progress
+      - echo "Build completed on $(date)"
+
+  post_build:
+    commands:
+      # Verify the JAR was produced — fails the build immediately if JAR is missing
+      # rather than silently passing and deploying nothing
+      - ls -la java-backend/target/*.jar
+      - echo "JAR artifact verified successfully"
+
+artifacts:
+  # All paths are relative to the root of the source directory (CODEBUILD_SRC_DIR)
+  # Spring Boot Maven plugin produces a fat JAR containing all dependencies
+  # *.jar pattern picks it up regardless of the version number in the filename
+  files:
+    - java-backend/target/*.jar
+    - java-backend/appspec.yml        # Required by CodeDeploy to know how to deploy
+    - java-backend/scripts/**/*       # Start/stop scripts used by CodeDeploy
+  discard-paths: no  # Preserve directory structure so CodeDeploy finds files correctly
+
+cache:
+  paths:
+    # Cache the local Maven repository between builds
+    # All dependencies are downloaded here on first build
+    # Subsequent builds reuse the cache — significantly faster
+    - /root/.m2/**/*
