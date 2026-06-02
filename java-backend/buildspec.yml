@@ -54,7 +54,7 @@ phases:
       - echo "Pre-build started on $(date)"
       # dependency:resolve validates all dependencies can be fetched before the full build
       # catches missing dependency issues early with a clear error message
-      - mvn dependency:resolve --no-transfer-progress
+      - cd java-backend && mvn dependency:resolve --no-transfer-progress
 
   build:
     commands:
@@ -65,14 +65,14 @@ phases:
       # -DskipTests: skips tests since none are written yet
       #   TODO: remove -DskipTests once tests are written
       # --no-transfer-progress: suppresses verbose download logs for cleaner output
-      - mvn -B clean package -DskipTests --no-transfer-progress
+      - cd java-backend && mvn -B clean package -DskipTests --no-transfer-progress
       - echo "Build completed on $(date)"
 
   post_build:
     commands:
       # Verify the JAR was produced — fails the build immediately if JAR is missing
       # rather than silently passing and deploying nothing
-      - ls -la target/*.jar
+      - ls -la java-backend/target/*.jar
       - echo "JAR artifact verified successfully"
 
 artifacts:
@@ -80,9 +80,7 @@ artifacts:
   # Spring Boot Maven plugin produces a fat JAR containing all dependencies
   # *.jar pattern picks it up regardless of the version number in the filename
   files:
-    - target/*.jar
-    - appspec.yml        # Required by CodeDeploy to know how to deploy
-    - scripts/**/*       # Start/stop scripts used by CodeDeploy
+    - java-backend/target/*.jar
   discard-paths: no  # Preserve directory structure so CodeDeploy finds files correctly
 
 cache:
