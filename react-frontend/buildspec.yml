@@ -24,7 +24,7 @@ phases:
       # --frozen-lockfile: equivalent of npm ci — uses exact lockfile versions for reproducible builds
       # --ignore-scripts: skips post-install scripts from all packages (e.g. cypress, @clerk/shared)
       # safe in CI — we only need packages present, not their install scripts executed
-      - pnpm install --frozen-lockfile --ignore-scripts
+      - cd react-frontend && pnpm install --frozen-lockfile --ignore-scripts
 
   build:
     commands:
@@ -34,19 +34,14 @@ phases:
 
   post_build:
     commands:
-      # Sync built files to S3 frontend hosting bucket
-      # --delete removes files in S3 that no longer exist in dist/ (keeps S3 clean)
-      # S3_BUCKET_NAME is set as a plain environment variable in the CodeBuild project (not a secret)
-      - aws s3 sync dist/ s3://${S3_BUCKET_NAME} --delete
-
-      # Invalidate CloudFront cache so users get the latest version immediately after deploy
-      # "/*" invalidates all cached files in the distribution
-      # CLOUDFRONT_DISTRIBUTION_ID is set as a plain environment variable in the CodeBuild project
-      - aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} --paths "/*"
+      # Verify the built files are present — fails the build immediately if they are missing
+      # rather than silently passing and deploying nothing
+      - ls -la react-frontend/dist
+      - echo "Built files verified successfully"
 
 artifacts:
   # Only files inside dist/ are included in the artifact
-  base-directory: dist
+  base-directory: react-frontend/dist
   files:
     - "**/*"  # Include all files and subfolders recursively
 
