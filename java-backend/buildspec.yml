@@ -80,11 +80,15 @@ phases:
       - echo "JAR artifact verified successfully"
 
 artifacts:
+  commands:
+    - echo "Preparing artifacts for deployment"
+    - pwd  # Confirm current directory is java-backend/ as expected
+    - ls -la
   # All paths are relative to java-backend/ since that is the CodeBuild source directory
   # Spring Boot Maven plugin produces a fat JAR containing all dependencies
   # *.jar pattern picks it up regardless of the version number in the filename
   files:
-    - target/*.jar
+    - java-backend/target/*.jar
   discard-paths: no  # Preserve directory structure so CodeDeploy finds files correctly
 
 cache:
