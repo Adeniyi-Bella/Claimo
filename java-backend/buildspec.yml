@@ -56,7 +56,7 @@ phases:
       - ls -la  # List files to verify source code is present before resolving dependencies
       # dependency:resolve validates all dependencies can be fetched before the full build
       # catches missing dependency issues early with a clear error message
-      - mvn dependency:resolve --no-transfer-progress
+      - cd java-backend && mvn dependency:resolve --no-transfer-progress
 
   build:
     commands:
