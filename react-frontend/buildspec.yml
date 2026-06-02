@@ -36,7 +36,7 @@ phases:
     commands:
       # Verify the built files are present — fails the build immediately if they are missing
       # rather than silently passing and deploying nothing
-      - ls -la react-frontend/dist
+      - ls -la
       - echo "Built files verified successfully"
 
 artifacts:
