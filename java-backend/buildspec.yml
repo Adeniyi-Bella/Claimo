@@ -2,6 +2,8 @@
 # Official docs: https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
 # IMPORTANT: version 0.2 runs all commands in the same shell instance WITHIN a phase
 # but each phase gets a fresh shell — so cd commands do NOT persist across phases
+# NOTE: this buildspec lives in java-backend/ so CodeBuild runs from that directory
+# meaning no cd java-backend && prefix is needed
 version: 0.2
 
 env:
@@ -37,6 +39,9 @@ env:
     # Spring profile
     ACTIVE_PROFILE: /claimo/backend/ACTIVE_PROFILE
 
+    # Allowed Origins
+    ALLOWED_ORIGINS: /claimo/backend/ALLOWED_ORIGINS
+
 phases:
   install:
     runtime-versions:
@@ -47,40 +52,37 @@ phases:
   pre_build:
     commands:
       - echo "Pre-build started on $(date)"
-      # cd + && chains the command in the same shell — the only reliable way to run
-      # commands in a subdirectory since cd does not persist across phases
-      - cd java-backend && mvn dependency:resolve --no-transfer-progress
       # dependency:resolve validates all dependencies can be fetched before the full build
       # catches missing dependency issues early with a clear error message
+      - mvn dependency:resolve --no-transfer-progress
 
   build:
     commands:
       - echo "Build started on $(date)"
-      # cd into java-backend again — each phase starts fresh so we must cd again
       # -B: batch mode, no interactive prompts — cleaner CI logs
       # clean: removes previous build output for a fresh reproducible build
       # package: compiles source and packages into a fat JAR including all dependencies
       # -DskipTests: skips tests since none are written yet
       #   TODO: remove -DskipTests once tests are written
       # --no-transfer-progress: suppresses verbose download logs for cleaner output
-      - cd java-backend && mvn -B clean package -DskipTests --no-transfer-progress
+      - mvn -B clean package -DskipTests --no-transfer-progress
       - echo "Build completed on $(date)"
 
   post_build:
     commands:
       # Verify the JAR was produced — fails the build immediately if JAR is missing
       # rather than silently passing and deploying nothing
-      - ls -la java-backend/target/*.jar
+      - ls -la target/*.jar
       - echo "JAR artifact verified successfully"
 
 artifacts:
-  # All paths are relative to the root of the source directory (CODEBUILD_SRC_DIR)
+  # All paths are relative to java-backend/ since that is the CodeBuild source directory
   # Spring Boot Maven plugin produces a fat JAR containing all dependencies
   # *.jar pattern picks it up regardless of the version number in the filename
   files:
-    - java-backend/target/*.jar
-    - java-backend/appspec.yml        # Required by CodeDeploy to know how to deploy
-    - java-backend/scripts/**/*       # Start/stop scripts used by CodeDeploy
+    - target/*.jar
+    - appspec.yml        # Required by CodeDeploy to know how to deploy
+    - scripts/**/*       # Start/stop scripts used by CodeDeploy
   discard-paths: no  # Preserve directory structure so CodeDeploy finds files correctly
 
 cache:

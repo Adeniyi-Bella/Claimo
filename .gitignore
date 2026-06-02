@@ -1,3 +1,6 @@
 .vscode/
 clerk-local-testing/*
 .DS_Store
+buildspec.local.yml
+codebuild_build.sh
+output
