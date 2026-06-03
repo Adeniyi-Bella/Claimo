@@ -1,4 +1,4 @@
-import type { JobStatus, PaymentStatusType } from "../../mock-data";
+import type { JobStatus, PaymentStatusType } from "@/api/dto/responseDto";
 
 export interface IfcTreeNode {
   localId: number;

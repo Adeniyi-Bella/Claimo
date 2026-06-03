@@ -1,5 +1,5 @@
 import type { PaymentItemCategory } from "@/types";
-import type { CompanyRole, ProjectRole } from "./responseDto";
+import type { CompanyRole, JobStatus, PaymentStatusType, ProjectRole } from "./responseDto";
 
 export interface CreateProjectRequestDto {
   name: string;
@@ -27,4 +27,22 @@ export interface CreatePaymentItemRequestDto {
   approverId: string;
   contractValue: number;
   description?: string;
+}
+
+export interface SubmitClaimRequestDto {
+  amount: number;
+  description: string;
+}
+
+export interface DecideClaimRequestDto {
+  decision: "APPROVED" | "REJECTED";
+  note?: string;
+}
+
+export interface UpdateJobStatusRequestDto {
+  status: JobStatus;
+}
+
+export interface UpdatePaymentStatusRequestDto {
+  status: PaymentStatusType;
 }

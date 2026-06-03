@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils/utils";
-import type { PaymentStatus } from "@/lib/mock-data";
+import type { PaymentStatus } from "@/types";
 
 const styles: Record<
   PaymentStatus | "PENDING_INVITE",

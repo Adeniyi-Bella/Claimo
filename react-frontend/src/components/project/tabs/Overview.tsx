@@ -1,8 +1,7 @@
 import type { ProjectResponse } from "@/api/dto/responseDto";
 import { Avatar } from "@/components/common/avatar";
 import { RoleBadge } from "@/components/common/status-badge";
-import { type projectSummary } from "@/lib/mock-data";
-import { fmtCurrency } from "@/utils";
+import { fmtCurrency, projectSummary } from "@/utils";
 
 export default function Overview({
   project,

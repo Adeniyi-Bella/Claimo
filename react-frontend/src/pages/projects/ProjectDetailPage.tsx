@@ -244,7 +244,13 @@ export default function ProjectDetail() {
           side="right"
           className="w-full sm:max-w-md p-0 overflow-y-auto"
         >
-          {activeItem && <PaymentItemPanel itemId={activeItem} />}
+          {activeItem && (
+            <PaymentItemPanel
+              itemId={activeItem}
+              projectId={project.id}
+              currentUserRole={project.currentUserRole ?? "VIEWER"}
+            />
+          )}
         </SheetContent>
       </Sheet>
     </AppShell>

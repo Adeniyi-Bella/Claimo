@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.claimo.api.paymentitem.entity.PaymentItem;
 import com.claimo.api.user.model.User;
 
 import jakarta.persistence.Column;

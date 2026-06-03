@@ -1,11 +1,8 @@
 import { ShieldCheck } from "lucide-react";
-// import { usePaymentStore } from "@/hooks/usePaymentStore";
-// import { toast } from "sonner";
 import type { PaymentItem, JobStatus } from "@/api/dto/responseDto";
 import { HardHat } from "lucide-react";
 
 export function AdminView({ item }: { item: PaymentItem }) {
-//   const setJobStatus = usePaymentStore((s) => s.setJobStatus);
 
   return (
     <div className="space-y-4">

@@ -134,7 +134,6 @@ export function useCreatePaymentItem(projectId: string) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
-      await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
       await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
     },
     retry: false,

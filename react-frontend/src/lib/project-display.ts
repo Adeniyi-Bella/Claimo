@@ -1,4 +1,6 @@
-import { itemTotals, type PaymentItem } from "@/lib/mock-data";
+
+import { itemTotals } from "@/utils";
+import type { PaymentItem } from "@/api/dto/responseDto";
 
 export function getJobStatusLabel(status: PaymentItem["jobStatus"] | undefined) {
   switch (status ?? "NOT_STARTED") {

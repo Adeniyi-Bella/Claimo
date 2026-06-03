@@ -1,4 +1,4 @@
-package com.claimo.api.projects.models;
+package com.claimo.api.paymentitem.entity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -9,6 +9,8 @@ import java.util.UUID;
 import com.claimo.api.projects.enums.JobStatus;
 import com.claimo.api.projects.enums.PaymentItemCategory;
 import com.claimo.api.projects.enums.PaymentStatus;
+import com.claimo.api.projects.models.Project;
+import com.claimo.api.projects.models.ProjectModel;
 import com.claimo.api.user.model.User;
 
 import jakarta.persistence.Column;

@@ -1,4 +1,4 @@
-package com.claimo.api.projects.models;
+package com.claimo.api.paymentitem.entity;
 
 import java.time.Instant;
 import java.util.UUID;

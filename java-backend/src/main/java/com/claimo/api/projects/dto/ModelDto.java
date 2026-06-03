@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import com.claimo.api.paymentitem.dto.PaymentItemResponseDto;
+
 public record ModelDto(
         UUID id,
         String name,

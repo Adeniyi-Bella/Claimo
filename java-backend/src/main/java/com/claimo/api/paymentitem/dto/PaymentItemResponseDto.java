@@ -1,4 +1,4 @@
-package com.claimo.api.projects.dto;
+package com.claimo.api.paymentitem.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;

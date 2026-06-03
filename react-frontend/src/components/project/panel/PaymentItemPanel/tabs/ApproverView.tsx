@@ -1,19 +1,42 @@
 import { useState } from "react";
-import { AlertCircle, Check, MessageSquareWarning, ShieldCheck, X, XCircle } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  MessageSquareWarning,
+  ShieldCheck,
+  X,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { usePaymentStore } from "@/hooks/usePaymentStore";
 import { fmtCurrency } from "@/utils";
 import type { PaymentItem, PaymentStatusType } from "@/api/dto/responseDto";
+import {
+  useDecideClaim,
+  useUpdatePaymentStatus,
+} from "@/hooks/api/paymentItem/usePaymentItem";
 
 const rejectReasonSchema = z
-  .string().trim()
+  .string()
+  .trim()
   .min(5, "Rejection reason is required (min 5 chars)")
   .max(500, "Keep it under 500 characters");
 
-export function ApproverView({ item }: { item: PaymentItem }) {
-  const decideClaim = usePaymentStore((s) => s.decideClaim);
-  const setPaymentStatus = usePaymentStore((s) => s.setPaymentStatus);
+export function ApproverView({
+  item,
+  projectId,
+  itemId,
+}: {
+  item: PaymentItem;
+  projectId: string;
+  itemId: string;
+}) {
+  const { mutate: decideClaim, isPending: isDeciding } = useDecideClaim(
+    projectId,
+    itemId,
+  );
+  const { mutate: updatePaymentStatus, isPending: isUpdatingPayment } =
+    useUpdatePaymentStatus(projectId, itemId);
 
   const [showRejectFor, setShowRejectFor] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -22,22 +45,46 @@ export function ApproverView({ item }: { item: PaymentItem }) {
   const pendingClaim = item.claims.find((c) => c.status === "SUBMITTED");
 
   function onApprove(claimId: string) {
-    decideClaim(item.id, claimId, "APPROVED");
-    toast.success("Claim approved", {
-      description: `Marked as approved by ${item.approverName}.`,
-    });
+    decideClaim(
+      { claimId, data: { decision: "APPROVED" } },
+      {
+        onSuccess: () => {
+          toast.success("Claim approved", {
+            description: `Marked as approved by ${item.approverName}.`,
+          });
+        },
+        onError: (error) => {
+          toast.error("Failed to approve claim", {
+            description: error.message,
+          });
+        },
+      },
+    );
   }
 
   function onReject(claimId: string) {
     setRejectErr(null);
     const res = rejectReasonSchema.safeParse(rejectReason);
-    if (!res.success) { setRejectErr(res.error.issues[0].message); return; }
-    decideClaim(item.id, claimId, "REJECTED", res.data);
-    setShowRejectFor(null);
-    setRejectReason("");
-    toast.error("Claim rejected", {
-      description: "Contractor has been notified to revise and resubmit.",
-    });
+    if (!res.success) {
+      setRejectErr(res.error.issues[0].message);
+      return;
+    }
+
+    decideClaim(
+      { claimId, data: { decision: "REJECTED", note: res.data } },
+      {
+        onSuccess: () => {
+          setShowRejectFor(null);
+          setRejectReason("");
+          toast.error("Claim rejected", {
+            description: "Contractor has been notified to revise and resubmit.",
+          });
+        },
+        onError: (error) => {
+          toast.error("Failed to reject claim", { description: error.message });
+        },
+      },
+    );
   }
 
   return (
@@ -51,17 +98,30 @@ export function ApproverView({ item }: { item: PaymentItem }) {
           {(["NONE", "PAID"] as PaymentStatusType[]).map((s) => (
             <button
               key={s}
+              disabled={isUpdatingPayment || item.paymentStatus === s}
               onClick={() => {
-                if (item.paymentStatus === s) return;
-                setPaymentStatus(item.id, s);
-                toast.success("Payment status updated", {
-                  description: `Marked as ${s.toLowerCase()}. Contractor has been notified to confirm.`,
-                });
+                updatePaymentStatus(
+                  { status: s },
+                  {
+                    onSuccess: () => {
+                      toast.success("Payment status updated", {
+                        description: `Marked as ${s.toLowerCase()}. Contractor has been notified to confirm.`,
+                      });
+                    },
+                    onError: (error) => {
+                      toast.error("Failed to update payment status", {
+                        description: error.message,
+                      });
+                    },
+                  },
+                );
               }}
               className={`h-7 rounded text-[11px] font-medium transition border
-                ${item.paymentStatus === s
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent text-muted-foreground border-border hover:bg-accent"}`}
+                ${
+                  item.paymentStatus === s
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-transparent text-muted-foreground border-border hover:bg-accent"
+                }`}
             >
               {s === "NONE" ? "None" : "Paid"}
             </button>
@@ -78,17 +138,23 @@ export function ApproverView({ item }: { item: PaymentItem }) {
           <div className="text-sm tabular-nums font-semibold">
             {fmtCurrency(pendingClaim.amount)}{" "}
             <span className="text-muted-foreground text-xs font-normal">
-              · {Math.round((pendingClaim.amount / item.contractValue) * 100)}% of contract
+              · {Math.round((pendingClaim.amount / item.contractValue) * 100)}%
+              of contract
             </span>
           </div>
           {pendingClaim.description && (
-            <div className="text-xs text-muted-foreground italic">"{pendingClaim.description}"</div>
+            <div className="text-xs text-muted-foreground italic">
+              "{pendingClaim.description}"
+            </div>
           )}
           {showRejectFor === pendingClaim.id ? (
             <div className="space-y-2">
               <textarea
                 value={rejectReason}
-                onChange={(e) => { setRejectReason(e.target.value); setRejectErr(null); }}
+                onChange={(e) => {
+                  setRejectReason(e.target.value);
+                  setRejectErr(null);
+                }}
                 rows={2}
                 maxLength={500}
                 placeholder="Reason for rejection (required)"
@@ -101,7 +167,11 @@ export function ApproverView({ item }: { item: PaymentItem }) {
               )}
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setShowRejectFor(null); setRejectReason(""); setRejectErr(null); }}
+                  onClick={() => {
+                    setShowRejectFor(null);
+                    setRejectReason("");
+                    setRejectErr(null);
+                  }}
                   className="h-8 px-3 rounded-md border border-border bg-surface text-xs hover:bg-accent transition"
                 >
                   Cancel
@@ -117,14 +187,17 @@ export function ApproverView({ item }: { item: PaymentItem }) {
           ) : (
             <div className="flex gap-2">
               <button
+                disabled={isDeciding}
                 onClick={() => onApprove(pendingClaim.id)}
-                className="flex-1 h-9 inline-flex items-center justify-center gap-1.5 rounded-md bg-status-approved-fg text-sm font-medium hover:opacity-90 transition"
+                className="flex-1 h-9 inline-flex items-center justify-center gap-1.5 rounded-md bg-status-approved-fg text-sm font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check className="h-4 w-4" /> Approve
+                <Check className="h-4 w-4" />{" "}
+                {isDeciding ? "Approving..." : "Approve"}
               </button>
               <button
+                disabled={isDeciding}
                 onClick={() => setShowRejectFor(pendingClaim.id)}
-                className="flex-1 h-9 inline-flex items-center justify-center gap-1.5 rounded-md border border-status-rejected-fg/40 text-status-rejected-fg text-sm font-medium hover:bg-status-rejected/40 transition"
+                className="flex-1 h-9 inline-flex items-center justify-center gap-1.5 rounded-md border border-status-rejected-fg/40 text-status-rejected-fg text-sm font-medium hover:bg-status-rejected/40 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="h-4 w-4" /> Reject
               </button>
@@ -133,7 +206,8 @@ export function ApproverView({ item }: { item: PaymentItem }) {
         </div>
       ) : (
         <div className="rounded-md border border-border bg-surface-elevated p-3 text-xs text-muted-foreground flex items-center gap-2">
-          <MessageSquareWarning className="h-3.5 w-3.5" /> No claim is awaiting your review right now.
+          <MessageSquareWarning className="h-3.5 w-3.5" /> No claim is awaiting
+          your review right now.
         </div>
       )}
     </div>

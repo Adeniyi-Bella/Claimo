@@ -1,7 +1,8 @@
-package com.claimo.api.projects.models;
+package com.claimo.api.paymentitem.entity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+
 import java.util.UUID;
 
 import com.claimo.api.projects.enums.ClaimDecision;
