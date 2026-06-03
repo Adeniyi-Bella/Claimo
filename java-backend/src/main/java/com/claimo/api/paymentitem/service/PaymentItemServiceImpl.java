@@ -142,11 +142,18 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
                                                 "Payment item not found"));
 
-                // Only the assigned contractor can submit a claim
-                // if (!item.getContractor().getId().equals(currentUser.getId())) {
-                // throw new AppExceptions.ForbiddenException(
-                // "Only the assigned contractor can submit claims");
-                // }
+                // Only assigned approver or SUPER_ADMIN
+                boolean isSuperAdmin = projectMemberRepository
+                                .findByProjectIdAndUserId(projectId, currentUser.getId())
+                                .map(m -> m.getRole().name().equals("SUPER_ADMIN"))
+                                .orElse(false);
+
+                boolean isAssignedApprover = item.getApprover().getId().equals(currentUser.getId());
+
+                if (!isSuperAdmin && !isAssignedApprover) {
+                        throw new AppExceptions.ForbiddenException(
+                                        "Only the assigned approver or a super admin can decide claims");
+                }
 
                 // Block if a claim is already pending
                 if (paymentItemClaimRepository.existsByPaymentItem_IdAndStatus(itemId, ClaimDecision.SUBMITTED)) {
@@ -192,6 +199,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                         DecideClaimRequest request) {
 
                 User currentUser = authHelper.getAuthenticatedUser(jwt);
+                String actorName = currentUser.getFirstName() + " " + currentUser.getLastName();
 
                 PaymentItem item = paymentItemRepository.findWithDetailsById(itemId)
                                 .filter(i -> i.getProject().getId().equals(projectId))
@@ -236,6 +244,22 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                 item.setUpdatedAt(now);
                 paymentItemRepository.save(item);
 
+                PaymentItemAuditEntry entry = new PaymentItemAuditEntry();
+                entry.setPaymentItem(item);
+                entry.setTimestamp(now);
+                entry.setActorId(currentUser.getId().toString());
+                entry.setActorName(actorName);
+                entry.setActorRole(ProjectRole.APPROVER);
+                entry.setField(AuditField.CLAIM);
+                entry.setFromValue("SUBMITTED");
+                entry.setToValue(request.decision().name());
+                entry.setAction(
+                                request.decision() == ClaimDecision.APPROVED
+                                                ? "Approved claim #" + claim.getSequence() + " for " + claim.getAmount()
+                                                : "Rejected claim #" + claim.getSequence() + " — \"" + request.note()
+                                                                + "\"");
+                auditEntryRepository.save(entry);
+
                 return toPaymentItemDetails(item);
         }
 
@@ -246,6 +270,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                         UpdateJobStatusRequest request) {
 
                 User currentUser = authHelper.getAuthenticatedUser(jwt);
+                String actorName = currentUser.getFirstName() + " " + currentUser.getLastName();
 
                 PaymentItem item = paymentItemRepository.findWithDetailsById(itemId)
                                 .filter(i -> i.getProject().getId().equals(projectId))
@@ -267,6 +292,19 @@ public class PaymentItemServiceImpl implements PaymentItemService {
 
                 item.setJobStatus(request.status());
                 item.setUpdatedAt(Instant.now());
+
+                PaymentItemAuditEntry entry = new PaymentItemAuditEntry();
+                entry.setPaymentItem(item);
+                entry.setTimestamp(Instant.now());
+                entry.setActorId(currentUser.getId().toString());
+                entry.setActorName(actorName);
+                entry.setActorRole(isSuperAdmin ? ProjectRole.SUPER_ADMIN : ProjectRole.CONTRACTOR);
+                entry.setField(AuditField.JOB_STATUS);
+                entry.setFromValue(item.getJobStatus().name());
+                entry.setToValue(request.status().name());
+                entry.setAction("Set job status to " + request.status().name().replace("_", " ").toLowerCase());
+                auditEntryRepository.save(entry);
+
                 paymentItemRepository.save(item);
 
                 return toPaymentItemDetails(item);
@@ -279,6 +317,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                         UpdatePaymentStatusRequest request) {
 
                 User currentUser = authHelper.getAuthenticatedUser(jwt);
+                String actorName = currentUser.getFirstName() + " " + currentUser.getLastName();
 
                 PaymentItem item = paymentItemRepository.findWithDetailsById(itemId)
                                 .filter(i -> i.getProject().getId().equals(projectId))
@@ -303,6 +342,22 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                 item.setPaymentStatus(request.status());
                 item.setPaymentConfirmationPending(isPaid);
                 item.setUpdatedAt(Instant.now());
+
+                PaymentItemAuditEntry entry = new PaymentItemAuditEntry();
+                entry.setPaymentItem(item);
+                entry.setTimestamp(Instant.now());
+                entry.setActorId(currentUser.getId().toString());
+                entry.setActorName(actorName);
+                entry.setActorRole(isSuperAdmin ? ProjectRole.SUPER_ADMIN : ProjectRole.APPROVER);
+                entry.setField(AuditField.PAYMENT_STATUS);
+                entry.setFromValue(item.getPaymentStatus().name());
+                entry.setToValue(request.status().name());
+                entry.setAction(
+                                request.status() == PaymentStatus.PAID
+                                                ? "Marked payment as paid — awaiting contractor confirmation"
+                                                : "Reset payment status to " + request.status().name().toLowerCase());
+                auditEntryRepository.save(entry);
+
                 paymentItemRepository.save(item);
 
                 return toPaymentItemDetails(item);
