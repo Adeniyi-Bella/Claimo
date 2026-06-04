@@ -6,5 +6,5 @@ codebuild_build.sh
 output
 *.pem
 .env.prod
-*.sh
+# *.sh
 .env

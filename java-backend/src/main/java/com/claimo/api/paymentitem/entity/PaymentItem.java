@@ -52,12 +52,12 @@ public class PaymentItem {
     @Column(nullable = false)
     private PaymentItemCategory category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contractor_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "contractor_id")
     private User contractor;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approver_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "approver_id")
     private User approver;
 
     @Column(name = "contract_value", nullable = false, precision = 18, scale = 2)

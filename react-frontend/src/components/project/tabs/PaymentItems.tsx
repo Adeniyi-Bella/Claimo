@@ -13,7 +13,13 @@ import {
 } from "@/lib/project-display";
 import { Filter, Plus, Search } from "lucide-react";
 import type { PaymentItem } from "@/api/dto/responseDto";
-import { fmtCurrency, fmtDate, getSubmittedOrApprovedAmount } from "@/utils";
+import {
+  displayFirstName,
+  fmtCurrency,
+  fmtDate,
+  getSubmittedOrApprovedAmount,
+  partyHue,
+} from "@/utils";
 
 export default function PaymentItemsTab({
   items,
@@ -79,10 +85,10 @@ export default function PaymentItemsTab({
                   <div className="inline-flex items-center gap-2">
                     <Avatar
                       name={i.contractorName}
-                      hue={(i.contractorId.charCodeAt(1) * 70) % 360}
+                      hue={partyHue(i.contractorId)}
                       size={22}
                     />
-                    <span>{i.contractorName.split(" ")[0]}</span>
+                    <span>{displayFirstName(i.contractorName)}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">

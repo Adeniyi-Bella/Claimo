@@ -61,7 +61,7 @@ export interface ProjectModel {
   fileType: ModelFileType;
   fileUrl?: string;
   uploadedAt: string;
-  uploadedBy: string;
+  uploadedBy: string | null;
   paymentItems: PaymentItem[];
 }
 
@@ -70,10 +70,10 @@ export interface PaymentItem {
   category: PaymentItemCategory;
   modelId: string;
   modelName: string;
-  contractorId: string;
-  contractorName: string;
-  approverId: string;
-  approverName: string;
+  contractorId: string | null;
+  contractorName: string | null;
+  approverId: string | null;
+  approverName: string | null;
   contractValue: number;
   description?: string;
   createdAt: string;

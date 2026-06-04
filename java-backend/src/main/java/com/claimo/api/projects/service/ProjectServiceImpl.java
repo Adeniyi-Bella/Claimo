@@ -623,7 +623,8 @@ public class ProjectServiceImpl implements ProjectService {
                 return new CreateUpdateProjectResponse(
                                 project.getId(), project.getName(), project.getDescription(),
                                 project.getLocation(), project.getStartDate(),
-                                project.getCompany().getId(), project.getCreatedBy().getId(),
+                                project.getCompany().getId(),
+                                project.getCreatedBy() == null ? null : project.getCreatedBy().getId(),
                                 role, project.getCreatedAt(), project.getUpdatedAt());
         }
 

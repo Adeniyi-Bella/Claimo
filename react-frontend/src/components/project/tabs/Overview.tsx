@@ -48,7 +48,7 @@ export default function Overview({
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {m.paymentItems.length} items · uploaded{" "}
-                          {fmtDate(m.uploadedAt)} by {m.uploadedBy}
+                          {fmtDate(m.uploadedAt)} by {fallbackLabel(m.uploadedBy)}
                         </div>
                       </div>
                     </div>

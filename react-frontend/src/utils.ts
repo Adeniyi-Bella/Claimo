@@ -21,6 +21,25 @@ export function fmtDate(s: string) {
   });
 }
 
+export function fallbackLabel(
+  value: string | null | undefined,
+  fallback = "Unassigned",
+) {
+  return value && value.trim() ? value : fallback;
+}
+
+export function partyHue(value: string | null | undefined, fallback = 250) {
+  if (!value || value.length === 0) return fallback;
+  return (value.charCodeAt(0) * 70) % 360;
+}
+
+export function displayFirstName(
+  value: string | null | undefined,
+  fallback = "Unassigned",
+) {
+  return fallbackLabel(value, fallback).split(" ")[0] ?? fallback;
+}
+
 export interface ItemTotals {
   contract: number;
   approved: number;

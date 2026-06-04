@@ -12,6 +12,7 @@ import {
 import { getElementPaymentMap } from "../state/selectors";
 import type { PaymentItemLocal } from "../state/types";
 import { useViewerStore } from "../state/store";
+import { fallbackLabel } from "@/utils";
 import {
   VIEWER_PANEL_COLLAPSED_WIDTH,
   VIEWER_PANEL_MAX_WIDTH,
@@ -90,7 +91,7 @@ function PaymentCard({
             {item.description || item.category}
           </div>
           <div className="text-[10px] text-muted-foreground truncate">
-            {item.contractorName}
+            {fallbackLabel(item.contractorName)}
           </div>
         </div>
       </div>

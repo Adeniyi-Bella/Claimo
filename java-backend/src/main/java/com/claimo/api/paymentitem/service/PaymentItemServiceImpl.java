@@ -148,7 +148,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 .map(m -> m.getRole().name().equals("SUPER_ADMIN"))
                                 .orElse(false);
 
-                boolean isAssignedApprover = item.getApprover().getId().equals(currentUser.getId());
+                boolean isAssignedApprover = isSameUser(item.getApprover(), currentUser);
 
                 if (!isSuperAdmin && !isAssignedApprover) {
                         throw new AppExceptions.ForbiddenException(
@@ -212,7 +212,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 .map(m -> m.getRole().name().equals("SUPER_ADMIN"))
                                 .orElse(false);
 
-                boolean isAssignedApprover = item.getApprover().getId().equals(currentUser.getId());
+                boolean isAssignedApprover = isSameUser(item.getApprover(), currentUser);
 
                 if (!isSuperAdmin && !isAssignedApprover) {
                         throw new AppExceptions.ForbiddenException(
@@ -283,7 +283,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 .map(m -> m.getRole().name().equals("SUPER_ADMIN"))
                                 .orElse(false);
 
-                boolean isAssignedContractor = item.getContractor().getId().equals(currentUser.getId());
+                boolean isAssignedContractor = isSameUser(item.getContractor(), currentUser);
 
                 if (!isSuperAdmin && !isAssignedContractor) {
                         throw new AppExceptions.ForbiddenException(
@@ -330,7 +330,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 .map(m -> m.getRole().name().equals("SUPER_ADMIN"))
                                 .orElse(false);
 
-                boolean isAssignedApprover = item.getApprover().getId().equals(currentUser.getId());
+                boolean isAssignedApprover = isSameUser(item.getApprover(), currentUser);
 
                 if (!isSuperAdmin && !isAssignedApprover) {
                         throw new AppExceptions.ForbiddenException(
@@ -381,7 +381,7 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 .map(m -> m.getRole().name().equals("SUPER_ADMIN"))
                                 .orElse(false);
 
-                boolean isAssignedContractor = item.getContractor().getId().equals(currentUser.getId());
+                boolean isAssignedContractor = isSameUser(item.getContractor(), currentUser);
 
                 if (!isSuperAdmin && !isAssignedContractor) {
                         throw new AppExceptions.ForbiddenException(
@@ -440,10 +440,10 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 item.getCategory(),
                                 item.getModel().getId().toString(),
                                 item.getModel().getFileName(),
-                                item.getContractor().getId().toString(),
-                                item.getContractor().getFirstName() + " " + item.getContractor().getLastName(),
-                                item.getApprover().getId().toString(),
-                                item.getApprover().getFirstName() + " " + item.getApprover().getLastName(),
+                                item.getContractor() == null ? null : item.getContractor().getId().toString(),
+                                displayName(item.getContractor()),
+                                item.getApprover() == null ? null : item.getApprover().getId().toString(),
+                                displayName(item.getApprover()),
                                 item.getContractValue(),
                                 item.getDescription(),
                                 item.getCreatedAt(),
@@ -484,6 +484,28 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 e.getField(),
                                 e.getFromValue(),
                                 e.getToValue());
+        }
+
+        private boolean isSameUser(User candidate, User currentUser) {
+                return candidate != null && candidate.getId().equals(currentUser.getId());
+        }
+
+        private String displayName(User user) {
+                if (user == null) {
+                        return null;
+                }
+                String firstName = user.getFirstName();
+                String lastName = user.getLastName();
+                if (firstName != null && !firstName.isBlank() && lastName != null && !lastName.isBlank()) {
+                        return firstName + " " + lastName;
+                }
+                if (firstName != null && !firstName.isBlank()) {
+                        return firstName;
+                }
+                if (lastName != null && !lastName.isBlank()) {
+                        return lastName;
+                }
+                return user.getEmail();
         }
 
 }

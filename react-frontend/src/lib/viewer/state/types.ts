@@ -14,7 +14,7 @@ export interface PaymentItemLocal {
   category: string;
   modelId: string;
   modelName: string;
-  contractorName: string;
+  contractorName: string | null;
   contractValue: number;
   description?: string;
   claims: any[];

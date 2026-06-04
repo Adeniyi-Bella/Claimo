@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Boxes, Check, Trash2, Upload } from "lucide-react";
 import type { ProjectResponse } from "@/api/dto/responseDto";
-import { fmtDate, modelSummary } from "@/utils";
+import { fallbackLabel, fmtDate, modelSummary } from "@/utils";
 
 export default function ModelsTab({
   project,
@@ -156,7 +156,7 @@ export default function ModelsTab({
                 <div className="p-4">
                   <div className="font-medium text-sm truncate">{m.name}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
-                    Uploaded {fmtDate(m.uploadedAt)} · {m.uploadedBy}
+                    Uploaded {fmtDate(m.uploadedAt)} · {fallbackLabel(m.uploadedBy)}
                   </div>
                   <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
                     <span>{m.paymentItems.length} payment items</span>

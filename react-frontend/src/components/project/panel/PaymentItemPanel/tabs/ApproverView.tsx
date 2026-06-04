@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { fmtCurrency } from "@/utils";
+import { fallbackLabel, fmtCurrency } from "@/utils";
 import type { PaymentItem, PaymentStatusType } from "@/api/dto/responseDto";
 import {
   useDecideClaim,
@@ -50,7 +50,7 @@ export function ApproverView({
       {
         onSuccess: () => {
           toast.success("Claim approved", {
-            description: `Marked as approved by ${item.approverName}.`,
+            description: `Marked as approved by ${fallbackLabel(item.approverName)}.`,
           });
         },
         onError: (error) => {

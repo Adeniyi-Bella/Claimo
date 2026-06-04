@@ -3,7 +3,7 @@ import { AlertCircle, Check, Clock, HardHat, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/common/button";
-import { fmtCurrency } from "@/utils";
+import { displayFirstName, fallbackLabel, fmtCurrency } from "@/utils";
 import type { PaymentItem, JobStatus } from "@/api/dto/responseDto";
 import type { ItemTotals } from "@/utils";
 import type { PaymentStatus } from "@/types";
@@ -85,7 +85,7 @@ export function ContractorView({
           setClaimAmount("");
           setClaimDesc("");
           toast.success(`Claim #${newClaim.sequence} submitted`, {
-            description: `${fmtCurrency(newClaim.amount)} sent to ${item.approverName} for review.`,
+            description: `${fmtCurrency(newClaim.amount)} sent to ${fallbackLabel(item.approverName)} for review.`,
           });
         },
         onError: (error) => {
@@ -153,7 +153,7 @@ export function ContractorView({
             <Clock className="h-3.5 w-3.5" /> Payment confirmation required
           </div>
           <div className="text-sm text-muted-foreground">
-            {item.approverName} has marked this payment as paid. Please confirm
+            {fallbackLabel(item.approverName)} has marked this payment as paid. Please confirm
             or dispute.
           </div>
           <div className="flex gap-2">
@@ -277,7 +277,7 @@ export function ContractorView({
             <Send className="h-4 w-4" />
             {isSubmitting
               ? "Submitting..."
-              : `Submit claim to ${item.approverName.split(" ")[0]}`}
+              : `Submit claim to ${displayFirstName(item.approverName)}`}
           </Button>
         </div>
       )}
@@ -288,7 +288,7 @@ export function ContractorView({
           <Clock className="h-4 w-4 mt-0.5 shrink-0" />
           <div>
             Claim #{pendingClaim.sequence} ({fmtCurrency(pendingClaim.amount)})
-            is awaiting approval from {item.approverName}. You can submit
+            is awaiting approval from {fallbackLabel(item.approverName)}. You can submit
             another once a decision is made.
           </div>
         </div>

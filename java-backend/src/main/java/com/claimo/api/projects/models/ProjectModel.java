@@ -44,8 +44,8 @@ public class ProjectModel {
     @Column(name = "storage_path", nullable = false)
     private String storagePath;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "uploaded_by")
     private User uploadedBy;
 
     @Column(name = "uploaded_at", updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")

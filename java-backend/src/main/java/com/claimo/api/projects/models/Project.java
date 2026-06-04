@@ -38,8 +38,8 @@ public class Project {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "created_by")
     private User createdBy;
 
     @Column(updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
