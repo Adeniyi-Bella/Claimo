@@ -38,6 +38,8 @@ phases:
       # rather than silently passing and deploying nothing
       - ls -la
       - echo "Built files verified successfully"
+      - aws s3 sync dist/ s3://claimo-react-frontend --delete
+      - aws cloudfront create-invalidation --distribution-id E1P9SEXKRAX8LI --paths "/*"
 
 artifacts:
   # Only files inside dist/ are included in the artifact
