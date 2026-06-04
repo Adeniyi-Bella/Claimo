@@ -4,3 +4,7 @@ clerk-local-testing/*
 buildspec.local.yml
 codebuild_build.sh
 output
+*.pem
+.env.prod
+*.sh
+.env
