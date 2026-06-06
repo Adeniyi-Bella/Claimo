@@ -21,7 +21,6 @@ const dispatchAuthError = () => {
 const captureQueryError = (error: Error, context: Record<string, unknown>) => {
   SentryLogger.captureException(error, context);
 };
-
 /**
  * Redirects the user to the server error page, passing a human-readable
  * message and the current URL so the user can be sent back after recovery.
