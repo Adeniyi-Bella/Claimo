@@ -11,16 +11,17 @@ env:
   # These are injected at build time and never stored in the repository
   # Vite requires VITE_ prefix for variables to be accessible in the browser
   parameter-store:
-    VITE_API_URL: /claimo/frontend/VITE_API_URL                               # Production backend API URL
-    VITE_ENV: /claimo/frontend/VITE_ENV                                       # Environment name e.g. production
-    VITE_CLERK_PUBLISHABLE_KEY: /claimo/frontend/VITE_CLERK_PUBLISHABLE_KEY   # Clerk frontend auth key
+    VITE_API_URL: /claimo/frontend/VITE_API_URL # Production backend API URL
+    VITE_ENV: /claimo/frontend/VITE_ENV # Environment name e.g. production
+    VITE_CLERK_PUBLISHABLE_KEY: /claimo/frontend/VITE_CLERK_PUBLISHABLE_KEY # Clerk frontend auth key
 
 phases:
   install:
     runtime-versions:
-      nodejs: 22  # Always pin Node.js version explicitly to avoid unexpected breaking changes
+      nodejs: 22 # Always pin Node.js version explicitly to avoid unexpected breaking changes
     commands:
-      - npm install -g pnpm               # Install pnpm globally — not available by default in CodeBuild
+      - npm install -g pnpm # Install pnpm globally — not available by default in CodeBuild
+      - aws codeartifact login --tool npm --repository claimo-frontend --domain claimo --domain-owner 632630731355 --region eu-central-1
       # --frozen-lockfile: equivalent of npm ci — uses exact lockfile versions for reproducible builds
       # --ignore-scripts: skips post-install scripts from all packages (e.g. cypress, @clerk/shared)
       # safe in CI — we only need packages present, not their install scripts executed
@@ -45,7 +46,7 @@ artifacts:
   # Only files inside dist/ are included in the artifact
   base-directory: react-frontend/dist
   files:
-    - "**/*"  # Include all files and subfolders recursively
+    - "**/*" # Include all files and subfolders recursively
 
 cache:
   paths:

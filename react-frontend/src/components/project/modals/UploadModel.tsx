@@ -38,6 +38,12 @@ export default function UploadModelModal({
   const accept = [".ifc"];
 
   const validateFiles = (nextFiles: File[]) => {
+    const oversized = nextFiles.find((f) => f.size > 3 * 1024 * 1024);
+    if (oversized) {
+      setError("File size must not exceed 3MB.");
+      setFiles([]);
+      return [];
+    }
     const invalid = nextFiles.find((f) => {
       const ext = f.name.split(".").pop()?.toLowerCase();
       return ext !== "ifc";
@@ -137,7 +143,7 @@ export default function UploadModelModal({
                 <span className="text-primary font-medium">browse</span>
               </p>
               <p className="text-xs opacity-60">
-                Supports .ifc files and multiple ifc files uploads.
+                Supports .ifc files up to 3MB.
               </p>
             </div>
           )}
