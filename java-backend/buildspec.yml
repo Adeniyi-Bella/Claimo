@@ -45,31 +45,31 @@ env:
 phases:
   install:
     runtime-versions:
-      java: corretto21  # Amazon Corretto 21 — AWS's LTS distribution of OpenJDK 21, matches pom.xml java.version
+      java: corretto21 # Amazon Corretto 21 — AWS's LTS distribution of OpenJDK 21, matches pom.xml java.version
     commands:
-      - java -version  # Verify correct Java version is active before building
+      - java -version
 
   pre_build:
     commands:
       - echo "Pre-build started on $(date)"
-      - pwd  # Confirm current directory is java-backend/ as expected
-      - ls -la  # List files to verify source code is present before resolving dependencies
-      # dependency:resolve validates all dependencies can be fetched before the full build
-      # catches missing dependency issues early with a clear error message
+      - export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain claimo --domain-owner 632630731355 --region eu-central-1 --query authorizationToken --output text)
+      - mkdir -p ~/.m2
+      - cp java-backend/settings.xml ~/.m2/settings.xml
+      - ls -la
       - cd java-backend && mvn dependency:resolve --no-transfer-progress
 
   build:
     commands:
       - echo "Build started on $(date)"
-      - pwd  # Confirm current directory is java-backend/ as expected
-      - ls -la  # List files to verify source code is present before building
+      - pwd # Confirm current directory is java-backend/ as expected
+      - ls -la # List files to verify source code is present before building
       # -B: batch mode, no interactive prompts — cleaner CI logs
       # clean: removes previous build output for a fresh reproducible build
       # package: compiles source and packages into a fat JAR including all dependencies
       # -DskipTests: skips tests since none are written yet
       #   TODO: remove -DskipTests once tests are written
       # --no-transfer-progress: suppresses verbose download logs for cleaner output
-      - mvn -B clean package -DskipTests --no-transfer-progress
+      - mvn -B clean package -DskipTests -s settings.xml --no-transfer-progress
       - echo "Build completed on $(date)"
 
   post_build:
@@ -84,10 +84,10 @@ artifacts:
   # Spring Boot Maven plugin produces a fat JAR containing all dependencies
   # *.jar pattern picks it up regardless of the version number in the filename
   files:
-    - appspec.yml  # Include appspec.yml for CodeDeploy to know how to deploy the artifact
-    - scripts/*.sh  # Include deployment scripts for CodeDeploy hooks
+    - appspec.yml # Include appspec.yml for CodeDeploy to know how to deploy the artifact
+    - scripts/*.sh # Include deployment scripts for CodeDeploy hooks
     - java-backend/target/*.jar
-  discard-paths: no  # Preserve directory structure so CodeDeploy finds files correctly
+  discard-paths: no # Preserve directory structure so CodeDeploy finds files correctly
 
 cache:
   paths:

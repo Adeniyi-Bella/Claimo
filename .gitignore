@@ -3,6 +3,7 @@ clerk-local-testing/*
 .DS_Store
 buildspec.local.yml
 codebuild_build.sh
+merge-and-deploy.sh
 output
 *.pem
 .env.prod
