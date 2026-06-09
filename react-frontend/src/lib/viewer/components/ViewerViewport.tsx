@@ -11,11 +11,17 @@ export function ViewerViewport({
   status: "idle" | "loading" | "converting" | "ready" | "error";
   canvasBackground: string;
 }) {
-  const selectedElementInfo = useViewerStore((state) => state.selectedElementInfo);
+  const selectedElementInfo = useViewerStore(
+    (state) => state.selectedElementInfo,
+  );
   const selectedCount = useViewerStore((state) => state.selectedIds.size);
+  const tilesLoading = useViewerStore((s) => s.tilesLoading);
 
   return (
-    <main className="flex-1 relative min-w-0" style={{ background: canvasBackground }}>
+    <main
+      className="flex-1 relative min-w-0"
+      style={{ background: canvasBackground }}
+    >
       <div
         ref={containerRef}
         className="absolute inset-0"
@@ -31,7 +37,19 @@ export function ViewerViewport({
           <div className="text-sm font-medium text-foreground">
             {status === "idle" && "Preparing…"}
             {status === "loading" && "Initialising scene…"}
-            {status === "converting" && "Converting IFC, this may take a moment…"}
+            {status === "converting" &&
+              "Converting IFC, this may take a moment…"}
+          </div>
+        </div>
+      )}
+      {tilesLoading && status === "ready" && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20"
+          style={{ background: "oklch(0.1 0.02 255 / 60%)" }}
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-sm font-medium text-foreground">
+            Loading tiles from Cesium Ion…
           </div>
         </div>
       )}
@@ -58,13 +76,20 @@ export function ViewerViewport({
               </div>
             </div>
 
-            <div className="max-h-48 overflow-auto rounded border" style={{ borderColor: "var(--viewer-panel-border)" }}>
+            <div
+              className="max-h-48 overflow-auto rounded border"
+              style={{ borderColor: "var(--viewer-panel-border)" }}
+            >
               <table className="w-full border-collapse">
                 <tbody>
                   {Object.entries(selectedElementInfo.data)
                     .slice(0, 10)
                     .map(([key, value]) => (
-                      <tr key={key} className="border-t first:border-t-0" style={{ borderColor: "var(--viewer-panel-border)" }}>
+                      <tr
+                        key={key}
+                        className="border-t first:border-t-0"
+                        style={{ borderColor: "var(--viewer-panel-border)" }}
+                      >
                         <td className="w-1/3 px-2 py-1 align-top text-[9px] uppercase tracking-wide text-muted-foreground font-mono">
                           {key}
                         </td>

@@ -17,6 +17,7 @@ export default function ModelViewer() {
     handleResetCamera,
     canvasBackground,
     modelName,
+    runtime,
   } = useModelViewer();
 
   if (!project || models.length === 0 || !model) {
@@ -48,7 +49,7 @@ export default function ModelViewer() {
       />
 
       <div className="flex flex-1 min-h-0 min-w-0">
-        <LeftPanel />
+        <LeftPanel runtime={runtime} />
         <ViewerViewport
           containerRef={containerRef}
           status={status}

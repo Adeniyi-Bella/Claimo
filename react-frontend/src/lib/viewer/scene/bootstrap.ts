@@ -3,7 +3,11 @@ import * as OBCF from "@thatopen/components-front";
 
 export interface ViewerRuntime {
   components: OBC.Components;
-  world: any;
+  world: OBC.SimpleWorld<
+    OBC.SimpleScene,
+    OBC.OrthoPerspectiveCamera,
+    OBC.SimpleRenderer
+  >;
   camera: OBC.OrthoPerspectiveCamera;
   fragments: OBC.FragmentsManager;
   highlighter: OBCF.Highlighter;

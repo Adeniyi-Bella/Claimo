@@ -14,7 +14,6 @@ import {
 } from "react";
 import { IfcTreePanel } from "./panels/IfcTreePanel";
 import { PaymentTreePanel } from "./panels/PaymentTreePanel";
-import { LegendPanel } from "./panels/LegendPanel";
 import {
   VIEWER_LEFT_PANEL_DEFAULT_WIDTH,
   VIEWER_PANEL_COLLAPSED_WIDTH,
@@ -23,8 +22,14 @@ import {
   startPanelResize,
 } from "./panelResize";
 import { useViewerStore } from "../state/store";
+import CesiumIonPanel from "./panels/CesiumIonPanel";
+import type { ViewerRuntime } from "../scene/bootstrap";
 
-export function LeftPanel() {
+interface LeftPanelProps {
+  runtime: ViewerRuntime | null;
+}
+
+export function LeftPanel({ runtime }: LeftPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const collapsed = useViewerStore((s) => s.leftPanelCollapsed);
   const width = useViewerStore((s) => s.leftPanelWidth);
@@ -119,11 +124,11 @@ export function LeftPanel() {
                 Pay
               </TabsTrigger>
               <TabsTrigger
-                value="legend"
+                value="3d-tiles"
                 className="text-xs gap-1 data-[state=active]:bg-accent data-[state=active]:text-foreground"
               >
                 <Layers className="h-3.5 w-3.5" />
-                Legend
+                3D Tiles
               </TabsTrigger>
             </TabsList>
 
@@ -141,8 +146,11 @@ export function LeftPanel() {
               <PaymentTreePanel />
             </TabsContent>
 
-            <TabsContent value="legend" className="px-3 pb-3 mt-0">
+            {/* <TabsContent value="legend" className="px-3 pb-3 mt-0">
               <LegendPanel />
+            </TabsContent> */}
+            <TabsContent value="3d-tiles" className="px-3 pb-3 mt-0">
+              <CesiumIonPanel runtime={runtime} />
             </TabsContent>
           </Tabs>
 

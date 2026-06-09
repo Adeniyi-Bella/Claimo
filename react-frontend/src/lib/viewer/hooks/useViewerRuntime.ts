@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useViewerStore } from "../state/store";
 import { createViewerRuntime, loadViewerModelIntoRuntime } from "../scene";
 import type { ViewerModelRecord } from "../model";
+import type { ViewerRuntime } from "../scene/bootstrap";
 import { useAuth } from "@clerk/react";
 
 export type ModelViewerStatus =
@@ -18,6 +19,7 @@ export interface UseViewerRuntimeResult {
   status: ModelViewerStatus;
   containerRef: RefObject<HTMLDivElement | null>;
   handleResetCamera: () => Promise<void>;
+  runtime: ViewerRuntime | null;
 }
 
 export function useViewerRuntime(
@@ -30,6 +32,7 @@ export function useViewerRuntime(
   const runtimeRef = useRef<Awaited<
     ReturnType<typeof createViewerRuntime>
   > | null>(null);
+  const [runtime, setRuntime] = useState<ViewerRuntime | null>(null);
   const cameraRef = useRef<any>(null);
   const backgroundColorRef = useRef(backgroundColor);
   const [status, setStatus] = useState<ModelViewerStatus>("idle");
@@ -131,6 +134,7 @@ export function useViewerRuntime(
         }
 
         runtimeRef.current = runtime;
+        setRuntime(runtime);
         componentsRef.current = runtime.components;
         cameraRef.current = runtime.camera;
         runtime.world.scene.three.background = new THREE.Color(
@@ -228,6 +232,7 @@ export function useViewerRuntime(
     return () => {
       cancelled = true;
       runtimeRef.current = null;
+      setRuntime(null);
       if (componentsRef.current) {
         componentsRef.current.dispose();
         componentsRef.current = null;
@@ -247,6 +252,7 @@ export function useViewerRuntime(
     status,
     containerRef,
     handleResetCamera,
+    runtime,
   };
 }
 

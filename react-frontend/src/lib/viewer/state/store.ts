@@ -60,6 +60,7 @@ interface ViewerStore {
   ifcTree: IfcTreeNode[];
   ifcTreesByModelId: Record<string, IfcTreeNode[]>;
   ifcTreeLoading: boolean;
+  tilesLoading: boolean;
   leftPanelCollapsed: boolean;
   rightPanelCollapsed: boolean;
   leftPanelWidth: number;
@@ -94,6 +95,7 @@ interface ViewerStore {
   setActiveModelId: (modelId: string) => void;
   setIfcTree: (modelId: string, tree: IfcTreeNode[]) => void;
   setIfcTreeLoading: (v: boolean) => void;
+  setTilesLoading: (loading: boolean) => void;
   setModelVisibility: (modelId: string, visible: boolean) => Promise<void>;
   setSelectionFromModelMap: (
     modelIdMap: Record<string, Set<number>>,
@@ -133,6 +135,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   ifcTree: [],
   ifcTreesByModelId: {},
   ifcTreeLoading: false,
+  tilesLoading: false,
   leftPanelCollapsed: false,
   rightPanelCollapsed: false,
   leftPanelWidth: VIEWER_LEFT_PANEL_DEFAULT_WIDTH,
@@ -162,6 +165,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
       ifcTree: [],
       ifcTreesByModelId: {},
       ifcTreeLoading: false,
+      tilesLoading: false,
       leftPanelCollapsed: false,
       rightPanelCollapsed: false,
       leftPanelWidth: VIEWER_LEFT_PANEL_DEFAULT_WIDTH,
@@ -195,7 +199,8 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
         refreshedModels.find((item) => item.id === modelId) ??
         state.models.find((item) => item.id === modelId) ??
         null;
-      const activeSelection = state.selectedByModelId[modelId] ?? new Set<number>();
+      const activeSelection =
+        state.selectedByModelId[modelId] ?? new Set<number>();
       return {
         _activeModelId: modelId,
         modelName: model?.name ?? state.modelName,
@@ -216,6 +221,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
       },
     })),
   setIfcTreeLoading: (v) => set({ ifcTreeLoading: v }),
+  setTilesLoading: (loading) => set({ tilesLoading: loading }),
   setSelectionFromModelMap: (modelIdMap, preferredModelId) =>
     set((state) => {
       const entries = Object.entries(modelIdMap);
@@ -235,8 +241,10 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
         (currentActive && modelIdMap[currentActive] ? currentActive : null) ??
         entries[0][0];
 
-      const model = state.models.find((item) => item.id === activeModelId) ?? null;
-      const selectedIdsForActive = modelIdMap[activeModelId] ?? new Set<number>();
+      const model =
+        state.models.find((item) => item.id === activeModelId) ?? null;
+      const selectedIdsForActive =
+        modelIdMap[activeModelId] ?? new Set<number>();
 
       return {
         selectedByModelId: Object.fromEntries(
