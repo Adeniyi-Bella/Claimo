@@ -1,0 +1,18 @@
+Parameters:
+  AppName:
+    Type: String
+    Description: Global project name (e.g. claimo)
+    Default: claimo
+Resources:
+  FrontendCICD:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cicd/frontend.cicd.yaml
+      Parameters:
+        AppName: !Ref AppName
+  BackendCICD:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cicd/backend.cicd.yaml
+      Parameters:
+        AppName: !Ref AppName

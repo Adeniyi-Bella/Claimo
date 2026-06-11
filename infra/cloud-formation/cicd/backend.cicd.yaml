@@ -1,0 +1,14 @@
+Parameters:
+  AppName:
+    Type: String
+
+Resources:
+  BackendCICD:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: cicd-template.yaml
+      Parameters:
+        AppName: !Ref AppName
+        AppContext: backend
+        BranchName: main
+        ProjectRoot: java-backend

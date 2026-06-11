@@ -1,0 +1,19 @@
+# frontend-cicd.yaml
+
+Parameters:
+  AppName:
+    Type: String
+
+Resources:
+  FrontendCICD:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      # Points to the shared cicd-template.yaml stored in S3
+      TemplateURL: cicd-template.yaml
+      Parameters:
+        AppName: !Ref AppName
+        # Tells the template this is the frontend context → produces claimo-frontend-repo
+        AppContext: frontend
+        BranchName: main
+        # Subfolder inside the repo where the React app lives
+        ProjectRoot: react-frontend

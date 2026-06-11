@@ -1,0 +1,23 @@
+Parameters:
+  AppName:
+    Type: String
+  BucketPurpose:
+    Type: String
+  BlockPublicAccess:
+    Type: String
+    Default: true
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AppName}-${BucketPurpose}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !Ref BlockPublicAccess
+        BlockPublicPolicy: !Ref BlockPublicAccess
+
+Outputs:
+  BucketName:
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub "${AppName}-${BucketPurpose}-BucketName"

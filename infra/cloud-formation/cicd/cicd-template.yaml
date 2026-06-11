@@ -1,0 +1,40 @@
+
+Parameters:
+  # Received from claimo.yaml via frontend-cicd.yaml or backend-cicd.yaml
+  AppName:
+    Type: String
+
+  # Received from frontend-cicd.yaml or backend-cicd.yaml
+  AppContext:
+    Type: String
+
+  # Received from frontend-cicd.yaml or backend-cicd.yaml
+  BranchName:
+    Type: String
+    Default: main
+
+  # Received from frontend-cicd.yaml or backend-cicd.yaml
+  ProjectRoot:
+    Type: String
+
+Resources:
+  CodeCommitRepo:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      # Produces claimo-frontend-repo or claimo-backend-repo
+      RepositoryName: !Sub "${AppName}-${AppContext}"
+      RepositoryDescription: !Sub "Source repository for ${AppName}-${AppContext}"
+      Tags:
+        - Key: App
+          Value: !Sub "${AppName}-${AppContext}"
+
+Outputs:
+  CodeCommitRepoArn:
+    Value: !GetAtt CodeCommitRepo.Arn
+    Export:
+      Name: !Sub "${AppName}-${AppContext}-CodeCommitRepoArn"
+
+  CodeCommitRepoCloneUrl:
+    Value: !GetAtt CodeCommitRepo.CloneUrlHttp
+    Export:
+      Name: !Sub "${AppName}-${AppContext}-CodeCommitCloneUrl"

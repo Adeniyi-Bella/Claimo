@@ -9,3 +9,5 @@ output
 .env.prod
 # *.sh
 .env
+
+claimo-packaged.yaml
