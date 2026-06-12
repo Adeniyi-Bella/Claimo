@@ -1,40 +1,106 @@
+AWSTemplateFormatVersion: "2010-09-09"
 
 Parameters:
-  # Received from claimo.yaml via frontend-cicd.yaml or backend-cicd.yaml
+  # Received from claimo.yaml via frontend.cicd.yaml or backend.cicd.yaml
   AppName:
     Type: String
 
-  # Received from frontend-cicd.yaml or backend-cicd.yaml
+  # Received from frontend.cicd.yaml or backend.cicd.yaml
   AppContext:
     Type: String
 
-  # Received from frontend-cicd.yaml or backend-cicd.yaml
+  # The branch CodePipeline will watch and trigger on
   BranchName:
     Type: String
     Default: main
 
-  # Received from frontend-cicd.yaml or backend-cicd.yaml
+  # The subfolder inside the repo where the app lives e.g. react-frontend, java-backend
   ProjectRoot:
     Type: String
 
+  # IAM role ARN CodeBuild assumes during the build — created in frontend.cicd.yaml or backend.cicd.yaml
+  CodeBuildRoleArn:
+    Type: String
+
+  # S3 bucket for backend build artifacts — empty for frontend since it handles its own deploy
+  ArtifactsBucketName:
+    Type: String
+    Default: ""
+
+  # Region where CodeBuild runs — hardcoded default but overridable for other regions
+  Region:
+    Type: String
+    Default: eu-central-1
+
+Conditions:
+  # Used to conditionally configure artifacts — backend needs S3, frontend does not
+  IsBackend: !Equals [!Ref AppContext, backend]
+
 Resources:
+  # CodeCommit repository — holds the source code for the app
   CodeCommitRepo:
     Type: AWS::CodeCommit::Repository
     Properties:
       # Produces claimo-frontend-repo or claimo-backend-repo
-      RepositoryName: !Sub "${AppName}-${AppContext}"
+      RepositoryName: !Sub "${AppName}-${AppContext}-repo"
+      # Human readable description scoped to the project and context
       RepositoryDescription: !Sub "Source repository for ${AppName}-${AppContext}"
       Tags:
         - Key: App
           Value: !Sub "${AppName}-${AppContext}"
 
+  # CodeBuild project — builds the application based on the buildspec in the repo
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      # Project name scoped to app and context e.g. claimo-frontend-build
+      Name: !Sub "${AppName}-${AppContext}-build-cfn"
+
+      # IAM role CodeBuild assumes during the build
+      ServiceRole: !Ref CodeBuildRoleArn
+
+      # Where to find the source code — CodeCommit repo created above
+      Source:
+        Type: CODECOMMIT
+        Location: !GetAtt CodeCommitRepo.CloneUrlHttp
+        # Path to buildspec relative to repo root
+        BuildSpec: !Sub "${ProjectRoot}/buildspec.yml"
+
+      # Primary build output
+      Artifacts:
+        # Frontend handles its own deploy in post_build so no artifacts needed
+        # Backend needs artifacts for CodeDeploy
+        Type: !If [IsBackend, S3, NO_ARTIFACTS]
+        Location: !If [IsBackend, !Ref ArtifactsBucketName, !Ref AWS::NoValue]
+        # Preserve directory structure so CodeDeploy finds files correctly
+        NamespaceType: !If [IsBackend, BUILD_ID, !Ref AWS::NoValue]
+        Packaging: !If [IsBackend, ZIP, !Ref AWS::NoValue]
+
+      Environment:
+        # Standard CodeBuild image supporting both Node 22 and Java Corretto 21
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/standard:7.0
+        ComputeType: BUILD_GENERAL1_SMALL
+
+      Tags:
+        - Key: App
+          Value: !Sub "${AppName}-${AppContext}"
+
 Outputs:
+  # Exported so CodePipeline can reference the CodeCommit repo
   CodeCommitRepoArn:
     Value: !GetAtt CodeCommitRepo.Arn
     Export:
       Name: !Sub "${AppName}-${AppContext}-CodeCommitRepoArn"
 
+  # Exported so developers know where to push code
   CodeCommitRepoCloneUrl:
     Value: !GetAtt CodeCommitRepo.CloneUrlHttp
     Export:
       Name: !Sub "${AppName}-${AppContext}-CodeCommitCloneUrl"
+
+  # Exported so CodePipeline can reference the CodeBuild project
+  CodeBuildProjectName:
+    Value: !Ref CodeBuildProject
+    Export:
+      Name: !Sub "${AppName}-${AppContext}-CodeBuildProjectName"

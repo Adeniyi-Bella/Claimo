@@ -2,7 +2,7 @@
 
 # Step 1 — bootstrap bucket, must exist before package runs
 aws cloudformation deploy \
-  --template-file s3-template.yaml \
+  --template-file s3/s3-template.yaml \
   --stack-name claimo-cfn-bucket \
   --parameter-overrides AppName=claimo BucketPurpose=cfn-templates BlockPublicAccess=true
 
@@ -16,4 +16,4 @@ aws cloudformation package \
 aws cloudformation deploy \
   --template-file claimo-packaged.yaml \
   --stack-name claimo \
-  --capabilities CAPABILITY_IAM
+  --capabilities CAPABILITY_NAMED_IAM

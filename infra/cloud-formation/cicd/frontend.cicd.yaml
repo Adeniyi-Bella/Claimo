@@ -1,19 +1,62 @@
-# frontend-cicd.yaml
+AWSTemplateFormatVersion: "2010-09-09"
 
 Parameters:
+  # Received from claimo.yaml
   AppName:
     Type: String
 
+  # CodeArtifact domain owner account ID
+  CodeArtifactDomainOwner:
+    Type: String
+
 Resources:
-  FrontendCICD:
+  # Instantiate reusable IAM role template for frontend CodeBuild
+  FrontendCodeBuildRole:
     Type: AWS::CloudFormation::Stack
     Properties:
-      # Points to the shared cicd-template.yaml stored in S3
+      TemplateURL: ../iam/iam-template.yaml
+      Parameters:
+        AppName: !Ref AppName
+        RoleContext: frontend-codebuild
+        TrustedService: codebuild.amazonaws.com
+        ManagedPolicyArns: !Join
+          - ","
+          - - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+            - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+            - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  # Inline policy for CodeArtifact — no AWS managed policy exists for this
+  FrontendCodeBuildCodeArtifactPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AppName}-frontend-codebuild-codeartifact-policy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Allow CodeBuild to get an auth token for CodeArtifact
+          - Effect: Allow
+            Action:
+              - codeartifact:GetAuthorizationToken
+              - sts:GetServiceBearerToken
+            Resource: "*"
+          # Allow CodeBuild to read packages from the frontend CodeArtifact repository
+          - Effect: Allow
+            Action:
+              - codeartifact:GetRepositoryEndpoint
+              - codeartifact:ReadFromRepository
+            Resource: !Sub "arn:aws:codeartifact:eu-central-1:${CodeArtifactDomainOwner}:repository/claimo/claimo-frontend"
+      # Attach inline policy to the role created by the nested stack
+      Roles:
+        - !GetAtt FrontendCodeBuildRole.Outputs.RoleName
+
+  FrontendCICD:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: FrontendCodeBuildRole
+    Properties:
       TemplateURL: cicd-template.yaml
       Parameters:
         AppName: !Ref AppName
-        # Tells the template this is the frontend context → produces claimo-frontend-repo
         AppContext: frontend
         BranchName: main
-        # Subfolder inside the repo where the React app lives
         ProjectRoot: react-frontend
+        CodeBuildRoleArn: !GetAtt FrontendCodeBuildRole.Outputs.RoleArn

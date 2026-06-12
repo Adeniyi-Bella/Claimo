@@ -1,8 +1,13 @@
 Parameters:
   AppName:
     Type: String
-    Description: Global project name (e.g. claimo)
     Default: claimo
+
+  # Fetched from SSM at deploy time
+  CodeArtifactDomainOwner:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /claimo/account-id
+
 Resources:
   FrontendCICD:
     Type: AWS::CloudFormation::Stack
@@ -10,9 +15,12 @@ Resources:
       TemplateURL: cicd/frontend.cicd.yaml
       Parameters:
         AppName: !Ref AppName
+        CodeArtifactDomainOwner: !Ref CodeArtifactDomainOwner
+
   BackendCICD:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: cicd/backend.cicd.yaml
       Parameters:
         AppName: !Ref AppName
+        CodeArtifactDomainOwner: !Ref CodeArtifactDomainOwner

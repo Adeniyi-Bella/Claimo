@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  # Received from parent e.g. frontend.cicd.yaml or backend.cicd.yaml
+  AppName:
+    Type: String
+
+  # The context this role is for e.g. frontend-codebuild, backend-codebuild
+  RoleContext:
+    Type: String
+
+  # The AWS service that will assume this role e.g. codebuild.amazonaws.com
+  TrustedService:
+    Type: String
+
+  # Comma delimited list of AWS managed policy ARNs to attach to the role
+  # e.g. arn:aws:iam::aws:policy/AmazonS3FullAccess,arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+  ManagedPolicyArns:
+    Type: CommaDelimitedList
+    Default: ""
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AppName}-${RoleContext}-role"
+      # Trust policy — defines who can assume this role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: !Ref TrustedService
+            Action: sts:AssumeRole
+      # Attach AWS managed policies passed in as a parameter
+      ManagedPolicyArns: !Ref ManagedPolicyArns
+
+Outputs:
+  RoleArn:
+    Value: !GetAtt Role.Arn
+    Export:
+      Name: !Sub "${AppName}-${RoleContext}-RoleArn"
+
+  RoleName:
+    Value: !Ref Role
+    Export:
+      Name: !Sub "${AppName}-${RoleContext}-RoleName"

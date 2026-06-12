@@ -11,3 +11,6 @@ output
 .env
 
 claimo-packaged.yaml
+cleanup.sh
+changeset.sh        
+start-dev.sh

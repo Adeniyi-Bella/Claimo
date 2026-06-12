@@ -1,9 +1,5 @@
 # AWS CodeBuild build specification for Claimo Spring Boot backend
 # Official docs: https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html
-# IMPORTANT: version 0.2 runs all commands in the same shell instance WITHIN a phase
-# but each phase gets a fresh shell — so cd commands do NOT persist across phases
-# NOTE: this buildspec lives in java-backend/ so CodeBuild runs from that directory
-# meaning no cd java-backend && prefix is needed
 version: 0.2
 
 env:

@@ -1,10 +1,59 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
 Parameters:
   AppName:
     Type: String
+  CodeArtifactDomainOwner:
+    Type: String
 
 Resources:
+  BackendCodeBuildRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ../iam/iam-template.yaml
+      Parameters:
+        AppName: !Ref AppName
+        RoleContext: backend-codebuild
+        TrustedService: codebuild.amazonaws.com
+        ManagedPolicyArns: !Join
+          - ","
+          - - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+            - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  BackendArtifactsBucket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ../s3/s3-template.yaml
+      Parameters:
+        AppName: !Ref AppName
+        BucketPurpose: backend-artifacts
+        BlockPublicAccess: true
+
+  BackendCodeBuildCodeArtifactPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AppName}-backend-codebuild-codeartifact-policy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - codeartifact:GetAuthorizationToken
+              - sts:GetServiceBearerToken
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - codeartifact:GetRepositoryEndpoint
+              - codeartifact:ReadFromRepository
+            Resource: !Sub "arn:aws:codeartifact:eu-central-1:${CodeArtifactDomainOwner}:repository/claimo/claimo-backend"
+      Roles:
+        - !GetAtt BackendCodeBuildRole.Outputs.RoleName
+
   BackendCICD:
     Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - BackendCodeBuildRole
+      - BackendArtifactsBucket
     Properties:
       TemplateURL: cicd-template.yaml
       Parameters:
@@ -12,3 +61,5 @@ Resources:
         AppContext: backend
         BranchName: main
         ProjectRoot: java-backend
+        CodeBuildRoleArn: !GetAtt BackendCodeBuildRole.Outputs.RoleArn
+        ArtifactsBucketName: !GetAtt BackendArtifactsBucket.Outputs.BucketName
