@@ -5,7 +5,7 @@ import { ProjectApi } from "@/api/project.api";
 import { UnauthorizedError } from "@/api/error/customeError";
 import { dashboardQueryKey } from "@/hooks/api/useDashboard";
 import type { CreatePaymentItemRequestDto, InviteMemberRequestDto } from "@/api/dto/requestDto";
-import type { ProjectResponse } from "@/api/dto/responseDto";
+import type { GetProjectsResponse, ProjectResponse } from "@/api/dto/responseDto";
 import type { CreateProjectData } from "@/types";
 
 // Query Keys
@@ -17,7 +17,7 @@ export const projectQueryKey = (projectId: string) =>
 export function useGetProjects() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
-  return useQuery<ProjectResponse[]>({
+  return useQuery<GetProjectsResponse[]>({
     queryKey: projectsQueryKey,
     queryFn: async () => {
       const token = await getToken();
@@ -32,6 +32,7 @@ export function useGetProjects() {
     gcTime: 1000 * 60 * 30,
   });
 }
+
 
 export function useGetProject(projectId: string) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -96,7 +97,7 @@ export function useInviteMemberToProject(projectId: string) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
-      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+      // await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
     },
   });
 }
@@ -115,7 +116,7 @@ export function useRemoveMemberFromProject(projectId: string) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
-      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+      // await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
     },
   });
 }
@@ -134,7 +135,7 @@ export function useCreatePaymentItem(projectId: string) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
-      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+      // await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
     },
     retry: false,
   });

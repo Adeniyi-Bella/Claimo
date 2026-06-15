@@ -18,7 +18,9 @@ import com.claimo.api.paymentitem.repository.PaymentItemRepository;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
 import com.claimo.api.projects.dto.response.DashboardResponse;
+import com.claimo.api.projects.dto.response.GetProjectsResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
+import com.claimo.api.projects.dto.IProjectFinancials;
 import com.claimo.api.projects.dto.MemberDto;
 import com.claimo.api.projects.dto.ModelDto;
 import com.claimo.api.projects.dto.response.ProjectResponses.ProjectDetails;
@@ -82,7 +84,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<ProjectDetails> getProjects(Jwt jwt) {
+        public List<GetProjectsResponse> getProjects(Jwt jwt) {
                 User user = authHelper.getAuthenticatedUser(jwt);
 
                 Set<UUID> elevatedCompanyIds = companyMemberRepository.findAllByUser_Id(user.getId()).stream()
@@ -107,21 +109,39 @@ public class ProjectServiceImpl implements ProjectService {
                 }
 
                 List<UUID> projectIds = new ArrayList<>(visibleProjects.keySet());
-                Map<UUID, List<ProjectMember>> membersByProject = loadMembersByProjectIds(projectIds);
-                Map<UUID, List<ProjectModel>> modelsByProject = loadModelsByProjectIds(projectIds);
-                Map<UUID, List<PaymentItem>> paymentItemsByModel = loadPaymentItemsByModelFromProjectIds(projectIds);
+
+                Map<UUID, Long> memberCountByProject = projectMemberRepository.findAllByProject_IdIn(projectIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(m -> m.getProject().getId(), Collectors.counting()));
+
+                Map<UUID, Long> modelCountByProject = projectModelRepository.findAllByProject_IdIn(projectIds).stream()
+                                .collect(Collectors.groupingBy(m -> m.getProject().getId(), Collectors.counting()));
+
+                Map<UUID, IProjectFinancials> financialsByProject = projectIds.isEmpty() ? Map.of()
+                                : paymentItemRepository.findFinancialsByProjectIds(projectIds).stream()
+                                                .collect(Collectors.toMap(IProjectFinancials::getProjectId, f -> f));
 
                 return visibleProjects.values().stream()
                                 .sorted(Comparator.comparing(Project::getCreatedAt,
                                                 Comparator.nullsLast(Comparator.reverseOrder())))
-                                .map(project -> toDetails(
-                                                project,
-                                                membersByProject.getOrDefault(project.getId(), List.of()),
-                                                modelsByProject.getOrDefault(project.getId(), List.of()),
-                                                paymentItemsByModel,
-                                                List.of(), // no pending invites on list view
-                                                null,
-                                                null))
+                                .map(p -> {
+                                        IProjectFinancials f = financialsByProject.get(p.getId());
+                                        return new GetProjectsResponse(
+                                                        p.getId(),
+                                                        p.getName(),
+                                                        p.getDescription(),
+                                                        p.getLocation(),
+                                                        p.getStartDate(),
+                                                        "Active",
+                                                        memberCountByProject.getOrDefault(p.getId(), 0L).intValue(),
+                                                        modelCountByProject.getOrDefault(p.getId(), 0L).intValue(),
+                                                        new GetProjectsResponse.Financials(
+                                                                        f != null ? f.getContractValue()
+                                                                                        : BigDecimal.ZERO,
+                                                                        f != null ? f.getApproved() : BigDecimal.ZERO,
+                                                                        f != null ? f.getSubmitted() : BigDecimal.ZERO,
+                                                                        f != null ? f.getRejected() : BigDecimal.ZERO));
+                                })
                                 .toList();
         }
 
@@ -204,22 +224,8 @@ public class ProjectServiceImpl implements ProjectService {
         @Transactional(readOnly = true)
         public DashboardResponse getDashboardData(Jwt jwt) {
                 User user = authHelper.getAuthenticatedUser(jwt);
-
-                // try {
-                //         if (companyInviteService.hasPendingInvites(user.getEmail())) {
-                //                 companyInviteService.markUserCreatedInvitesAccepted(user.getEmail(), user);
-                //         }
-                //         if (projectInviteService.hasPendingInvites(user.getEmail())) {
-                //                 projectInviteService.markUserCreatedInvitesAccepted(user.getEmail(), user);
-                //         }
-                // } catch (Exception e) {
-                //         log.warn("Failed to finalize pending invites for userId={} error={}", user.getId(),
-                //                         e.getMessage());
-                // }
-
                 CompanyContext companyCtx = resolveCompanyContext(user);
 
-                // Collect all company IDs the user is associated with
                 List<UUID> allCompanyIds = new ArrayList<>();
                 allCompanyIds.add(companyCtx.company().getId());
                 companyMemberRepository.findAllByUser_Id(user.getId()).stream()
@@ -229,7 +235,6 @@ public class ProjectServiceImpl implements ProjectService {
 
                 List<Project> projects = projectRepository.findAllByCompanyIdIn(allCompanyIds);
 
-                // Non-admins are restricted to projects they are explicitly a member of
                 Set<UUID> adminCompanyIds = getAdminCompanyIds(user);
                 if (!adminCompanyIds.containsAll(allCompanyIds)) {
                         Set<UUID> userProjectIds = projectMemberRepository.findAllByUser_Id(user.getId()).stream()
@@ -247,52 +252,63 @@ public class ProjectServiceImpl implements ProjectService {
                                 .toList();
 
                 List<UUID> projectIds = projects.stream().map(Project::getId).toList();
-                Map<UUID, List<ProjectMember>> membersByProject = projectIds.isEmpty() ? Map.of()
-                                : loadMembersByProjectIds(projectIds);
-                Map<UUID, List<ProjectModel>> modelsByProject = projectIds.isEmpty() ? Map.of()
-                                : loadModelsByProjectIds(projectIds);
-                Map<UUID, List<PaymentItem>> paymentItemsByModel = projectIds.isEmpty() ? Map.of()
-                                : loadPaymentItemsByModelFromProjectIds(projectIds);
 
-                List<DashboardResponse.ProjectSummary> projectSummaries = projects.stream()
-                                .map(project -> toDashboardProjectSummary(
-                                                project,
-                                                membersByProject.getOrDefault(project.getId(), List.of()),
-                                                modelsByProject.getOrDefault(project.getId(), List.of()),
-                                                paymentItemsByModel))
+                // Two lightweight queries instead of loading all members/models/items/claims
+                Map<UUID, Long> modelCountByProject = projectIds.isEmpty() ? Map.of()
+                                : projectModelRepository.findAllByProject_IdIn(projectIds).stream()
+                                                .collect(Collectors.groupingBy(m -> m.getProject().getId(),
+                                                                Collectors.counting()));
+
+                Map<UUID, IProjectFinancials> financialsByProject = projectIds.isEmpty() ? Map.of()
+                                : paymentItemRepository.findFinancialsByProjectIds(projectIds).stream()
+                                                .collect(Collectors.toMap(IProjectFinancials::getProjectId, f -> f));
+
+                List<DashboardResponse.ProjectSummary> summaries = projects.stream()
+                                .map(p -> {
+                                        IProjectFinancials f = financialsByProject.get(p.getId());
+                                        return new DashboardResponse.ProjectSummary(
+                                                        p.getId(),
+                                                        p.getName(),
+                                                        p.getLocation(),
+                                                        p.getStartDate(),
+                                                        modelCountByProject.getOrDefault(p.getId(), 0L).intValue(),
+                                                        new DashboardResponse.Financials(
+                                                                        f != null ? f.getContractValue()
+                                                                                        : BigDecimal.ZERO,
+                                                                        f != null ? f.getApproved() : BigDecimal.ZERO,
+                                                                        f != null ? f.getSubmitted() : BigDecimal.ZERO,
+                                                                        f != null ? f.getRejected() : BigDecimal.ZERO));
+                                })
                                 .toList();
 
                 return new DashboardResponse(
                                 new DashboardResponse.UserSummary(
-                                                user.getId(),
-                                                displayName(user),
-                                                user.getEmail(),
+                                                user.getId(), displayName(user), user.getEmail(),
                                                 avatarHue(user.getEmail())),
                                 new DashboardResponse.CompanySummary(
-                                                CompanyDto.fromEntity(companyCtx.company()),
-                                                companyCtx.role()),
-                                projectSummaries);
+                                                CompanyDto.fromEntity(companyCtx.company()), companyCtx.role()),
+                                summaries);
         }
 
         // -------------------------------------------------------------------------
         // Batch data loaders — shared by getProjects, getProjectById, getDashboardData
         // -------------------------------------------------------------------------
 
-        private Map<UUID, List<ProjectMember>> loadMembersByProjectIds(List<UUID> projectIds) {
-                return projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
-                                .collect(Collectors.groupingBy(
-                                                m -> m.getProject().getId(),
-                                                LinkedHashMap::new,
-                                                Collectors.toList()));
-        }
+        // private Map<UUID, List<ProjectMember>> loadMembersByProjectIds(List<UUID> projectIds) {
+        //         return projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
+        //                         .collect(Collectors.groupingBy(
+        //                                         m -> m.getProject().getId(),
+        //                                         LinkedHashMap::new,
+        //                                         Collectors.toList()));
+        // }
 
-        private Map<UUID, List<ProjectModel>> loadModelsByProjectIds(List<UUID> projectIds) {
-                return projectModelRepository.findAllByProject_IdIn(projectIds).stream()
-                                .collect(Collectors.groupingBy(
-                                                m -> m.getProject().getId(),
-                                                LinkedHashMap::new,
-                                                Collectors.toList()));
-        }
+        // private Map<UUID, List<ProjectModel>> loadModelsByProjectIds(List<UUID> projectIds) {
+        //         return projectModelRepository.findAllByProject_IdIn(projectIds).stream()
+        //                         .collect(Collectors.groupingBy(
+        //                                         m -> m.getProject().getId(),
+        //                                         LinkedHashMap::new,
+        //                                         Collectors.toList()));
+        // }
 
         /**
          * Returns payment items keyed by model ID (not project ID),
@@ -425,127 +441,6 @@ public class ProjectServiceImpl implements ProjectService {
                                                                 e.getFromValue(), e.getToValue()))
                                                 .toList();
         }
-
-        // -------------------------------------------------------------------------
-        // DashboardResponse mappers (used by getDashboardData)
-        //
-        // Kept separate from ProjectResponses mappers because the record types differ:
-        // DashboardResponse uses double + String for enums;
-        // ProjectResponses uses BigDecimal + typed enums.
-        // -------------------------------------------------------------------------
-
-        private DashboardResponse.ProjectSummary toDashboardProjectSummary(
-                        Project project,
-                        List<ProjectMember> members,
-                        List<ProjectModel> models,
-                        Map<UUID, List<PaymentItem>> paymentItemsByModel) {
-
-                return new DashboardResponse.ProjectSummary(
-                                project.getId(),
-                                project.getName(),
-                                project.getDescription(),
-                                project.getLocation(),
-                                project.getStartDate(),
-                                "Active",
-                                toDashboardMemberSummaries(members),
-                                toDashboardModelSummaries(models, paymentItemsByModel));
-        }
-
-        private List<MemberDto> toDashboardMemberSummaries(List<ProjectMember> members) {
-                return members.stream()
-                                .map(m -> {
-                                        User u = m.getUser();
-                                        return new MemberDto(
-                                                        u.getId(),
-                                                        displayName(u),
-                                                        u.getEmail(),
-                                                        m.getRole(),
-                                                        m.getCreatedAt() == null ? null
-                                                                        : m.getCreatedAt().atOffset(ZoneOffset.UTC)
-                                                                                        .toLocalDate().toString(),
-                                                        avatarHue(u.getEmail()));
-                                })
-                                .toList();
-        }
-
-        private List<ModelDto> toDashboardModelSummaries(
-                        List<ProjectModel> models,
-                        Map<UUID, List<PaymentItem>> paymentItemsByModel) {
-                return models.stream()
-                                .map(model -> new ModelDto(
-                                                model.getId(),
-                                                model.getFileName(),
-                                                "ifc",
-                                                model.getFileUrl(),
-                                                model.getUploadedAt(),
-                                                model.getUploadedBy() == null ? null
-                                                                : displayName(model.getUploadedBy()),
-                                                toDashboardPaymentItemSummaries(
-                                                                paymentItemsByModel.getOrDefault(model.getId(),
-                                                                                List.of()))))
-                                .toList();
-        }
-
-        private List<PaymentItemResponseDto> toDashboardPaymentItemSummaries(List<PaymentItem> items) {
-                return items.stream()
-                                .map(item -> new PaymentItemResponseDto(
-                                                item.getId(),
-                                                item.getCategory(),
-                                                item.getModel() == null ? null : item.getModel().getId().toString(),
-                                                item.getModel() == null ? null : item.getModel().getFileName(),
-                                                item.getContractor() == null ? null
-                                                                : item.getContractor().getId().toString(),
-                                                item.getContractor() == null ? null : displayName(item.getContractor()),
-                                                item.getApprover() == null ? null
-                                                                : item.getApprover().getId().toString(),
-                                                item.getApprover() == null ? null : displayName(item.getApprover()),
-                                                item.getContractValue() == null ? BigDecimal.ZERO
-                                                                : item.getContractValue(),
-                                                item.getDescription(),
-                                                item.getCreatedAt(),
-                                                item.getUpdatedAt(),
-                                                toDashboardClaimSummaries(item.getClaims()),
-                                                parseAttachedElementIds(item.getAttachedElementIdsJson()),
-                                                item.getJobStatus(),
-                                                item.getPaymentStatus(),
-                                                item.isPaymentConfirmationPending(),
-                                                toDashboardAuditEntrySummaries(item.getAuditTrail())))
-                                .toList();
-        }
-
-        private List<ClaimDto> toDashboardClaimSummaries(
-                        Collection<PaymentItemClaim> claims) {
-                return claims == null ? List.of()
-                                : claims.stream()
-                                                .sorted(Comparator.comparing(PaymentItemClaim::getSequence))
-                                                .map(c -> new ClaimDto(
-                                                                c.getId(), c.getSequence(),
-                                                                c.getAmount() == null ? BigDecimal.ZERO : c.getAmount(),
-                                                                c.getDescription(), c.getStatus(),
-                                                                c.getSubmittedBy(), c.getSubmittedById(),
-                                                                c.getSubmittedAt(),
-                                                                c.getDecidedBy(), c.getDecidedById(), c.getDecidedAt(),
-                                                                c.getDecisionNote(), c.getPaidAt()))
-                                                .toList();
-        }
-
-        private List<AuditEntryDto> toDashboardAuditEntrySummaries(
-                        Collection<PaymentItemAuditEntry> auditTrail) {
-                return auditTrail == null ? List.of()
-                                : auditTrail.stream()
-                                                .sorted(Comparator.comparing(PaymentItemAuditEntry::getTimestamp))
-                                                .map(e -> new AuditEntryDto(
-                                                                e.getId(), e.getTimestamp(), e.getActorId(),
-                                                                e.getActorName(),
-                                                                e.getActorRole(), e.getAction(),
-                                                                e.getField(),
-                                                                e.getFromValue(), e.getToValue()))
-                                                .toList();
-        }
-
-        // -------------------------------------------------------------------------
-        // Company resolution (moved from DashboardServiceImpl)
-        // -------------------------------------------------------------------------
 
         /**
          * Owned company takes priority; falls back to first membership.

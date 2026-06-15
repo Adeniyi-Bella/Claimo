@@ -18,7 +18,7 @@ import { DashboardLoader } from "@/components/common/loader/loader";
 import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDialog";
 import { useCreateProject } from "@/hooks/api/projects/useProject";
 import { useGetProjects } from "@/hooks/api/projects/useProject";
-import { fmtCurrency, fmtDate, projectSummary } from "@/utils";
+import { fmtCurrency, fmtDate } from "@/utils";
 
 export default function Projects() {
   const { data, isLoading, isError, refetch } = useGetProjects();
@@ -135,10 +135,13 @@ export default function Projects() {
         ) : view === "grid" ? (
           <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((project) => {
-              const summary = projectSummary(project);
               const pct =
-                summary.total > 0
-                  ? Math.round((summary.approved / summary.total) * 100)
+                project.financials.contractValue > 0
+                  ? Math.round(
+                      (project.financials.approved /
+                        project.financials.contractValue) *
+                        100,
+                    )
                   : 0;
 
               return (
@@ -181,7 +184,7 @@ export default function Projects() {
                         <Boxes className="h-3 w-3" /> Models
                       </div>
                       <div className="mt-0.5 font-medium">
-                        {project.models.length}
+                        {project.modelCount}
                       </div>
                     </div>
                     <div>
@@ -189,15 +192,19 @@ export default function Projects() {
                         <Users className="h-3 w-3" /> Members
                       </div>
                       <div className="mt-0.5 font-medium">
-                        {project.members.length}
+                        {project.memberCount}
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5">
-                      <span>{fmtCurrency(summary.approved)} approved</span>
-                      <span>{fmtCurrency(summary.total)} total</span>
+                      <span>
+                        {fmtCurrency(project.financials.approved)} approved
+                      </span>
+                      <span>
+                        {fmtCurrency(project.financials.contractValue)} total
+                      </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                       <div
@@ -233,7 +240,7 @@ export default function Projects() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((project) => {
-                  const summary = projectSummary(project);
+                  // const summary = projectSummary(project);
                   return (
                     <tr
                       key={project.id}
@@ -257,17 +264,13 @@ export default function Projects() {
                       <td className="px-4 py-3 text-muted-foreground">
                         {fmtDate(project.startDate)}
                       </td>
+                      <td>{project.modelCount}</td>
+                      <td>{project.memberCount}</td>
                       <td className="px-4 py-3 text-right tabular-nums">
-                        {project.models.length}
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        {project.members.length}
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        {fmtCurrency(summary.total)}
+                        {fmtCurrency(project.financials.contractValue)}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums text-status-approved-fg font-medium">
-                        {fmtCurrency(summary.approved)}
+                        {fmtCurrency(project.financials.approved)}
                       </td>
                     </tr>
                   );

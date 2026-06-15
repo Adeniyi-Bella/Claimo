@@ -4,6 +4,7 @@ import com.claimo.api.exceptions.CustomApiResponse;
 import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
 import com.claimo.api.projects.dto.response.DashboardResponse;
+import com.claimo.api.projects.dto.response.GetProjectsResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.service.ProjectService;
 
@@ -52,9 +53,9 @@ public class ProjectController {
                         @ApiResponse(responseCode = "200", description = "Projects returned successfully"),
                         @ApiResponse(responseCode = "401", description = "Unauthorized")
         })
-        public ResponseEntity<CustomApiResponse<List<ProjectResponses.ProjectDetails>>> getProjects(
+        public ResponseEntity<CustomApiResponse<List<GetProjectsResponse>>> getProjects(
                         @AuthenticationPrincipal Jwt jwt) {
-                List<ProjectResponses.ProjectDetails> response = projectService.getProjects(jwt);
+                List<GetProjectsResponse> response = projectService.getProjects(jwt);
                 return ResponseEntity.ok(CustomApiResponse.success(response));
         }
 

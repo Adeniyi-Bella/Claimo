@@ -134,10 +134,45 @@ export interface DashboardCompany {
   role: "ACCOUNT_OWNER" | "ADMIN" | "MEMBER";
 }
 
+export interface ProjectFinancials {
+  contractValue: number;
+  approved: number;
+  submitted: number;
+  rejected: number;
+}
+
+export interface GetProjectsResponse {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  startDate: string;
+  status: ProjectStatus;
+  memberCount: number;
+  modelCount: number;
+  financials: ProjectFinancials;
+}
+
+export interface DashboardFinancials {
+  contractValue: number;
+  approved: number;
+  submitted: number;
+  rejected: number;
+}
+
+export interface DashboardProjectSummary {
+  id: string;
+  name: string;
+  location: string;
+  startDate: string;
+  modelCount: number;
+  financials: DashboardFinancials;
+}
+
 export interface DashboardResponse {
   user: DashboardUser;
   company: DashboardCompany;
-  projects: ProjectResponse[];
+  projects: DashboardProjectSummary[];
 }
 
 export interface PendingInvite {

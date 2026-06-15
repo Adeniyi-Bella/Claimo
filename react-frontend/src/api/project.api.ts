@@ -1,6 +1,10 @@
 import { apiClient } from "@/api/clients/axiosClient";
 import { requireApiData, requireApiSuccess } from "@/api/response";
-import type { CustomApiResponse, ProjectResponse } from "@/api/dto/responseDto";
+import type {
+  CustomApiResponse,
+  GetProjectsResponse,
+  ProjectResponse,
+} from "@/api/dto/responseDto";
 import type {
   CreatePaymentItemRequestDto,
   CreateProjectRequestDto,
@@ -29,15 +33,14 @@ export class ProjectApi {
     });
   }
 
-  static async getProjects(token: string): Promise<ProjectResponse[]> {
-    const response = await apiClient.get<CustomApiResponse<ProjectResponse[]>>(
-      "/projects",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  static async getProjects(token: string): Promise<GetProjectsResponse[]> {
+    const response = await apiClient.get<
+      CustomApiResponse<GetProjectsResponse[]>
+    >("/projects", {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
 
     return requireApiData(response.data, {
       message: "Projects response missing data",

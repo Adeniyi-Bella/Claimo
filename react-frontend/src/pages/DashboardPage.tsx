@@ -22,7 +22,7 @@ import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDia
 import { useCreateProject } from "@/hooks/api/projects/useProject";
 import { useDashboard } from "@/hooks/api/useDashboard";
 import { fmtCurrency, fmtDate } from "@/utils";
-import type { ProjectResponse } from "@/api/dto/responseDto";
+import type { DashboardProjectSummary } from "@/api/dto/responseDto";
 
 export default function DashboardPage() {
   const { data, isLoading, isError, refetch } = useDashboard();
@@ -159,20 +159,16 @@ function FilledDashboard({
   companyName: string;
   role: string;
   userName: string;
-  projects: ProjectResponse[];
+  projects: DashboardProjectSummary[];
   onCreateClick: () => void;
 }) {
-  const totalModels = projects.reduce(
-    (sum, project) => sum + project.models.length,
-    0,
-  );
+  const totalModels = projects.reduce((sum, p) => sum + p.modelCount, 0);
   const totals = projects.reduce(
-    (acc, project) => {
-      const summary = summarizeProject(project);
-      acc.total += summary.total;
-      acc.approved += summary.approved;
-      acc.submitted += summary.submitted;
-      acc.rejected += summary.rejected;
+    (acc, p) => {
+      acc.total += p.financials.contractValue;
+      acc.approved += p.financials.approved;
+      acc.submitted += p.financials.submitted;
+      acc.rejected += p.financials.rejected;
       return acc;
     },
     { total: 0, approved: 0, submitted: 0, rejected: 0 },
@@ -261,10 +257,13 @@ function FilledDashboard({
           </div>
           <div className="divide-y divide-border">
             {recent.map((project) => {
-              const summary = summarizeProject(project);
               const pct =
-                summary.total > 0
-                  ? Math.round((summary.approved / summary.total) * 100)
+                project.financials.contractValue > 0
+                  ? Math.round(
+                      (project.financials.approved /
+                        project.financials.contractValue) *
+                        100,
+                    )
                   : 0;
 
               return (
@@ -293,12 +292,14 @@ function FilledDashboard({
                   </div>
                   <div className="col-span-4 md:col-span-2 text-xs">
                     <div className="text-muted-foreground">Models</div>
-                    <div className="font-medium">{project.models.length}</div>
+                    <div className="font-medium">{project.modelCount}</div>
                   </div>
                   <div className="col-span-8 md:col-span-3">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
-                      <span>{fmtCurrency(summary.approved)}</span>
-                      <span>{fmtCurrency(summary.total)}</span>
+                      <span>{fmtCurrency(project.financials.approved)}</span>
+                      <span>
+                        {fmtCurrency(project.financials.contractValue)}
+                      </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                       <div
@@ -398,26 +399,26 @@ function Step({
   );
 }
 
-function summarizeProject(project: ProjectResponse) {
-  const items = project.models.flatMap((model) => model.paymentItems);
-  return items.reduce(
-    (acc, item) => {
-      const approved = item.claims
-        .filter((claim) => claim.status === "APPROVED")
-        .reduce((sum, claim) => sum + claim.amount, 0);
-      const pending = item.claims
-        .filter((claim) => claim.status === "SUBMITTED")
-        .reduce((sum, claim) => sum + claim.amount, 0);
-      const rejected = item.claims
-        .filter((claim) => claim.status === "REJECTED")
-        .reduce((sum, claim) => sum + claim.amount, 0);
+// function summarizeProject(project: ProjectResponse) {
+//   const items = project.models.flatMap((model) => model.paymentItems);
+//   return items.reduce(
+//     (acc, item) => {
+//       const approved = item.claims
+//         .filter((claim) => claim.status === "APPROVED")
+//         .reduce((sum, claim) => sum + claim.amount, 0);
+//       const pending = item.claims
+//         .filter((claim) => claim.status === "SUBMITTED")
+//         .reduce((sum, claim) => sum + claim.amount, 0);
+//       const rejected = item.claims
+//         .filter((claim) => claim.status === "REJECTED")
+//         .reduce((sum, claim) => sum + claim.amount, 0);
 
-      acc.total += item.contractValue;
-      acc.approved += approved;
-      acc.submitted += pending;
-      acc.rejected += rejected;
-      return acc;
-    },
-    { total: 0, approved: 0, submitted: 0, rejected: 0 },
-  );
-}
+//       acc.total += item.contractValue;
+//       acc.approved += approved;
+//       acc.submitted += pending;
+//       acc.rejected += rejected;
+//       return acc;
+//     },
+//     { total: 0, approved: 0, submitted: 0, rejected: 0 },
+//   );
+// }

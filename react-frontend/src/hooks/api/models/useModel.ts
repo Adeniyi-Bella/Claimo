@@ -2,7 +2,7 @@ import { useAuth } from "@clerk/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ModelApi } from "@/api/model.api";
 import { projectQueryKey } from "@/hooks/api/projects/useProject";
-import {dashboardQueryKey} from "@/hooks/api/useDashboard";
+// import {dashboardQueryKey} from "@/hooks/api/useDashboard";
 import { saveModelFile, deleteModelFile } from "@/lib/model-storage";
 import { deleteFragmentCache } from "@/lib/viewer/cache";
 
@@ -35,7 +35,7 @@ export function useUploadModel(projectId: string) {
       return ModelApi.uploadModel(token, projectId, modelId, fileName, file);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+      // queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
       queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
     },
   });
