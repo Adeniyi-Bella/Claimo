@@ -5,19 +5,26 @@ import {
   ReorientationPlugin,
 } from "3d-tiles-renderer/plugins";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
-import { Object3D } from "three";
+import { Group, Object3D } from "three";
 import type { ViewerRuntime } from "./bootstrap";
 
 export interface CesiumIonConfig {
   apiToken: string;
   assetId: string;
   onLoaded?: () => void;
+  onError?: (error: unknown) => void;
+}
+
+export interface CesiumIonTilesHandle {
+  tiles: TilesRenderer;
+  transformRoot: Group;
+  dispose: () => void;
 }
 
 export function loadCesiumIonTiles(
   runtime: ViewerRuntime,
   config: CesiumIonConfig,
-): TilesRenderer {
+): CesiumIonTilesHandle {
   const { world } = runtime;
   const scene = world.scene.three;
   const renderer = world.renderer!.three;
@@ -46,7 +53,10 @@ export function loadCesiumIonTiles(
   tiles.registerPlugin(new ReorientationPlugin({ recenter: true }));
 
   tiles.fetchOptions.mode = "cors";
-  scene.add(tiles.group);
+  const transformRoot = new Group();
+  transformRoot.name = "CesiumIon.TransformRoot";
+  scene.add(transformRoot);
+  transformRoot.add(tiles.group);
 
   camera.updateMatrixWorld();
   tiles.setCamera(camera);
@@ -61,6 +71,7 @@ export function loadCesiumIonTiles(
 
   tiles.addEventListener("load-error", (e: any) => {
     console.error("[CesiumIon] load error", e);
+    config.onError?.(e);
   });
 
   tiles.addEventListener("load-model", ({ scene }: { scene: Object3D }) => {
@@ -71,21 +82,30 @@ export function loadCesiumIonTiles(
     });
   });
 
-  // Hook into existing camera controls update
-  world.camera.controls.addEventListener("update", () => {
+  // Keep the tileset in sync with the viewer camera.
+  const handleCameraUpdate = () => {
     camera.updateMatrixWorld();
     tiles.setCamera(camera);
     tiles.setResolutionFromRenderer(camera, renderer);
     tiles.update();
-  });
+  };
 
-  return tiles;
+  world.camera.controls.addEventListener("update", handleCameraUpdate);
+
+  return {
+    tiles,
+    transformRoot,
+    dispose: () => {
+      world.camera.controls.removeEventListener("update", handleCameraUpdate);
+      transformRoot.remove(tiles.group);
+      runtime.world.scene.three.remove(transformRoot);
+      tiles.dispose();
+    },
+  };
 }
 
 export function disposeCesiumIonTiles(
-  runtime: ViewerRuntime,
-  tiles: TilesRenderer,
+  handle: CesiumIonTilesHandle,
 ): void {
-  runtime.world.scene.three.remove(tiles.group);
-  tiles.dispose();
+  handle.dispose();
 }
