@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.instrumentation.jdbc.datasource.JdbcTelemetry;
+
 import javax.sql.DataSource;
 
 @Configuration
@@ -16,10 +19,12 @@ import javax.sql.DataSource;
 public class DataSourceProxyConfig {
 
     @Bean
-    public DataSource dataSource(DataSourceProperties properties) {
+    public DataSource dataSource(DataSourceProperties properties, OpenTelemetry openTelemetry) {
         DataSource original = properties.initializeDataSourceBuilder().build();
+        DataSource otelWrapped = JdbcTelemetry.create(openTelemetry).wrap(original);
+
         return ProxyDataSourceBuilder
-                .create(original)
+                .create(otelWrapped)
                 .name("dataSource")
                 .afterQuery((execInfo, queryInfoList) -> {
                     queryInfoList.forEach(queryInfo -> {

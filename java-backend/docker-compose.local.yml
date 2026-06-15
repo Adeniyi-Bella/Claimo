@@ -27,6 +27,17 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: claimo-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4318:4318" # OTLP HTTP receiver
+    deploy:
+      resources:
+        limits:
+          memory: 128m
 
 volumes:
   claimo_pgdata:
