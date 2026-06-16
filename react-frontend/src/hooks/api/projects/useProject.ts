@@ -8,10 +8,7 @@ import {
 
 import { ProjectApi } from "@/api/project.api";
 import { dashboardQueryKey } from "@/hooks/api/useDashboard";
-import type {
-  CreatePaymentItemRequestDto,
-  InviteMemberRequestDto,
-} from "@/api/dto/requestDto";
+import type { InviteMemberRequestDto } from "@/api/dto/requestDto";
 import type {
   GetProjectsResponse,
   PagedResponse,
@@ -110,23 +107,8 @@ export function useRemoveMemberFromProject(projectId: string) {
       await queryClient.invalidateQueries({
         queryKey: projectQueryKey(projectId),
       });
+      await queryClient.invalidateQueries({ queryKey: projectsQueryKey });
     },
-  });
-}
-
-export function useCreatePaymentItem(projectId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: CreatePaymentItemRequestDto) => {
-      return ProjectApi.createPaymentItem(projectId, data);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: projectQueryKey(projectId),
-      });
-    },
-    retry: false,
   });
 }
 

@@ -2,6 +2,7 @@ import { apiClient } from "@/api/clients/axiosClient";
 import { requireApiData } from "@/api/response";
 import type { CustomApiResponse } from "@/api/dto/responseDto";
 import type {
+  CreatePaymentItemRequestDto,
   DecideClaimRequestDto,
   SubmitClaimRequestDto,
   UpdateJobStatusRequestDto,
@@ -11,13 +12,11 @@ import type { PaymentItem } from "@/api/dto/responseDto";
 
 export class PaymentItemApi {
   static async getPaymentItemById(
-    // token: string,
     projectId: string,
     itemId: string,
   ): Promise<PaymentItem> {
     const response = await apiClient.get<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}`,
-      // { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return requireApiData(response.data, {
@@ -28,7 +27,6 @@ export class PaymentItemApi {
   }
 
   static async submitClaim(
-    // token: string,
     projectId: string,
     itemId: string,
     data: SubmitClaimRequestDto,
@@ -36,7 +34,6 @@ export class PaymentItemApi {
     const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}/claims`,
       data,
-      // { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return requireApiData(response.data, {
@@ -133,6 +130,22 @@ export class PaymentItemApi {
     return requireApiData(response.data, {
       message: "Assign payment item response missing data",
       code: "EMPTY_ASSIGN_PAYMENT_ITEM_RESPONSE",
+      statusCode: response.status,
+    });
+  }
+
+  static async createPaymentItem(
+    projectId: string,
+    data: CreatePaymentItemRequestDto,
+  ): Promise<PaymentItem> {
+    const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
+      `/projects/${projectId}/payment-items`,
+      data,
+    );
+
+    return requireApiData(response.data, {
+      message: "Create payment item response missing data",
+      code: "EMPTY_CREATE_PAYMENT_ITEM_RESPONSE",
       statusCode: response.status,
     });
   }

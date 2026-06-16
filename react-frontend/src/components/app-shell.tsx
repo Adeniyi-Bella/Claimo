@@ -3,7 +3,6 @@ import {
   ChevronDown,
   FolderKanban,
   LayoutDashboard,
-  Search,
   Settings,
   Building2,
   LogOut,
@@ -44,10 +43,6 @@ function UserMenuContent({ onSignOut }: { onSignOut: () => void }) {
           {currentUser.email}
         </div>
       </div>
-      {/* <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition">
-        <User className="h-3.5 w-3.5" />
-        Profile
-      </button> */}
       <Link
         to="/settings"
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition"
@@ -69,7 +64,6 @@ function UserMenuContent({ onSignOut }: { onSignOut: () => void }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (r) => r.location.pathname });
-  // const [openNotif, setOpenNotif] = useState(false);
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const [openTopUserMenu, setOpenTopUserMenu] = useState(false);
   const { signOut } = useClerk();
@@ -166,16 +160,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ClaimoMark className="h-7 w-7" />
             <span className="font-semibold">Claimo</span>
           </Link>
-          <div className="hidden md:flex flex-1 max-w-md relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              placeholder="Search projects, models, claims…"
-              className="w-full h-8 rounded-md border border-input bg-surface-elevated pl-8 pr-12 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring/50 transition"
-            />
-            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 text-[10px] text-muted-foreground">
-              ⌘K
-            </kbd>
-          </div>
 
           <div className="flex-1 md:flex-none" />
 

@@ -9,7 +9,6 @@ import type {
   UpdateProjectRequestDto,
 } from "@/api/dto/responseDto";
 import type {
-  CreatePaymentItemRequestDto,
   CreateProjectRequestDto,
   InviteMemberRequestDto,
 } from "@/api/dto/requestDto";
@@ -75,22 +74,6 @@ export class ProjectApi {
 
   static async removeMember(projectId: string, userId: string): Promise<void> {
     await apiClient.delete(`/projects/${projectId}/members/${userId}`, {});
-  }
-
-  static async createPaymentItem(
-    projectId: string,
-    data: CreatePaymentItemRequestDto,
-  ): Promise<PaymentItem> {
-    const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
-      `/projects/${projectId}/payment-items`,
-      data,
-    );
-
-    return requireApiData(response.data, {
-      message: "Create payment item response missing data",
-      code: "EMPTY_CREATE_PAYMENT_ITEM_RESPONSE",
-      statusCode: response.status,
-    });
   }
 
   static async updateProject(

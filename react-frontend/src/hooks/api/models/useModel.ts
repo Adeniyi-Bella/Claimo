@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ModelApi } from "@/api/model.api";
-import { projectQueryKey } from "@/hooks/api/projects/useProject";
+import {
+  projectQueryKey,
+  projectsQueryKey,
+} from "@/hooks/api/projects/useProject";
 import { saveModelFile, deleteModelFile } from "@/lib/model-storage";
 import { deleteFragmentCache } from "@/lib/viewer/cache";
 
@@ -30,6 +33,7 @@ export function useUploadModel(projectId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
+      queryClient.invalidateQueries({ queryKey: projectsQueryKey });
     },
   });
 }
@@ -46,6 +50,7 @@ export function useDeleteModel(projectId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectQueryKey(projectId) });
+      queryClient.invalidateQueries({ queryKey: projectsQueryKey });
     },
   });
 }

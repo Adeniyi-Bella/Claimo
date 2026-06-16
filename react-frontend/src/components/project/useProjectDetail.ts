@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useGetProject } from "@/hooks/api/projects/useProject";
 import { loadProjectThumbs, updateProjects } from "@/lib/project-storage";
 import { useDeleteModel } from "@/hooks/api/models/useModel";
-import { useCreatePaymentItem } from "@/hooks/api/projects/useProject";
 import type { CreatePaymentItemRequestDto } from "@/api/dto/requestDto";
+import { useCreatePaymentItem } from "@/hooks/api/paymentItem/usePaymentItem";
 
 export function useProjectDetail(projectId: string) {
   const { data, isLoading, isError, refetch } = useGetProject(projectId);

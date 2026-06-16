@@ -3,12 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PaymentItemApi } from "@/api/paymentItem.api";
 import type {
+  CreatePaymentItemRequestDto,
   DecideClaimRequestDto,
   SubmitClaimRequestDto,
   UpdateJobStatusRequestDto,
   UpdatePaymentStatusRequestDto,
 } from "@/api/dto/requestDto";
-import { projectQueryKey } from "../projects/useProject";
+import { projectQueryKey, projectsQueryKey } from "../projects/useProject";
 import type { PaymentItem } from "@/api/dto/responseDto";
 
 export const paymentItemQueryKey = (projectId: string, itemId: string) =>
@@ -27,15 +28,10 @@ export function usePaymentItem(projectId: string, itemId: string) {
 }
 
 export function useSubmitClaim(projectId: string, itemId: string) {
-  // const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: SubmitClaimRequestDto) => {
-      // const token = await getToken();
-      // if (!token) {
-      //   throw new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401);
-      // }
       return PaymentItemApi.submitClaim(projectId, itemId, data);
     },
     onSuccess: async () => {
@@ -97,14 +93,10 @@ export function useUpdateJobStatus(projectId: string, itemId: string) {
 }
 
 export function useUpdatePaymentStatus(projectId: string, itemId: string) {
-  // const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: UpdatePaymentStatusRequestDto) => {
-      // const token = await getToken();
-      // if (!token)
-      //   throw new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401);
       return PaymentItemApi.updatePaymentStatus(projectId, itemId, data);
     },
     onSuccess: (updatedItem) => {
@@ -121,14 +113,10 @@ export function useUpdatePaymentStatus(projectId: string, itemId: string) {
 }
 
 export function useConfirmPayment(projectId: string, itemId: string) {
-  // const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (confirmed: boolean) => {
-      // const token = await getToken();
-      // if (!token)
-      //   throw new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401);
       return PaymentItemApi.confirmPayment(projectId, itemId, confirmed);
     },
     onSuccess: (updatedItem) => {
@@ -145,7 +133,6 @@ export function useConfirmPayment(projectId: string, itemId: string) {
 }
 
 export function useAssignPaymentItem(projectId: string, itemId: string) {
-  // const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -153,9 +140,6 @@ export function useAssignPaymentItem(projectId: string, itemId: string) {
       contractorId: string | null;
       approverId: string | null;
     }) => {
-      // const token = await getToken();
-      // if (!token)
-      //   throw new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401);
       return PaymentItemApi.assignPaymentItem(projectId, itemId, data);
     },
     onSuccess: (updatedItem) => {
@@ -166,6 +150,23 @@ export function useAssignPaymentItem(projectId: string, itemId: string) {
       void queryClient.invalidateQueries({
         queryKey: projectQueryKey(projectId),
       });
+    },
+    retry: false,
+  });
+}
+
+export function useCreatePaymentItem(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreatePaymentItemRequestDto) => {
+      return PaymentItemApi.createPaymentItem(projectId, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: projectQueryKey(projectId),
+      });
+      await queryClient.invalidateQueries({ queryKey: projectsQueryKey });
     },
     retry: false,
   });
