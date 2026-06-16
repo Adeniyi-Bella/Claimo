@@ -11,13 +11,13 @@ import type { PaymentItem } from "@/api/dto/responseDto";
 
 export class PaymentItemApi {
   static async getPaymentItemById(
-    token: string,
+    // token: string,
     projectId: string,
     itemId: string,
   ): Promise<PaymentItem> {
     const response = await apiClient.get<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return requireApiData(response.data, {
@@ -28,7 +28,7 @@ export class PaymentItemApi {
   }
 
   static async submitClaim(
-    token: string,
+    // token: string,
     projectId: string,
     itemId: string,
     data: SubmitClaimRequestDto,
@@ -36,7 +36,7 @@ export class PaymentItemApi {
     const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}/claims`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return requireApiData(response.data, {
@@ -47,7 +47,7 @@ export class PaymentItemApi {
   }
 
   static async decideClaim(
-    token: string,
+    // token: string,
     projectId: string,
     itemId: string,
     claimId: string,
@@ -56,7 +56,7 @@ export class PaymentItemApi {
     const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}/claims/${claimId}/decide`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
     return requireApiData(response.data, {
       message: "Decide claim response missing data",
@@ -66,7 +66,7 @@ export class PaymentItemApi {
   }
 
   static async updateJobStatus(
-    token: string,
+    // token: string,
     projectId: string,
     itemId: string,
     data: UpdateJobStatusRequestDto,
@@ -74,7 +74,7 @@ export class PaymentItemApi {
     const response = await apiClient.patch<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}/job-status`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
     return requireApiData(response.data, {
       message: "Update job status response missing data",
@@ -84,7 +84,7 @@ export class PaymentItemApi {
   }
 
   static async updatePaymentStatus(
-    token: string,
+    // token: string,
     projectId: string,
     itemId: string,
     data: UpdatePaymentStatusRequestDto,
@@ -92,7 +92,7 @@ export class PaymentItemApi {
     const response = await apiClient.patch<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}/payment-status`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
     return requireApiData(response.data, {
       message: "Update payment status response missing data",
@@ -102,7 +102,7 @@ export class PaymentItemApi {
   }
 
   static async confirmPayment(
-    token: string,
+    // token: string,
     projectId: string,
     itemId: string,
     confirmed: boolean,
@@ -110,7 +110,7 @@ export class PaymentItemApi {
     const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}/confirm-payment`,
       { confirmed },
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
     return requireApiData(response.data, {
       message: "Confirm payment response missing data",
@@ -120,7 +120,7 @@ export class PaymentItemApi {
   }
 
   static async assignPaymentItem(
-    token: string,
+    // token: string,
     projectId: string,
     itemId: string,
     data: { contractorId: string | null; approverId: string | null },
@@ -128,7 +128,7 @@ export class PaymentItemApi {
     const response = await apiClient.patch<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items/${itemId}/assign`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
     return requireApiData(response.data, {
       message: "Assign payment item response missing data",

@@ -3,15 +3,10 @@ import { requireApiSuccess } from "@/api/response";
 import type { CustomApiResponse } from "@/api/dto/responseDto";
 
 export class UserApi {
-  static async syncInvites(token: string): Promise<void> {
+  static async syncInvites(): Promise<void> {
     const response = await apiClient.post<CustomApiResponse<null>>(
       "/users/sync-invites",
       null,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
     );
 
     requireApiSuccess(response.data, {

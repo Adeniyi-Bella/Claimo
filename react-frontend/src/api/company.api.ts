@@ -7,17 +7,11 @@ import type {
 import type { InviteCompanyMemberRequestDto } from "./dto/requestDto";
 
 export class CompanyApi {
-  static async getUserCompanyWthMembers(
-    token: string,
-  ): Promise<ICompanyWithMember> {
-    const response = await apiClient.get<CustomApiResponse<ICompanyWithMember>>(
-      "/companies/profile",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
+  static async getUserCompanyWthMembers(): Promise<ICompanyWithMember> {
+    const response =
+      await apiClient.get<CustomApiResponse<ICompanyWithMember>>(
+        "/companies/profile",
+      );
 
     return requireApiData(response.data, {
       message: "Company response missing data",
@@ -27,14 +21,14 @@ export class CompanyApi {
   }
 
   static async inviteMemberToCompany(
-    token: string,
+    // token: string,
     companyId: string,
     data: InviteCompanyMemberRequestDto,
   ): Promise<void> {
     const response = await apiClient.post<CustomApiResponse<void>>(
       `/companies/${companyId}/members`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return requireApiSuccess(response.data, {
@@ -45,23 +39,23 @@ export class CompanyApi {
   }
 
   static async cancelInvite(
-    token: string,
+    // token: string,
     companyId: string,
     inviteId: string,
   ): Promise<void> {
     await apiClient.delete(
       `/companies/${companyId}/members/invites/${inviteId}`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      // { headers: { Authorization: `Bearer ${token}` } },
     );
   }
 
   static async removeMember(
-    token: string,
+    // token: string,
     companyId: string,
     userId: string,
   ): Promise<void> {
     await apiClient.delete(`/companies/${companyId}/members/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      // headers: { Authorization: `Bearer ${token}` },
     });
   }
 }

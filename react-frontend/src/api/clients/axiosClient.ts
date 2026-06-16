@@ -43,27 +43,38 @@ export class AxiosApiClient {
   private static createInstance(): AxiosInstance {
     return axios.create({
       baseURL: API_BASE_URL,
-      timeout: API_TIMEOUT_MS
+      timeout: API_TIMEOUT_MS,
     });
   }
 
   /**
-   * Attaches a response interceptor that converts all error responses into
-   * typed AppError subclasses. This keeps error handling logic out of
-   * individual API functions and components.
+   * Request interceptor: automatically attaches the Clerk session token to
+   * every outgoing request. Centralizing this here removes the need for
+   * every hook/API method to manually call getToken() and pass it through.
    *
-   * Error mapping:
-   *
-   * 1. Server responded (error.response exists):
-   *    - 401 → UnauthorizedError  (triggers global auth-error event via QueryCache)
-   *    - All others → ApiError    (message and code extracted from response body)
-   *
-   * 2. No response received:
-   *    - ECONNABORTED → TimeoutError  (request exceeded API_TIMEOUT_MS)
-   *    - ERR_NETWORK  → NetworkError  (no internet or DNS failure)
-   *    - Anything else → ServerDownError (unexpected — server unreachable)
+   * If Clerk's getToken() throws (e.g. ERR_NETWORK_CHANGED), the error is
+   * normalized into NetworkError so it flows through the same retry logic
+   * as any other network failure, instead of bypassing it as a raw/unknown error.
    */
   private static setupInterceptors(): void {
+    this.instance.interceptors.request.use(
+      async (config) => {
+        try {
+          const token = await window.Clerk?.session?.getToken();
+          if (!token) {
+            return Promise.reject(
+              new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401),
+            );
+          }
+          config.headers.Authorization = `Bearer ${token}`;
+          return config;
+        } catch {
+          return Promise.reject(new NetworkError());
+        }
+      },
+      () => Promise.reject(new NetworkError()),
+    );
+
     this.instance.interceptors.response.use(
       // Pass successful responses through unchanged
       (response) => response,

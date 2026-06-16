@@ -1,15 +1,10 @@
 import { Avatar } from "@/components/common/avatar";
-// import {
-//   fmtCurrency,
-//   fmtDate,
-//   type PaymentItem,
-// } from "@/lib/mock-data";
+
 import {
   getJobStatusClass,
   getJobStatusLabel,
   getPaymentStatusClass,
   getPaymentStatusLabel,
-  // getSubmittedOrApprovedAmount,
 } from "@/lib/project-display";
 import { Filter, Plus, Search } from "lucide-react";
 import type { PaymentItem } from "@/api/dto/responseDto";
@@ -64,7 +59,6 @@ export default function PaymentItemsTab({
               <th className="text-left font-medium px-4 py-2.5">Contractor</th>
               <th className="text-right font-medium px-4 py-2.5">Contract</th>
               <th className="text-right font-medium px-4 py-2.5">Submitted</th>
-              {/* <th className="text-left font-medium px-4 py-2.5">Status</th> */}
               <th className="text-left font-medium px-4 py-2.5">Updated</th>
               <th className="text-left font-medium px-4 py-2.5">Job Status</th>
               <th className="text-left font-medium px-4 py-2.5">Payment</th>

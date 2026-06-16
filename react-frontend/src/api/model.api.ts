@@ -4,7 +4,7 @@ import type { CustomApiResponse, ProjectModel } from "@/api/dto/responseDto";
 
 export class ModelApi {
   static async uploadModel(
-    token: string,
+    // token: string,
     projectId: string,
     modelId: string,
     fileName: string,
@@ -20,7 +20,7 @@ export class ModelApi {
       formData,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          // Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       },
@@ -34,26 +34,26 @@ export class ModelApi {
   }
 
   static async deleteModel(
-    token: string,
+    // token: string,
     projectId: string,
     modelId: string,
   ): Promise<void> {
     await apiClient.delete(`/projects/${projectId}/models/${modelId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      // headers: { Authorization: `Bearer ${token}` },
     });
   }
 
   static async downloadModel(
-    token: string,
+    // token: string,
     projectId: string,
     modelId: string,
   ): Promise<ArrayBuffer> {
     const response = await apiClient.get(
       `/projects/${projectId}/models/${modelId}/download`,
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        // headers: {
+        //   Authorization: `Bearer ${token}`,
+        // },
         responseType: "arraybuffer",
       },
     );

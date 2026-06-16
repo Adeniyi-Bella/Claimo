@@ -4,7 +4,6 @@ import { DashboardLoader } from '@/components/common/loader/loader'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { useEffect, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { UnauthorizedError } from '@/api/error/customeError'
 import { UserApi } from '@/api/user.api'
 
 export const Route = createFileRoute('/_authenticated')({
@@ -18,17 +17,13 @@ export const Route = createFileRoute('/_authenticated')({
 })
 
 function AuthenticatedLayout() {
-  const { isAuthenticated, isLoading, isLoaded, getToken, userId } = useAuth()
+  const { isAuthenticated, isLoading, isLoaded, userId } = useAuth()
   const lastSyncedUserIdRef = useRef<string | null>(null)
 
   const { mutate: syncInvites, isPending: isSyncingInvites } = useMutation({
     mutationFn: async () => {
-      const token = await getToken()
-      if (!token) {
-        throw new UnauthorizedError('No active session', 'AUTH_NO_TOKEN', 401)
-      }
 
-      await UserApi.syncInvites(token)
+      await UserApi.syncInvites()
     },
     retry: false,
   })

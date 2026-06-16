@@ -3,7 +3,7 @@ import { AlertCircle, Check, Clock, HardHat, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/common/button";
-import { displayFirstName, fallbackLabel, fmtCurrency } from "@/utils";
+import { fallbackLabel, fmtCurrency } from "@/utils";
 import type { PaymentItem, JobStatus } from "@/api/dto/responseDto";
 import type { ItemTotals } from "@/utils";
 import type { PaymentStatus } from "@/types";
@@ -275,9 +275,7 @@ export function ContractorView({
             className="w-full h-9 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
           >
             <Send className="h-4 w-4" />
-            {isSubmitting
-              ? "Submitting..."
-              : `Submit claim to ${displayFirstName(item.approverName)}`}
+            {isSubmitting ? "Submitting..." : "Submit claim"}
           </Button>
         </div>
       )}

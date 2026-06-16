@@ -13,17 +13,11 @@ import type {
 
 export class ProjectApi {
   static async createProject(
-    token: string,
     data: CreateProjectRequestDto,
   ): Promise<void> {
     const response = await apiClient.post<CustomApiResponse<void>>(
       "/projects",
       data,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
     );
 
     return requireApiData(response.data, {
@@ -33,13 +27,10 @@ export class ProjectApi {
     });
   }
 
-  static async getProjects(token: string): Promise<GetProjectsResponse[]> {
+  static async getProjects(): Promise<GetProjectsResponse[]> {
     const response = await apiClient.get<
       CustomApiResponse<GetProjectsResponse[]>
     >("/projects", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
 
     return requireApiData(response.data, {
@@ -50,16 +41,10 @@ export class ProjectApi {
   }
 
   static async getProjectById(
-    token: string,
     projectId: string,
   ): Promise<ProjectResponse> {
     const response = await apiClient.get<CustomApiResponse<ProjectResponse>>(
       `/projects/${projectId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
     );
 
     return requireApiData(response.data, {
@@ -70,14 +55,12 @@ export class ProjectApi {
   }
 
   static async inviteMember(
-    token: string,
     projectId: string,
     data: InviteMemberRequestDto,
   ): Promise<void> {
     const response = await apiClient.post<CustomApiResponse<void>>(
       `/projects/${projectId}/members`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return requireApiSuccess(response.data, {
@@ -88,24 +71,20 @@ export class ProjectApi {
   }
 
   static async removeMember(
-    token: string,
     projectId: string,
     userId: string,
   ): Promise<void> {
     await apiClient.delete(`/projects/${projectId}/members/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
   static async createPaymentItem(
-    token: string,
     projectId: string,
     data: CreatePaymentItemRequestDto,
   ): Promise<PaymentItem> {
     const response = await apiClient.post<CustomApiResponse<PaymentItem>>(
       `/projects/${projectId}/payment-items`,
       data,
-      { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return requireApiData(response.data, {

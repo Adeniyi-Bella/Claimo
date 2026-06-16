@@ -3,14 +3,9 @@ import { requireApiData } from "@/api/response";
 import type { CustomApiResponse, DashboardResponse } from "@/api/dto/responseDto";
 
 export class DashboardApi {
-  static async getDashboard(token: string): Promise<DashboardResponse> {
+  static async getDashboard(): Promise<DashboardResponse> {
     const response = await apiClient.get<CustomApiResponse<DashboardResponse>>(
       "/projects/dashboard",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
     );
 
     return requireApiData(response.data, {
