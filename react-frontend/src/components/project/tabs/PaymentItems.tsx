@@ -7,9 +7,8 @@ import {
   getPaymentStatusLabel,
 } from "@/lib/project-display";
 import { Filter, Plus, Search } from "lucide-react";
-import type { PaymentItem } from "@/api/dto/responseDto";
+import type { PaymentItem, ProjectResponse } from "@/api/dto/responseDto";
 import {
-  displayFirstName,
   fmtCurrency,
   fmtDate,
   getSubmittedOrApprovedAmount,
@@ -17,14 +16,19 @@ import {
 } from "@/utils";
 
 export default function PaymentItemsTab({
+  project,
   items,
   onPick,
   onAdd,
 }: {
+  project: ProjectResponse;
   items: PaymentItem[];
   onPick: (i: PaymentItem) => void;
   onAdd: () => void;
 }) {
+  const canAddPaymentItem =
+    project.currentUserRole === "SUPER_ADMIN" ||
+    project.currentUserRole === "ADMIN";
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -43,12 +47,14 @@ export default function PaymentItemsTab({
             <Filter className="h-3 w-3" /> {f}
           </button>
         ))}
-        <button
-          onClick={onAdd}
-          className="ml-auto h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
-        >
-          <Plus className="h-4 w-4" /> Add payment item
-        </button>
+        {canAddPaymentItem && (
+          <button
+            onClick={onAdd}
+            className="ml-auto h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
+          >
+            <Plus className="h-4 w-4" /> Add payment item
+          </button>
+        )}
       </div>
       <Card>
         <table className="w-full text-sm">
@@ -82,7 +88,7 @@ export default function PaymentItemsTab({
                       hue={partyHue(i.contractorId)}
                       size={22}
                     />
-                    <span>{displayFirstName(i.contractorName)}</span>
+                    <span>{i.contractorName}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">

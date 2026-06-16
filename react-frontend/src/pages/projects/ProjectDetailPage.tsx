@@ -89,6 +89,9 @@ export default function ProjectDetail() {
 
   const summary = projectSummary(project);
   const allItems = project.models.flatMap((model) => model.paymentItems);
+  const canManage =
+    project.currentUserRole === "SUPER_ADMIN" ||
+    project.currentUserRole === "ADMIN";
 
   const handleViewModels = (modelIds: string[]) => {
     if (modelIds.length === 0) return;
@@ -156,24 +159,25 @@ export default function ProjectDetail() {
                 </div>
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition">
-                <Edit3 className="h-3.5 w-3.5" /> Edit project
-              </button>
-              <button
-                onClick={() => setOpenUpload(true)}
-                className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition"
-              >
-                <Upload className="h-3.5 w-3.5" /> Upload model
-              </button>
-              <button
-                onClick={() => setOpenInvite(true)}
-                className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
-              >
-                <UserPlus className="h-4 w-4" /> Invite member
-              </button>
-            </div>
+            {canManage && (
+              <div className="flex items-center gap-2">
+                <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition">
+                  <Edit3 className="h-3.5 w-3.5" /> Edit project
+                </button>
+                <button
+                  onClick={() => setOpenUpload(true)}
+                  className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition"
+                >
+                  <Upload className="h-3.5 w-3.5" /> Upload model
+                </button>
+                <button
+                  onClick={() => setOpenInvite(true)}
+                  className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
+                >
+                  <UserPlus className="h-4 w-4" /> Invite member
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex items-center gap-1 -mb-px">
@@ -210,6 +214,7 @@ export default function ProjectDetail() {
         )}
         {tab === "Payment Items" && (
           <PaymentItemsTab
+            project={project}
             items={allItems}
             onPick={(item) => setActiveItem(item.id)}
             onAdd={() => setOpenAddItem(true)}

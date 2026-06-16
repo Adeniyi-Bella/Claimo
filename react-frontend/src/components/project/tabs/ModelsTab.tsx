@@ -18,6 +18,11 @@ export default function ModelsTab({
   onViewModels: (modelIds: string[]) => void;
 }) {
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  const canUploadModel =
+    project.currentUserRole === "SUPER_ADMIN" ||
+    project.currentUserRole === "ADMIN";
+
+  const canDeleteModel = project.currentUserRole === "SUPER_ADMIN";
 
   useEffect(() => {
     setSelectedModelIds((current) =>
@@ -47,7 +52,9 @@ export default function ModelsTab({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onViewModels(project.models.map((model) => model.id))}
+            onClick={() =>
+              onViewModels(project.models.map((model) => model.id))
+            }
             disabled={project.models.length === 0}
             className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -60,12 +67,14 @@ export default function ModelsTab({
           >
             View selected
           </button>
-          <button
-            onClick={onUpload}
-            className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
-          >
-            <Upload className="h-4 w-4" /> Upload model
-          </button>
+          {canUploadModel && (
+            <button
+              onClick={onUpload}
+              className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
+            >
+              <Upload className="h-4 w-4" /> Upload model
+            </button>
+          )}
         </div>
       </div>
 
@@ -78,9 +87,8 @@ export default function ModelsTab({
             No models yet
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground max-w-sm mx-auto">
-            Upload an ifc file to get started. Models
-            are the foundation for linking payment claims to real building
-            elements.
+            Upload an ifc file to get started. Models are the foundation for
+            linking payment claims to real building elements.
           </p>
           <button
             onClick={onUpload}
@@ -139,24 +147,27 @@ export default function ModelsTab({
                   <span className="absolute top-2 right-2 text-[10px] font-mono bg-surface/80 backdrop-blur border border-border rounded px-1.5 py-0.5 text-muted-foreground">
                     .{m.fileType ?? "json"}
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onDeleteModel(m.id);
-                    }}
-                    className="absolute top-2 left-10 p-1 rounded bg-surface/80 backdrop-blur border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
-                    title="Delete model"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {canDeleteModel && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onDeleteModel(m.id);
+                      }}
+                      className="absolute top-2 left-10 p-1 rounded bg-surface/80 backdrop-blur border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition"
+                      title="Delete model"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Info */}
                 <div className="p-4">
                   <div className="font-medium text-sm truncate">{m.name}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
-                    Uploaded {fmtDate(m.uploadedAt)} · {fallbackLabel(m.uploadedBy)}
+                    Uploaded {fmtDate(m.uploadedAt)} ·{" "}
+                    {fallbackLabel(m.uploadedBy)}
                   </div>
                   <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
                     <span>{m.paymentItems.length} payment items</span>

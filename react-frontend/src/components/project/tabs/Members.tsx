@@ -32,7 +32,9 @@ export default function MembersTab({
 }) {
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const { mutateAsync, isPending } = useRemoveMemberFromProject(project.id);
-
+  const canInviteMember =
+    project.currentUserRole === "SUPER_ADMIN" ||
+    project.currentUserRole === "ADMIN";
   const currentUserRole = project.members.find(
     (m) => m.id === currentUserId,
   )?.role;
@@ -84,12 +86,14 @@ export default function MembersTab({
               {totalCount} members can access this project
             </div>
           </div>
-          <button
-            onClick={onInvite}
-            className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
-          >
-            <UserPlus className="h-4 w-4" /> Invite member
-          </button>
+          {canInviteMember && (
+            <button
+              onClick={onInvite}
+              className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
+            >
+              <UserPlus className="h-4 w-4" /> Invite member
+            </button>
+          )}
         </div>
         <table className="w-full text-sm">
           <thead className="text-xs text-muted-foreground">
