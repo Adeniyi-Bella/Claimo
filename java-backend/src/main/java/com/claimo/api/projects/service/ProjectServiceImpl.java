@@ -26,6 +26,7 @@ import com.claimo.api.projects.dto.ModelDto;
 import com.claimo.api.projects.dto.response.ProjectResponses.ProjectDetails;
 import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.enums.ProjectRole;
+import com.claimo.api.projects.enums.ProjectStatus;
 import com.claimo.api.projects.models.Project;
 import com.claimo.api.projects.models.ProjectMember;
 import com.claimo.api.projects.models.ProjectModel;
@@ -37,6 +38,11 @@ import com.claimo.api.projects.repository.PendingInviteRepository;
 import com.claimo.api.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,7 +90,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<GetProjectsResponse> getProjects(Jwt jwt) {
+        public Page<GetProjectsResponse> getProjects(Jwt jwt, String q, String status, int page, int pageSize) {
                 User user = authHelper.getAuthenticatedUser(jwt);
 
                 Set<UUID> elevatedCompanyIds = companyMemberRepository.findAllByUser_Id(user.getId()).stream()
@@ -93,56 +99,65 @@ public class ProjectServiceImpl implements ProjectService {
                                 .map(m -> m.getCompany().getId())
                                 .collect(Collectors.toSet());
 
-                LinkedHashMap<UUID, Project> visibleProjects = new LinkedHashMap<>();
+                List<UUID> memberProjectIds = projectMemberRepository.findAllByUserId(user.getId()).stream()
+                                .map(pm -> pm.getProject().getId())
+                                .toList();
 
-                if (!elevatedCompanyIds.isEmpty()) {
-                        projectRepository.findAllByCompanyIdIn(List.copyOf(elevatedCompanyIds))
-                                        .forEach(p -> visibleProjects.putIfAbsent(p.getId(), p));
-                }
+                ProjectStatus statusFilter = (status == null || status.isBlank())
+                                ? null
+                                : ProjectStatus.valueOf(status.toUpperCase());
 
-                projectMemberRepository.findAllByUserId(user.getId()).stream()
-                                .map(ProjectMember::getProject)
-                                .forEach(p -> visibleProjects.putIfAbsent(p.getId(), p));
+                String searchTerm = (q == null || q.isBlank()) ? null : q.trim();
 
-                if (visibleProjects.isEmpty()) {
-                        return List.of();
-                }
+                Pageable pageable = PageRequest.of(page, pageSize, Sort.by("createdAt").descending());
 
-                List<UUID> projectIds = new ArrayList<>(visibleProjects.keySet());
+                Page<Project> projectsPage = projectRepository.findVisibleProjects(
+                                List.copyOf(elevatedCompanyIds),
+                                memberProjectIds,
+                                searchTerm,
+                                statusFilter,
+                                pageable);
 
-                Map<UUID, Long> memberCountByProject = projectMemberRepository.findAllByProject_IdIn(projectIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(m -> m.getProject().getId(), Collectors.counting()));
+                List<UUID> projectIds = projectsPage.getContent().stream().map(Project::getId).toList();
 
-                Map<UUID, Long> modelCountByProject = projectModelRepository.findAllByProject_IdIn(projectIds).stream()
-                                .collect(Collectors.groupingBy(m -> m.getProject().getId(), Collectors.counting()));
+                Map<UUID, Long> memberCountByProject = projectIds.isEmpty() ? Map.of()
+                                : projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
+                                                .collect(Collectors.groupingBy(m -> m.getProject().getId(),
+                                                                Collectors.counting()));
+
+                Map<UUID, Long> modelCountByProject = projectIds.isEmpty() ? Map.of()
+                                : projectModelRepository.findAllByProject_IdIn(projectIds).stream()
+                                                .collect(Collectors.groupingBy(m -> m.getProject().getId(),
+                                                                Collectors.counting()));
 
                 Map<UUID, IProjectFinancials> financialsByProject = projectIds.isEmpty() ? Map.of()
                                 : paymentItemRepository.findFinancialsByProjectIds(projectIds).stream()
                                                 .collect(Collectors.toMap(IProjectFinancials::getProjectId, f -> f));
 
-                return visibleProjects.values().stream()
-                                .sorted(Comparator.comparing(Project::getCreatedAt,
-                                                Comparator.nullsLast(Comparator.reverseOrder())))
-                                .map(p -> {
-                                        IProjectFinancials f = financialsByProject.get(p.getId());
-                                        return new GetProjectsResponse(
-                                                        p.getId(),
-                                                        p.getName(),
-                                                        p.getDescription(),
-                                                        p.getLocation(),
-                                                        p.getStartDate(),
-                                                        "Active",
-                                                        memberCountByProject.getOrDefault(p.getId(), 0L).intValue(),
-                                                        modelCountByProject.getOrDefault(p.getId(), 0L).intValue(),
-                                                        new GetProjectsResponse.Financials(
-                                                                        f != null ? f.getContractValue()
-                                                                                        : BigDecimal.ZERO,
-                                                                        f != null ? f.getApproved() : BigDecimal.ZERO,
-                                                                        f != null ? f.getSubmitted() : BigDecimal.ZERO,
-                                                                        f != null ? f.getRejected() : BigDecimal.ZERO));
-                                })
-                                .toList();
+                Map<UUID, ProjectRole> currentUserRoleByProject = projectIds.isEmpty() ? Map.of()
+                                : projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
+                                                .filter(m -> m.getUser().getId().equals(user.getId()))
+                                                .collect(Collectors.toMap(m -> m.getProject().getId(),
+                                                                ProjectMember::getRole));
+
+                return projectsPage.map(p -> {
+                        IProjectFinancials f = financialsByProject.get(p.getId());
+                        return new GetProjectsResponse(
+                                        p.getId(),
+                                        p.getName(),
+                                        p.getDescription(),
+                                        p.getLocation(),
+                                        p.getStartDate(),
+                                        p.getStatus(),
+                                        currentUserRoleByProject.get(p.getId()),
+                                        memberCountByProject.getOrDefault(p.getId(), 0L).intValue(),
+                                        modelCountByProject.getOrDefault(p.getId(), 0L).intValue(),
+                                        new GetProjectsResponse.Financials(
+                                                        f != null ? f.getContractValue() : BigDecimal.ZERO,
+                                                        f != null ? f.getApproved() : BigDecimal.ZERO,
+                                                        f != null ? f.getSubmitted() : BigDecimal.ZERO,
+                                                        f != null ? f.getRejected() : BigDecimal.ZERO));
+                });
         }
 
         @Override
@@ -193,6 +208,8 @@ public class ProjectServiceImpl implements ProjectService {
                         project.setLocation(request.location());
                 if (request.startDate() != null)
                         project.setStartDate(request.startDate());
+                if (request.status() != null)
+                        project.setStatus(request.status());
 
                 Project saved = projectRepository.save(project);
                 log.info("Project updated projectId={}", saved.getId());
@@ -290,31 +307,6 @@ public class ProjectServiceImpl implements ProjectService {
                                 summaries);
         }
 
-        // -------------------------------------------------------------------------
-        // Batch data loaders — shared by getProjects, getProjectById, getDashboardData
-        // -------------------------------------------------------------------------
-
-        // private Map<UUID, List<ProjectMember>> loadMembersByProjectIds(List<UUID> projectIds) {
-        //         return projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
-        //                         .collect(Collectors.groupingBy(
-        //                                         m -> m.getProject().getId(),
-        //                                         LinkedHashMap::new,
-        //                                         Collectors.toList()));
-        // }
-
-        // private Map<UUID, List<ProjectModel>> loadModelsByProjectIds(List<UUID> projectIds) {
-        //         return projectModelRepository.findAllByProject_IdIn(projectIds).stream()
-        //                         .collect(Collectors.groupingBy(
-        //                                         m -> m.getProject().getId(),
-        //                                         LinkedHashMap::new,
-        //                                         Collectors.toList()));
-        // }
-
-        /**
-         * Returns payment items keyed by model ID (not project ID),
-         * because both toDetails and toDashboardProjectSummary render items under
-         * their parent model.
-         */
         private Map<UUID, List<PaymentItem>> loadPaymentItemsByModelFromProjectIds(List<UUID> projectIds) {
                 return paymentItemRepository.findAllByProject_IdIn(projectIds).stream()
                                 .collect(Collectors.groupingBy(
@@ -489,11 +481,11 @@ public class ProjectServiceImpl implements ProjectService {
                 Project project = projectRepository.findById(projectId)
                                 .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
                                                 "Project not found: " + projectId));
-                if (!projectMemberService.isMember(projectId, user.getId())) {
-                        throw new AppExceptions.ForbiddenException("Access denied to project: " + projectId);
-                }
-                if (projectMemberService.getRole(projectId, user.getId()) != ProjectRole.ADMIN) {
-                        throw new AppExceptions.ForbiddenException("Only project ADMINs can manage projects");
+                ProjectRole role = projectMemberService.isMember(projectId, user.getId())
+                                ? projectMemberService.getRole(projectId, user.getId())
+                                : null;
+                if (role != ProjectRole.SUPER_ADMIN && role != ProjectRole.ADMIN) {
+                        throw new AppExceptions.ForbiddenException("Only project admins can manage projects");
                 }
                 return project;
         }

@@ -1,6 +1,6 @@
 import type { PaymentItemCategory } from "@/types";
 
-export type ProjectStatus = "Active" | "Completed" | "Archived";
+export type ProjectStatus = "ACTIVE" | "COMPLETED";
 export type ProjectRole =
   | "SUPER_ADMIN"
   | "ADMIN"
@@ -102,6 +102,14 @@ export interface Claim {
   paidAt?: string;
 }
 
+export interface PagedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 export interface AuditEntry {
   id: string;
   timestamp: string;
@@ -151,6 +159,28 @@ export interface GetProjectsResponse {
   memberCount: number;
   modelCount: number;
   financials: ProjectFinancials;
+  currentUserRole: ProjectRole | null;
+}
+
+export interface CreateUpdateProjectResponse {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  startDate: string;
+  companyId: string;
+  createdById: string | null;
+  role: ProjectRole | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateProjectRequestDto {
+  name?: string;
+  description?: string;
+  location?: string;
+  startDate?: string;
+  status?: "ACTIVE" | "COMPLETED";
 }
 
 export interface DashboardFinancials {

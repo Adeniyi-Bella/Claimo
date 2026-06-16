@@ -31,10 +31,15 @@ services:
     image: jaegertracing/all-in-one:latest
     container_name: claimo-jaeger
     restart: unless-stopped
+    environment:
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+      - BADGER_SPAN_STORE_TTL=5m
     ports:
       - "16686:16686" # Jaeger UI
       - "4318:4318" # OTLP HTTP receiver
-    command: ["--badger.span-store-ttl=5m"]
     deploy:
       resources:
         limits:

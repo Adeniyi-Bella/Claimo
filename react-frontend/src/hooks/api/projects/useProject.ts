@@ -1,5 +1,10 @@
 import { useAuth } from "@clerk/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { ProjectApi } from "@/api/project.api";
 import { dashboardQueryKey } from "@/hooks/api/useDashboard";
@@ -9,7 +14,9 @@ import type {
 } from "@/api/dto/requestDto";
 import type {
   GetProjectsResponse,
+  PagedResponse,
   ProjectResponse,
+  UpdateProjectRequestDto,
 } from "@/api/dto/responseDto";
 import type { CreateProjectData } from "@/types";
 
@@ -19,13 +26,19 @@ export const projectQueryKey = (projectId: string) =>
   ["projects", projectId] as const;
 
 // Hooks
-export function useGetProjects() {
+export function useGetProjects(params: {
+  q?: string;
+  status?: string;
+  page: number;
+  pageSize: number;
+}) {
   const { isLoaded, isSignedIn } = useAuth();
 
-  return useQuery<GetProjectsResponse[]>({
-    queryKey: projectsQueryKey,
-    queryFn: async () => ProjectApi.getProjects(),
+  return useQuery<PagedResponse<GetProjectsResponse>>({
+    queryKey: [...projectsQueryKey, params],
+    queryFn: () => ProjectApi.getProjects(params),
     enabled: isLoaded && isSignedIn,
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
@@ -114,5 +127,28 @@ export function useCreatePaymentItem(projectId: string) {
       });
     },
     retry: false,
+  });
+}
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      data,
+    }: {
+      projectId: string;
+      data: UpdateProjectRequestDto;
+    }) => {
+      return ProjectApi.updateProject(projectId, data);
+    },
+    onSuccess: async (_, { projectId }) => {
+      await queryClient.invalidateQueries({ queryKey: projectsQueryKey });
+      await queryClient.invalidateQueries({
+        queryKey: projectQueryKey(projectId),
+      });
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+    },
   });
 }

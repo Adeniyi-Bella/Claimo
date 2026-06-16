@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.claimo.api.company.model.Company;
+import com.claimo.api.projects.enums.ProjectStatus;
 import com.claimo.api.user.model.User;
 
 import jakarta.persistence.*;
@@ -33,6 +34,10 @@ public class Project {
 
     @Column
     private LocalDate startDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProjectStatus status = ProjectStatus.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)

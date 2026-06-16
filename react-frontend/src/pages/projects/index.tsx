@@ -1,38 +1,70 @@
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   ArrowUpDown,
-  Boxes,
-  Calendar,
-  LayoutGrid,
-  List,
-  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  Loader2,
   Plus,
   Search,
-  Users,
+  Trash2,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/common/button";
-import { DashboardLoader } from "@/components/common/loader/loader";
 import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDialog";
-import { useCreateProject } from "@/hooks/api/projects/useProject";
-import { useGetProjects } from "@/hooks/api/projects/useProject";
+import {
+  useCreateProject,
+  useGetProjects,
+  useUpdateProject,
+} from "@/hooks/api/projects/useProject";
 import { fmtCurrency, fmtDate } from "@/utils";
+import { useToast } from "@/hooks/use-toast";
+import type { GetProjectsResponse } from "@/api/dto/responseDto";
+import EditProjectDialog from "@/components/project/dialogues/EditProjectDialogue";
+
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50] as const;
+
+function useDebounced<T>(value: T, delay = 300): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return v;
+}
 
 export default function Projects() {
-  const { data, isLoading, isError, refetch } = useGetProjects();
-  const { createProject, isCreating } = useCreateProject();
-  const [view, setView] = useState<"grid" | "table">("grid");
-  const [filter, setFilter] = useState<
-    "All" | "Active" | "Completed" | "Archived"
-  >("All");
+  const [filter, setFilter] = useState<"All" | "ACTIVE" | "COMPLETED">("All");
   const [q, setQ] = useState("");
+  const debouncedQ = useDebounced(q, 300);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [page, setPage] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const { mutate: updateProject, isPending, variables } = useUpdateProject();
+  const { toast } = useToast();
+  const [editingProject, setEditingProject] =
+    useState<GetProjectsResponse | null>(null);
 
-  if (isLoading || !data) {
-    return <DashboardLoader />;
-  }
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedQ, filter, pageSize]);
+
+  const { data, isLoading, isFetching, isError, refetch } = useGetProjects({
+    q: debouncedQ || undefined,
+    status: filter === "All" ? undefined : filter,
+    page,
+    pageSize,
+  });
+  const { createProject, isCreating } = useCreateProject();
+
+  const items = data?.content ?? [];
+  const total = data?.totalElements ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+  const start = total === 0 ? 0 : page * pageSize + 1;
+  const end = Math.min(total, page * pageSize + items.length);
 
   if (isError) {
     return (
@@ -44,13 +76,6 @@ export default function Projects() {
     );
   }
 
-  const projects = data;
-  const filtered = data.filter(
-    (project) =>
-      (filter === "All" || project.status === filter) &&
-      project.name.toLowerCase().includes(q.toLowerCase()),
-  );
-
   return (
     <AppShell>
       <div className="px-6 lg:px-10 py-8 max-w-[1400px]">
@@ -58,9 +83,7 @@ export default function Projects() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {projects.length} projects across{" "}
-              {new Set(projects.map((project) => project.location)).size}{" "}
-              locations.
+              {total} {total === 1 ? "project" : "projects"} matching filters.
             </p>
           </div>
           <Button
@@ -80,205 +103,224 @@ export default function Projects() {
               placeholder="Search projects…"
               className="w-full h-9 rounded-md border border-input bg-surface pl-8 pr-3 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring/50"
             />
+            {isFetching && q !== debouncedQ && (
+              <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin" />
+            )}
           </div>
 
           <div className="inline-flex items-center rounded-md border border-border bg-surface p-0.5">
-            {(["All", "Active", "Completed", "Archived"] as const).map(
-              (value) => (
-                <button
-                  key={value}
-                  onClick={() => setFilter(value)}
-                  className={`h-7 px-2.5 text-xs rounded-[5px] transition ${
-                    filter === value
-                      ? "bg-accent text-accent-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {value}
-                </button>
-              ),
-            )}
+            {(["All", "ACTIVE", "COMPLETED"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`h-7 px-2.5 text-xs rounded-[5px] transition ${
+                  filter === f
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f === "All" ? "All" : f === "ACTIVE" ? "Active" : "Completed"}
+              </button>
+            ))}
           </div>
 
           <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition">
             <ArrowUpDown className="h-3.5 w-3.5" /> Sort: Name
           </button>
-
-          <div className="ml-auto inline-flex items-center rounded-md border border-border bg-surface p-0.5">
-            <button
-              onClick={() => setView("grid")}
-              className={`h-7 w-7 inline-flex items-center justify-center rounded-[5px] ${
-                view === "grid"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => setView("table")}
-              className={`h-7 w-7 inline-flex items-center justify-center rounded-[5px] ${
-                view === "table"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <List className="h-3.5 w-3.5" />
-            </button>
-          </div>
         </div>
 
-        {projects.length === 0 ? (
-          <EmptyState onCreateClick={() => setDialogOpen(true)} />
-        ) : filtered.length === 0 ? (
-          <EmptyResults onCreateClick={() => setDialogOpen(true)} />
-        ) : view === "grid" ? (
-          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((project) => {
-              const pct =
-                project.financials.contractValue > 0
-                  ? Math.round(
-                      (project.financials.approved /
-                        project.financials.contractValue) *
-                        100,
-                    )
-                  : 0;
-
-              return (
-                <Link
-                  key={project.id}
-                  to="/projects/$projectId"
-                  params={{ projectId: project.id }}
-                  className="group rounded-xl border border-border bg-surface p-5 shadow-soft hover:shadow-elevated hover:border-primary/30 transition"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-linear-to-br from-[oklch(0.55_0.13_255)] to-[oklch(0.32_0.08_255)] flex items-center justify-center text-white text-sm font-semibold shrink-0">
-                      {project.name
-                        .split(" ")
-                        .map((word) => word[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider rounded-full px-2 py-0.5 bg-status-approved text-status-approved-fg">
-                      {project.status}
-                    </span>
-                  </div>
-                  <div className="mt-4 font-medium tracking-tight">
-                    {project.name}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                    {project.description}
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
-                    <div>
-                      <div className="text-muted-foreground inline-flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> Location
-                      </div>
-                      <div className="mt-0.5 font-medium truncate">
-                        {project.location}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground inline-flex items-center gap-1">
-                        <Boxes className="h-3 w-3" /> Models
-                      </div>
-                      <div className="mt-0.5 font-medium">
-                        {project.modelCount}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground inline-flex items-center gap-1">
-                        <Users className="h-3 w-3" /> Members
-                      </div>
-                      <div className="mt-0.5 font-medium">
-                        {project.memberCount}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5">
-                      <span>
-                        {fmtCurrency(project.financials.approved)} approved
-                      </span>
-                      <span>
-                        {fmtCurrency(project.financials.contractValue)} total
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-[11px]">
-                      <span className="text-muted-foreground inline-flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Started{" "}
-                        {fmtDate(project.startDate)}
-                      </span>
-                      <span className="font-medium tabular-nums">{pct}%</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="mt-6 rounded-xl border border-border bg-surface overflow-hidden shadow-soft">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-elevated text-xs text-muted-foreground">
+        <div className="mt-6 rounded-xl border border-border bg-surface overflow-hidden shadow-soft">
+          <table className="w-full text-sm">
+            <thead className="bg-surface-elevated text-xs text-muted-foreground">
+              <tr>
+                <Th>Project</Th>
+                <Th>Status</Th>
+                <Th>Location</Th>
+                <Th>Started</Th>
+                <Th className="text-right">Models</Th>
+                <Th className="text-right">Members</Th>
+                <Th className="text-right">Contract</Th>
+                <Th className="text-right">Approved</Th>
+                <Th className="text-right">Actions</Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {isLoading ? (
+                <SkeletonRows rows={pageSize} />
+              ) : items.length === 0 ? (
                 <tr>
-                  <Th>Project</Th>
-                  <Th>Location</Th>
-                  <Th>Started</Th>
-                  <Th className="text-right">Models</Th>
-                  <Th className="text-right">Members</Th>
-                  <Th className="text-right">Contract</Th>
-                  <Th className="text-right">Approved</Th>
+                  <td
+                    colSpan={9}
+                    className="px-4 py-10 text-center text-sm text-muted-foreground"
+                  >
+                    No projects match your search.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((project) => {
-                  // const summary = projectSummary(project);
+              ) : (
+                items.map((p) => {
+                  const isUpdatingThisRow =
+                    isPending && variables?.projectId === p.id;
+
                   return (
                     <tr
-                      key={project.id}
-                      className="hover:bg-accent/40 transition"
+                      key={p.id}
+                      onClick={() =>
+                        navigate({
+                          to: "/projects/$projectId",
+                          params: { projectId: p.id },
+                        })
+                      }
+                      className="hover:bg-accent/40 transition cursor-pointer"
                     >
                       <td className="px-4 py-3">
                         <Link
                           to="/projects/$projectId"
-                          params={{ projectId: project.id }}
-                          className="font-medium hover:text-primary"
+                          params={{ projectId: p.id }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-medium hover:text-primary hover:underline"
                         >
-                          {project.name}
+                          {p.name}
                         </Link>
                         <div className="text-xs text-muted-foreground line-clamp-1">
-                          {project.description}
+                          {p.description}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {project.location}
+                      <td
+                        className="px-4 py-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <select
+                          value={p.status}
+                          disabled={isUpdatingThisRow}
+                          onChange={(e) =>
+                            updateProject(
+                              {
+                                projectId: p.id,
+                                data: {
+                                  status: e.target.value as
+                                    | "ACTIVE"
+                                    | "COMPLETED",
+                                },
+                              },
+                              {
+                                onError: (error) => {
+                                  toast({
+                                    title: "Failed to update status",
+                                    description:
+                                      error instanceof Error
+                                        ? error.message
+                                        : "Please try again.",
+                                    variant: "destructive",
+                                  });
+                                },
+                              },
+                            )
+                          }
+                          className={`text-[10px] font-semibold uppercase tracking-wider rounded-full px-2 py-0.5 bg-status-approved/15 text-status-approved-fg border-none focus:outline-none focus:ring-2 focus:ring-ring/30 cursor-pointer ${isUpdatingThisRow ? "opacity-50 cursor-wait" : ""}`}
+                        >
+                          <option value="ACTIVE">Active</option>
+                          <option value="COMPLETED">Completed</option>
+                        </select>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {fmtDate(project.startDate)}
+                        {p.location}
                       </td>
-                      <td>{project.modelCount}</td>
-                      <td>{project.memberCount}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {fmtDate(p.startDate)}
+                      </td>
                       <td className="px-4 py-3 text-right tabular-nums">
-                        {fmtCurrency(project.financials.contractValue)}
+                        {p.modelCount}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {p.memberCount}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {fmtCurrency(p.financials.contractValue)}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums text-status-approved-fg font-medium">
-                        {fmtCurrency(project.financials.approved)}
+                        {fmtCurrency(p.financials.approved)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {(p.currentUserRole === "SUPER_ADMIN" ||
+                          p.currentUserRole === "ADMIN") && (
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingProject(p);
+                              }}
+                              className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-surface hover:bg-accent transition"
+                              aria-label="Edit project"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // open delete dialog — wired later
+                              }}
+                              className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-surface hover:bg-accent text-status-rejected-fg transition"
+                              aria-label="Delete project"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
-                })}
-              </tbody>
-            </table>
+                })
+              )}
+            </tbody>
+          </table>
+
+          <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-t border-border text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <label htmlFor="page-size">Rows per page:</label>
+              <select
+                id="page-size"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="h-7 rounded-md border border-input bg-surface px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring/30"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="tabular-nums">
+                {start}–{end} of {total}
+              </span>
+              <div className="inline-flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0 || isFetching}
+                  className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-surface hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <span className="px-2 tabular-nums">
+                  Page {page + 1} of {totalPages}
+                </span>
+                <button
+                  onClick={() =>
+                    setPage((p) => (p + 1 < totalPages ? p + 1 : p))
+                  }
+                  disabled={page + 1 >= totalPages || isFetching}
+                  className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-surface hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       <CreateProjectDialog
@@ -289,43 +331,14 @@ export default function Projects() {
         }}
         isSubmitting={isCreating}
       />
+      {editingProject && (
+        <EditProjectDialog
+          open={!!editingProject}
+          onOpenChange={(v) => !v && setEditingProject(null)}
+          project={editingProject}
+        />
+      )}
     </AppShell>
-  );
-}
-
-function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
-  return (
-    <div className="mt-10 rounded-2xl border border-dashed border-border bg-surface p-10 text-center shadow-soft">
-      <div className="mx-auto h-14 w-14 rounded-xl bg-accent text-primary inline-flex items-center justify-center">
-        <Plus className="h-6 w-6" />
-      </div>
-      <h2 className="mt-5 text-lg font-semibold tracking-tight">
-        No projects yet
-      </h2>
-      <p className="mt-1.5 text-sm text-muted-foreground max-w-md mx-auto">
-        Create your first project to start tracking models, members and payment
-        claims.
-      </p>
-      <Button onClick={onCreateClick} className="mt-6">
-        <Plus className="h-4 w-4" /> New project
-      </Button>
-    </div>
-  );
-}
-
-function EmptyResults({ onCreateClick }: { onCreateClick: () => void }) {
-  return (
-    <div className="mt-10 rounded-2xl border border-dashed border-border bg-surface p-10 text-center shadow-soft">
-      <h2 className="text-lg font-semibold tracking-tight">
-        No matching projects
-      </h2>
-      <p className="mt-1.5 text-sm text-muted-foreground max-w-md mx-auto">
-        Try another search or create a new project.
-      </p>
-      <Button onClick={onCreateClick} className="mt-6">
-        <Plus className="h-4 w-4" /> New project
-      </Button>
-    </div>
   );
 }
 
@@ -343,7 +356,29 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function Th({ children, className = "" }: any) {
+function SkeletonRows({ rows = 5 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <tr key={i}>
+          {Array.from({ length: 8 }).map((__, j) => (
+            <td key={j} className="px-4 py-3">
+              <div className="h-3.5 rounded bg-muted animate-pulse" />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function Th({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <th className={`text-left font-medium px-4 py-2.5 ${className}`}>
       {children}

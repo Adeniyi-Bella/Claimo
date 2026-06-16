@@ -1,9 +1,12 @@
 import { apiClient } from "@/api/clients/axiosClient";
 import { requireApiData, requireApiSuccess } from "@/api/response";
 import type {
+  CreateUpdateProjectResponse,
   CustomApiResponse,
   GetProjectsResponse,
+  PagedResponse,
   ProjectResponse,
+  UpdateProjectRequestDto,
 } from "@/api/dto/responseDto";
 import type {
   CreatePaymentItemRequestDto,
@@ -12,9 +15,7 @@ import type {
 } from "@/api/dto/requestDto";
 
 export class ProjectApi {
-  static async createProject(
-    data: CreateProjectRequestDto,
-  ): Promise<void> {
+  static async createProject(data: CreateProjectRequestDto): Promise<void> {
     const response = await apiClient.post<CustomApiResponse<void>>(
       "/projects",
       data,
@@ -27,11 +28,15 @@ export class ProjectApi {
     });
   }
 
-  static async getProjects(): Promise<GetProjectsResponse[]> {
+  static async getProjects(params: {
+    q?: string;
+    status?: string;
+    page: number;
+    pageSize: number;
+  }): Promise<PagedResponse<GetProjectsResponse>> {
     const response = await apiClient.get<
-      CustomApiResponse<GetProjectsResponse[]>
-    >("/projects", {
-    });
+      CustomApiResponse<PagedResponse<GetProjectsResponse>>
+    >("/projects", { params });
 
     return requireApiData(response.data, {
       message: "Projects response missing data",
@@ -40,9 +45,7 @@ export class ProjectApi {
     });
   }
 
-  static async getProjectById(
-    projectId: string,
-  ): Promise<ProjectResponse> {
+  static async getProjectById(projectId: string): Promise<ProjectResponse> {
     const response = await apiClient.get<CustomApiResponse<ProjectResponse>>(
       `/projects/${projectId}`,
     );
@@ -70,12 +73,8 @@ export class ProjectApi {
     });
   }
 
-  static async removeMember(
-    projectId: string,
-    userId: string,
-  ): Promise<void> {
-    await apiClient.delete(`/projects/${projectId}/members/${userId}`, {
-    });
+  static async removeMember(projectId: string, userId: string): Promise<void> {
+    await apiClient.delete(`/projects/${projectId}/members/${userId}`, {});
   }
 
   static async createPaymentItem(
@@ -90,6 +89,21 @@ export class ProjectApi {
     return requireApiData(response.data, {
       message: "Create payment item response missing data",
       code: "EMPTY_CREATE_PAYMENT_ITEM_RESPONSE",
+      statusCode: response.status,
+    });
+  }
+
+  static async updateProject(
+    projectId: string,
+    data: UpdateProjectRequestDto,
+  ): Promise<CreateUpdateProjectResponse> {
+    const response = await apiClient.put<
+      CustomApiResponse<CreateUpdateProjectResponse>
+    >(`/projects/${projectId}`, data);
+
+    return requireApiData(response.data, {
+      message: "Update project response missing data",
+      code: "EMPTY_UPDATE_PROJECT_RESPONSE",
       statusCode: response.status,
     });
   }

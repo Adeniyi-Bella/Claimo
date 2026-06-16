@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 import com.claimo.api.projects.enums.ProjectRole;
+import com.claimo.api.projects.enums.ProjectStatus;
 
 public class ProjectRequests {
 
@@ -21,7 +22,8 @@ public class ProjectRequests {
                         @Size(max = 255) String name,
                         String description,
                         String location,
-                        LocalDate startDate) {
+                        LocalDate startDate,
+                        ProjectStatus status) {
         }
 
         public record InviteMember(

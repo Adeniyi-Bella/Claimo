@@ -85,7 +85,7 @@ export async function loadIfcViewerModel({
       return null;
     }
 
-    buffer = await ModelApi.downloadModel(token, projectId, model.id);
+    buffer = await ModelApi.downloadModel(projectId, model.id);
     await saveModelFile(model.id, buffer);
     console.log(`Model ${model.id} cached in IndexedDB`);
   }
