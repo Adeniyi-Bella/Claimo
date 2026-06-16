@@ -5,7 +5,9 @@ import com.claimo.api.exceptions.AppExceptions;
 import com.claimo.api.paymentitem.dto.AuditEntryDto;
 import com.claimo.api.paymentitem.dto.ClaimDto;
 import com.claimo.api.paymentitem.dto.PaymentItemResponseDto;
+import com.claimo.api.paymentitem.dto.request.AssignPaymentItemRequest;
 import com.claimo.api.paymentitem.dto.request.ConfirmPaymentRequest;
+import com.claimo.api.paymentitem.dto.request.CreatePaymentItemRequest;
 import com.claimo.api.paymentitem.dto.request.DecideClaimRequest;
 import com.claimo.api.paymentitem.dto.request.SubmitClaimRequest;
 import com.claimo.api.paymentitem.dto.request.UpdateJobStatusRequest;
@@ -16,7 +18,6 @@ import com.claimo.api.paymentitem.entity.PaymentItemClaim;
 import com.claimo.api.paymentitem.repository.PaymentItemAuditEntryRepository;
 import com.claimo.api.paymentitem.repository.PaymentItemClaimRepository;
 import com.claimo.api.paymentitem.repository.PaymentItemRepository;
-import com.claimo.api.projects.dto.requests.CreatePaymentItemRequest;
 import com.claimo.api.projects.enums.AuditField;
 import com.claimo.api.projects.enums.ClaimDecision;
 import com.claimo.api.projects.enums.JobStatus;
@@ -84,11 +85,17 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                                         + "\" already exists on this model");
                 }
 
-                User contractor = userRepository.findById(request.contractorId())
-                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException("Contractor not found"));
+                User contractor = request.contractorId() != null
+                                ? userRepository.findById(request.contractorId())
+                                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                                "Contractor not found"))
+                                : null;
 
-                User approver = userRepository.findById(request.approverId())
-                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException("Approver not found"));
+                User approver = request.approverId() != null
+                                ? userRepository.findById(request.approverId())
+                                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                                "Approver not found"))
+                                : null;
 
                 Instant now = Instant.now();
                 PaymentItem item = new PaymentItem();
@@ -148,11 +155,11 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                                 .map(m -> m.getRole().name().equals("SUPER_ADMIN"))
                                 .orElse(false);
 
-                boolean isAssignedApprover = isSameUser(item.getApprover(), currentUser);
+                boolean isAssignedContractor = isSameUser(item.getContractor(), currentUser);
 
-                if (!isSuperAdmin && !isAssignedApprover) {
+                if (!isSuperAdmin && !isAssignedContractor) {
                         throw new AppExceptions.ForbiddenException(
-                                        "Only the assigned approver or a super admin can decide claims");
+                                        "Only the assigned contractor or a super admin can submit claims");
                 }
 
                 // Block if a claim is already pending
@@ -418,6 +425,47 @@ public class PaymentItemServiceImpl implements PaymentItemService {
                 item.setUpdatedAt(now);
 
                 auditEntryRepository.save(entry);
+                paymentItemRepository.save(item);
+
+                return toPaymentItemDetails(item);
+        }
+
+        @Override
+        @Transactional
+        public PaymentItemResponseDto assignPaymentItem(
+                        Jwt jwt, UUID projectId, UUID itemId,
+                        AssignPaymentItemRequest request) {
+
+                User currentUser = authHelper.getAuthenticatedUser(jwt);
+
+                PaymentItem item = paymentItemRepository.findWithDetailsById(itemId)
+                                .filter(i -> i.getProject().getId().equals(projectId))
+                                .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                "Payment item not found"));
+
+                // Only SUPER_ADMIN or ADMIN can assign
+                projectMemberRepository.findByProjectIdAndUserId(projectId, currentUser.getId())
+                                .filter(m -> m.getRole().name().equals("SUPER_ADMIN")
+                                                || m.getRole().name().equals("ADMIN"))
+                                .orElseThrow(() -> new AppExceptions.ForbiddenException(
+                                                "Only project admins can assign contractor or approver"));
+
+                // Only assign if currently null
+                if (request.contractorId() != null && item.getContractor() == null) {
+                        User contractor = userRepository.findById(request.contractorId())
+                                        .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                        "Contractor not found"));
+                        item.setContractor(contractor);
+                }
+
+                if (request.approverId() != null && item.getApprover() == null) {
+                        User approver = userRepository.findById(request.approverId())
+                                        .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
+                                                        "Approver not found"));
+                        item.setApprover(approver);
+                }
+
+                item.setUpdatedAt(Instant.now());
                 paymentItemRepository.save(item);
 
                 return toPaymentItemDetails(item);

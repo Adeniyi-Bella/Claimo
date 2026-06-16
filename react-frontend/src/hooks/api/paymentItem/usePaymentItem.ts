@@ -158,3 +158,27 @@ export function useConfirmPayment(projectId: string, itemId: string) {
     retry: false,
   });
 }
+
+export function useAssignPaymentItem(projectId: string, itemId: string) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { contractorId: string | null; approverId: string | null }) => {
+      const token = await getToken();
+      if (!token)
+        throw new UnauthorizedError("No active session", "AUTH_NO_TOKEN", 401);
+      return PaymentItemApi.assignPaymentItem(token, projectId, itemId, data);
+    },
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(
+        paymentItemQueryKey(projectId, itemId),
+        updatedItem,
+      );
+      void queryClient.invalidateQueries({
+        queryKey: projectQueryKey(projectId),
+      });
+    },
+    retry: false,
+  });
+}

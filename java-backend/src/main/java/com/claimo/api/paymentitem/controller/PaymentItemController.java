@@ -2,13 +2,14 @@ package com.claimo.api.paymentitem.controller;
 
 import com.claimo.api.exceptions.CustomApiResponse;
 import com.claimo.api.paymentitem.dto.PaymentItemResponseDto;
+import com.claimo.api.paymentitem.dto.request.AssignPaymentItemRequest;
 import com.claimo.api.paymentitem.dto.request.ConfirmPaymentRequest;
+import com.claimo.api.paymentitem.dto.request.CreatePaymentItemRequest;
 import com.claimo.api.paymentitem.dto.request.DecideClaimRequest;
 import com.claimo.api.paymentitem.dto.request.SubmitClaimRequest;
 import com.claimo.api.paymentitem.dto.request.UpdateJobStatusRequest;
 import com.claimo.api.paymentitem.dto.request.UpdatePaymentStatusRequest;
 import com.claimo.api.paymentitem.service.PaymentItemService;
-import com.claimo.api.projects.dto.requests.CreatePaymentItemRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -160,5 +161,22 @@ public class PaymentItemController {
                         @Valid @RequestBody ConfirmPaymentRequest request) {
                 return ResponseEntity.ok(CustomApiResponse.success(
                                 paymentItemService.confirmPayment(jwt, projectId, itemId, request)));
+        }
+
+        @PatchMapping("/{projectId}/payment-items/{itemId}/assign")
+        @Operation(summary = "Assign contractor and approver", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Assignment updated"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @ApiResponse(responseCode = "403", description = "Access denied"),
+                        @ApiResponse(responseCode = "404", description = "Payment item not found")
+        })
+        public ResponseEntity<CustomApiResponse<PaymentItemResponseDto>> assignPaymentItem(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @PathVariable UUID projectId,
+                        @PathVariable UUID itemId,
+                        @Valid @RequestBody AssignPaymentItemRequest request) {
+                return ResponseEntity.ok(CustomApiResponse.success(
+                                paymentItemService.assignPaymentItem(jwt, projectId, itemId, request)));
         }
 }

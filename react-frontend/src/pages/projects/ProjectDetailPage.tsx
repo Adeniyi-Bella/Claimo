@@ -249,6 +249,7 @@ export default function ProjectDetail() {
               itemId={activeItem}
               projectId={project.id}
               currentUserRole={project.currentUserRole ?? "VIEWER"}
+              members={project.members}
             />
           )}
         </SheetContent>

@@ -1,5 +1,10 @@
 import type { PaymentItemCategory } from "@/types";
-import type { CompanyRole, JobStatus, PaymentStatusType, ProjectRole } from "./responseDto";
+import type {
+  CompanyRole,
+  JobStatus,
+  PaymentStatusType,
+  ProjectRole,
+} from "./responseDto";
 
 export interface CreateProjectRequestDto {
   name: string;
@@ -23,8 +28,8 @@ export interface InviteCompanyMemberRequestDto {
 export interface CreatePaymentItemRequestDto {
   modelId: string;
   category: PaymentItemCategory;
-  contractorId: string;
-  approverId: string;
+  contractorId: string | null;
+  approverId: string | null;
   contractValue: number;
   description?: string;
 }

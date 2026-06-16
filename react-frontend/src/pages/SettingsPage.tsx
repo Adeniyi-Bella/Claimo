@@ -182,7 +182,6 @@ export default function Settings() {
         {/* Profile */}
         <Section
           title="Profile"
-          subtitle="This information is synced with your auth provider."
         >
           <div className="flex items-center gap-4">
             <Avatar
@@ -506,7 +505,7 @@ function Section({
   children,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   badge?: string;
   children: React.ReactNode;
 }) {

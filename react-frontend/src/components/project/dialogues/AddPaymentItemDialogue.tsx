@@ -38,41 +38,23 @@ export default function AddPaymentItemDialogue({
   const [approverId, setApproverId] = useState("");
 
   useEffect(() => {
-    const first = project.members.find((m) => m.role === "CONTRACTOR");
-    setContractorId(first?.id ?? "");
-  }, [project.members]);
-
-  useEffect(() => {
-    const first = project.members.find((m) => m.role === "APPROVER");
-    setApproverId(first?.id ?? "");
-  }, [project.members]);
-
-  useEffect(() => {
     setModelId(project.models[0]?.id ?? "");
   }, [project.models]);
 
   const reset = () => {
     setModelId(project.models[0]?.id ?? "");
     setCategory(CATEGORIES[0]);
-    setContractorId(
-      project.members.find((m) => m.role === "CONTRACTOR")?.id ?? "",
-    );
-    setApproverId(project.members.find((m) => m.role === "APPROVER")?.id ?? "");
+    setContractorId("");
+    setApproverId("");
     setContractValue("");
     setError("");
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (!modelId) {
       setError("This project has no models yet. Upload a model first.");
-      return;
-    }
-    if (!contractorId) {
-      setError(
-        "No contractors on this project yet. Add a contractor member first.",
-      );
       return;
     }
 
@@ -146,46 +128,36 @@ export default function AddPaymentItemDialogue({
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium">Contractor</label>
-              {contractors.length === 0 ? (
-                <div className="mt-1.5 text-xs text-muted-foreground">
-                  No contractors on this project yet — add a contractor member
-                  first.
-                </div>
-              ) : (
-                <select
-                  value={contractorId}
-                  onChange={(e) => setContractorId(e.target.value)}
-                  className="mt-1.5 w-full h-9 rounded-md border border-input bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
-                >
-                  {contractors.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} — {m.email}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <label className="text-xs font-medium">
+                Contractor (optional)
+              </label>
+              <select
+                value={contractorId}
+                onChange={(e) => setContractorId(e.target.value)}
+                className="mt-1.5 w-full h-9 rounded-md border border-input bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
+              >
+                <option value="">None</option>
+                {contractors.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} — {m.email}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="text-xs font-medium">Approver</label>
-              {approvers.length === 0 ? (
-                <div className="mt-1.5 text-xs text-muted-foreground">
-                  No approvers on this project yet — add an approver member
-                  first.
-                </div>
-              ) : (
-                <select
-                  value={approverId}
-                  onChange={(e) => setApproverId(e.target.value)}
-                  className="mt-1.5 w-full h-9 rounded-md border border-input bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
-                >
-                  {approvers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} — {m.email}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <label className="text-xs font-medium">Approver (optional)</label>
+              <select
+                value={approverId}
+                onChange={(e) => setApproverId(e.target.value)}
+                className="mt-1.5 w-full h-9 rounded-md border border-input bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
+              >
+                <option value="">None</option>
+                {approvers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} — {m.email}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-xs font-medium">

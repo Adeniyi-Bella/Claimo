@@ -153,8 +153,8 @@ export function ContractorView({
             <Clock className="h-3.5 w-3.5" /> Payment confirmation required
           </div>
           <div className="text-sm text-muted-foreground">
-            {fallbackLabel(item.approverName)} has marked this payment as paid. Please confirm
-            or dispute.
+            {fallbackLabel(item.approverName)} has marked this payment as paid.
+            Please confirm or dispute.
           </div>
           <div className="flex gap-2">
             <button
@@ -288,8 +288,8 @@ export function ContractorView({
           <Clock className="h-4 w-4 mt-0.5 shrink-0" />
           <div>
             Claim #{pendingClaim.sequence} ({fmtCurrency(pendingClaim.amount)})
-            is awaiting approval from {fallbackLabel(item.approverName)}. You can submit
-            another once a decision is made.
+            is awaiting approval. You can submit another once a decision is
+            made.
           </div>
         </div>
       )}

@@ -118,4 +118,22 @@ export class PaymentItemApi {
       statusCode: response.status,
     });
   }
+
+  static async assignPaymentItem(
+    token: string,
+    projectId: string,
+    itemId: string,
+    data: { contractorId: string | null; approverId: string | null },
+  ): Promise<PaymentItem> {
+    const response = await apiClient.patch<CustomApiResponse<PaymentItem>>(
+      `/projects/${projectId}/payment-items/${itemId}/assign`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return requireApiData(response.data, {
+      message: "Assign payment item response missing data",
+      code: "EMPTY_ASSIGN_PAYMENT_ITEM_RESPONSE",
+      statusCode: response.status,
+    });
+  }
 }

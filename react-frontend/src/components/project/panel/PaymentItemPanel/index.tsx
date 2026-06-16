@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, Eye, HardHat, ShieldCheck, Users } from "lucide-react";
 import { derivedStatus, itemTotals } from "@/utils";
-import type { ProjectRole } from "@/api/dto/responseDto";
+import type { Member, ProjectRole } from "@/api/dto/responseDto";
 
 import { Header } from "./components/Header";
 import { Totals } from "./components/Totals";
@@ -59,10 +59,12 @@ export default function PaymentItemPanel({
   itemId,
   projectId,
   currentUserRole,
+  members,
 }: {
   itemId: string;
   projectId: string;
   currentUserRole: ProjectRole;
+  members: Member[];
 }) {
   const { data: item, isLoading } = usePaymentItem(projectId, itemId);
   const [actingRole, setActingRole] = useState<ProjectRole | null>(null);
@@ -111,7 +113,14 @@ export default function PaymentItemPanel({
         {effectiveRole === "APPROVER" && (
           <ApproverView item={item} projectId={projectId} itemId={itemId} />
         )}
-        {effectiveRole === "ADMIN" && <AdminView item={item} />}
+        {effectiveRole === "ADMIN" && (
+          <AdminView
+            item={item}
+            members={members}
+            projectId={projectId}
+            itemId={itemId}
+          />
+        )}
         {effectiveRole === "VIEWER" && <ViewerView />}
 
         <ClaimHistory claims={item.claims} />

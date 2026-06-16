@@ -1,4 +1,4 @@
-package com.claimo.api.projects.dto.requests;
+package com.claimo.api.paymentitem.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -11,8 +11,8 @@ import com.claimo.api.projects.enums.PaymentItemCategory;
 public record CreatePaymentItemRequest(
         @NotNull UUID modelId,
         @NotNull PaymentItemCategory category,
-        @NotNull UUID contractorId,
-        @NotNull UUID approverId,
+        UUID contractorId,
+        UUID approverId,
         @NotNull @Positive BigDecimal contractValue,
-        String description
-    ) {}
+        String description) {
+}
