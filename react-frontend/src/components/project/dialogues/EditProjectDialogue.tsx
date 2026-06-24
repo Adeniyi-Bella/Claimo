@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/common/button";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateProject } from "@/hooks/api/projects/useProject";
-import type { GetProjectsResponse } from "@/api/dto/responseDto";
 import { updateProjectSchema, type UpdateProjectFormValues } from "@/utils";
 
 export default function EditProjectDialog({
@@ -20,7 +19,14 @@ export default function EditProjectDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  project: GetProjectsResponse;
+  project: {
+    id: string;
+    name: string;
+    description?: string;
+    location?: string;
+    startDate?: string;
+    status: "ACTIVE" | "COMPLETED";
+  };
 }) {
   const { toast } = useToast();
   const { mutateAsync: updateProject, isPending } = useUpdateProject();
@@ -48,6 +54,7 @@ export default function EditProjectDialog({
   }, [open, project]);
 
   const handleSave = async () => {
+    console.log(project.status);
     setFieldErrors({});
     setErrorMessage(null);
 
@@ -169,6 +176,11 @@ export default function EditProjectDialog({
               <option value="ACTIVE">Active</option>
               <option value="COMPLETED">Completed</option>
             </select>
+            {fieldErrors.status ? (
+              <p className="text-sm text-destructive mt-1">
+                {fieldErrors.status}
+              </p>
+            ) : null}
           </div>
           {errorMessage ? (
             <p className="text-sm text-destructive">{errorMessage}</p>

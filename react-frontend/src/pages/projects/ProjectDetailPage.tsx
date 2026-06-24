@@ -31,6 +31,7 @@ import { DashboardLoader } from "@/components/common/loader/loader";
 import { fmtDate, projectSummary } from "@/utils";
 import { useDashboard } from "@/hooks/api/useDashboard";
 import PaymentItemPanel from "@/components/project/panel/PaymentItemPanel";
+import EditProjectDialog from "@/components/project/dialogues/EditProjectDialogue";
 
 const TABS = ["Overview", "Models", "Members", "Payment Items"] as const;
 
@@ -43,6 +44,7 @@ export default function ProjectDetail() {
   const [tab, setTab] = useState<(typeof TABS)[number]>(
     (search as { tab?: (typeof TABS)[number] })?.tab ?? "Overview",
   );
+  const [openEdit, setOpenEdit] = useState(false);
   const { data } = useDashboard();
 
   const {
@@ -161,7 +163,10 @@ export default function ProjectDetail() {
             </div>
             {canManage && (
               <div className="flex items-center gap-2">
-                <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition">
+                <button
+                  onClick={() => setOpenEdit(true)}
+                  className="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface text-sm hover:bg-accent transition"
+                >
                   <Edit3 className="h-3.5 w-3.5" /> Edit project
                 </button>
                 <button
@@ -239,6 +244,12 @@ export default function ProjectDetail() {
         project={project}
         onAdd={handleAddPaymentItem}
         isSubmitting={isCreatingPaymentItem}
+      />
+
+      <EditProjectDialog
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        project={project}
       />
 
       <Sheet

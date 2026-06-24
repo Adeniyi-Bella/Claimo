@@ -10,6 +10,7 @@ import com.claimo.api.projects.dto.MemberDto;
 import com.claimo.api.projects.dto.ModelDto;
 import com.claimo.api.projects.enums.PendingInviteStatus;
 import com.claimo.api.projects.enums.ProjectRole;
+import com.claimo.api.projects.enums.ProjectStatus;
 
 public class ProjectResponses {
         public record ProjectDetails(
@@ -18,7 +19,7 @@ public class ProjectResponses {
                         String description,
                         String location,
                         LocalDate startDate,
-                        String status,
+                        ProjectStatus status,
                         List<MemberDto> members,
                         List<ModelDto> models,
                         List<PendingInvite> pendingInvites,

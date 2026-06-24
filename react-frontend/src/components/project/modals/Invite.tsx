@@ -53,6 +53,7 @@ export default function InviteModal({
       toast({
         title: "Invitation sent",
         description: `${email.trim()} has been invited to the project.`,
+        variant: "success",
       });
     } catch (err: unknown) {
       const message =

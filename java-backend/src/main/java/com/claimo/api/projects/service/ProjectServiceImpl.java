@@ -377,7 +377,7 @@ public class ProjectServiceImpl implements ProjectService {
                                 project.getDescription(),
                                 project.getLocation(),
                                 project.getStartDate(),
-                                "Active",
+                                project.getStatus(),
                                 memberDtos,
                                 modelDtos,
                                 pendingInviteDtos,

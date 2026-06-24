@@ -1,8 +1,8 @@
+import type { ProjectStatus } from "@/api/dto/responseDto";
 import type { ReactNode } from "react";
 
 export type FooterLink = { label: string; to: string };
 export type FooterColumn = { heading: string; links: FooterLink[] };
-export type ProjectStatus = "Active" | "Completed" | "Archived";
 export type ProjectRole = "ADMIN" | "CONTRACTOR" | "VIEWER" | "APPROVER";
 export type ModelFileType = "ifc";
 export type ClaimDecision = "SUBMITTED" | "APPROVED" | "REJECTED";
