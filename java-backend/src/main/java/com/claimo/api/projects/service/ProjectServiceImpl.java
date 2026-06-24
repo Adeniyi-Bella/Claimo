@@ -484,12 +484,15 @@ public class ProjectServiceImpl implements ProjectService {
                 Project project = projectRepository.findById(projectId)
                                 .orElseThrow(() -> new AppExceptions.ResourceNotFoundException(
                                                 "Project not found: " + projectId));
-                ProjectRole role = projectMemberService.isMember(projectId, user.getId())
-                                ? projectMemberService.getRole(projectId, user.getId())
-                                : null;
+
+                ProjectRole role = projectMemberRepository.findRoleByProjectIdAndUserId(projectId, user.getId())
+                                .orElseThrow(() -> new AppExceptions.ForbiddenException(
+                                                "Only project admins can manage projects"));
+
                 if (role != ProjectRole.SUPER_ADMIN && role != ProjectRole.ADMIN) {
                         throw new AppExceptions.ForbiddenException("Only project admins can manage projects");
                 }
+
                 return project;
         }
 

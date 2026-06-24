@@ -134,3 +134,17 @@ export function useUpdateProject() {
     },
   });
 }
+
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (projectId: string) => {
+      return ProjectApi.deleteProject(projectId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: projectsQueryKey });
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+    },
+  });
+}

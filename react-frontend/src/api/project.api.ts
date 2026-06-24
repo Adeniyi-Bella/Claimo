@@ -90,4 +90,8 @@ export class ProjectApi {
       statusCode: response.status,
     });
   }
+
+  static async deleteProject(projectId: string): Promise<void> {
+    await apiClient.delete(`/projects/${projectId}`);
+  }
 }

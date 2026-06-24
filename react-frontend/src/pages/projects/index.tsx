@@ -16,13 +16,15 @@ import { Button } from "@/components/common/button";
 import CreateProjectDialog from "@/components/project/dialogues/CreateProjectDialog";
 import {
   useCreateProject,
+  useDeleteProject,
   useGetProjects,
   useUpdateProject,
 } from "@/hooks/api/projects/useProject";
 import { fmtCurrency, fmtDate } from "@/utils";
 import { useToast } from "@/hooks/use-toast";
 import type { GetProjectsResponse } from "@/api/dto/responseDto";
-import EditProjectDialog from "@/components/projects/EditProjectDialogue";
+import EditProjectDialog from "@/components/project/dialogues/EditProjectDialogue";
+import DeleteProjectDialog from "@/components/project/dialogues/DeleteProjectDialog";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50] as const;
 
@@ -47,6 +49,10 @@ export default function Projects() {
   const { toast } = useToast();
   const [editingProject, setEditingProject] =
     useState<GetProjectsResponse | null>(null);
+  const [deletingProject, setDeletingProject] =
+    useState<GetProjectsResponse | null>(null);
+  const { mutateAsync: deleteProject, isPending: isDeleting } =
+    useDeleteProject();
 
   useEffect(() => {
     setPage(0);
@@ -82,9 +88,6 @@ export default function Projects() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {total} {total === 1 ? "project" : "projects"} matching filters.
-            </p>
           </div>
           <Button
             onClick={() => setDialogOpen(true)}
@@ -133,6 +136,7 @@ export default function Projects() {
           <table className="w-full text-sm">
             <thead className="bg-surface-elevated text-xs text-muted-foreground">
               <tr>
+                <Th>#</Th>
                 <Th>Project</Th>
                 <Th>Status</Th>
                 <Th>Location</Th>
@@ -150,7 +154,7 @@ export default function Projects() {
               ) : items.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
                     No projects match your search.
@@ -172,6 +176,9 @@ export default function Projects() {
                       }
                       className="hover:bg-accent/40 transition cursor-pointer"
                     >
+                      <td className="px-4 py-3 text-muted-foreground tabular-nums">
+                        {start + items.indexOf(p)}
+                      </td>
                       <td className="px-4 py-3">
                         <Link
                           to="/projects/$projectId"
@@ -257,7 +264,7 @@ export default function Projects() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // open delete dialog — wired later
+                                setDeletingProject(p);
                               }}
                               className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-surface hover:bg-accent text-status-rejected-fg transition"
                               aria-label="Delete project"
@@ -336,6 +343,24 @@ export default function Projects() {
           open={!!editingProject}
           onOpenChange={(v) => !v && setEditingProject(null)}
           project={editingProject}
+        />
+      )}
+
+      {deletingProject && (
+        <DeleteProjectDialog
+          open={!!deletingProject}
+          onOpenChange={(v) => !v && setDeletingProject(null)}
+          project={deletingProject}
+          onDelete={async () => {
+            await deleteProject(deletingProject.id);
+            toast({
+              title: "Project deleted",
+              description: "The project has been successfully deleted.",
+              variant: "success",
+            });
+            setDeletingProject(null);
+          }}
+          isDeleting={isDeleting}
         />
       )}
     </AppShell>
