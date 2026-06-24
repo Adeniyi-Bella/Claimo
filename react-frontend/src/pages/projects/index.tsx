@@ -22,7 +22,7 @@ import {
 import { fmtCurrency, fmtDate } from "@/utils";
 import { useToast } from "@/hooks/use-toast";
 import type { GetProjectsResponse } from "@/api/dto/responseDto";
-import EditProjectDialog from "@/components/project/dialogues/EditProjectDialogue";
+import EditProjectDialog from "@/components/projects/EditProjectDialogue";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50] as const;
 

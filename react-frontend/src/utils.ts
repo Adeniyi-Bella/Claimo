@@ -125,26 +125,34 @@ export function derivedStatus(item: PaymentItem): PaymentStatus {
   return "NOT_STARTED";
 }
 
+const nameField = z
+  .string()
+  .min(2, "Project name must be at least 2 characters")
+  .max(100, "Project name must be under 100 characters")
+  .regex(/^[\p{L}\p{N}\s\-.,()&']+$/u, "Project name contains invalid characters");
+
+const descriptionField = z
+  .string()
+  .max(500, "Description must be under 500 characters")
+  .optional();
+
+const locationField = z
+  .string()
+  .max(100, "Location must be under 100 characters")
+  .regex(/^$|^[\p{L}\p{N}\s\-.,()&']+$/u, "Location contains invalid characters")
+  .optional();
+
 export const createProjectSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Project name must be at least 2 characters")
-    .max(100, "Project name must be under 100 characters")
-    .regex(
-      /^[\p{L}\p{N}\s\-.,()&']+$/u,
-      "Project name contains invalid characters",
-    ),
-  description: z
-    .string()
-    .max(500, "Description must be under 500 characters")
-    .optional(),
-  location: z
-    .string()
-    .max(100, "Location must be under 100 characters")
-    // .regex(/^[\p{L}\p{N}\s\-.,()&']+$/u, "Location contains invalid characters")
-    .or(z.literal(""))
-    .optional(),
+  name: nameField,
+  description: descriptionField,
+  location: locationField,
   startDate: z.string().min(1, "Start date is required"),
 });
 
+export const updateProjectSchema = createProjectSchema.extend({
+  startDate: z.string().optional(),
+  status: z.enum(["ACTIVE", "COMPLETED"]).optional(),
+});
+
 export type CreateProjectFormValues = z.infer<typeof createProjectSchema>;
+export type UpdateProjectFormValues = z.infer<typeof updateProjectSchema>;
