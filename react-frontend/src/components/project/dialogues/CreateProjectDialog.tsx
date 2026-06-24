@@ -14,6 +14,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/common/button";
 import type { CreateProjectDialogProps } from "@/types";
 import { createProjectSchema, type CreateProjectFormValues } from "@/utils";
+import LocationAutocomplete from "@/components/common/location";
 
 export default function CreateProjectDialog({
   open,
@@ -69,7 +70,7 @@ export default function CreateProjectDialog({
       await onCreate(result.data);
       reset();
       onOpenChange(false);
-    } catch(error) {
+    } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -127,14 +128,13 @@ export default function CreateProjectDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="proj-loc">Location</Label>
-                <Input
-                  id="proj-loc"
-                  placeholder="City, Country"
+                <LocationAutocomplete
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={setLocation}
+                  error={fieldErrors.location}
                 />
                 {fieldErrors.location ? (
-                  <p className="text-sm text-destructive">
+                  <p className="text-sm text-destructive mt-1">
                     {fieldErrors.location}
                   </p>
                 ) : null}
