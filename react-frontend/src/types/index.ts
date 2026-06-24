@@ -9,8 +9,6 @@ export type ClaimDecision = "SUBMITTED" | "APPROVED" | "REJECTED";
 export type JobStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 export type PaymentStatusType = "NONE" | "PAID" | "REJECTED" | "APPROVED";
 
-
-
 export type FeatureProps = {
   eyebrow?: string;
   title: string;
@@ -20,8 +18,8 @@ export type FeatureProps = {
 
 export type CreateProjectData = {
   name: string;
-  description: string;
-  location: string;
+  description?: string;
+  location?: string;
   startDate: string;
 };
 
@@ -132,7 +130,7 @@ export type PaymentItemCategory =
   | "FIRE_PROTECTION"
   | "INSULATION";
 
-  export type PaymentStatus =
+export type PaymentStatus =
   | "NOT_STARTED"
   | "SUBMITTED"
   | "APPROVED"

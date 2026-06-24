@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name"
+        defaultValue="claimo" />
+    <springProperty scope="context" name="ACTIVE_PROFILE" source="spring.profiles.active"
+        defaultValue="local" />
+    <property name="LOG_FILE_PATH" value="${LOG_FILE_PATH:-./claimo.log}" />
+
+    <!-- Pretty console for local dev -->
+    <springProfile name="local">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>%cyan(%d{HH:mm:ss}) %highlight(%-5level)
+                    %yellow([%X{requestId:-no-req-id}]) %magenta(%logger{36}) - %msg%n%ex{full}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- Structured console for prod/staging (CloudWatch reads this) -->
+    <springProfile name="!local">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level app=%property{APP_NAME}
+                    profile=%property{ACTIVE_PROFILE} requestId=%X{requestId:-} logger=%logger{36}
+                    message=%msg%n%ex{full}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- File appender always structured (for local log file + prod) -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE_PATH}</file>
+        <append>true</append>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level app=%property{APP_NAME}
+                profile=%property{ACTIVE_PROFILE} requestId=%X{requestId:-} logger=%logger{36}
+                message=%msg%n%ex{full}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE_PATH}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>14</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+</configuration>

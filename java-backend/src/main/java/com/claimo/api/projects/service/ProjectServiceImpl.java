@@ -120,8 +120,11 @@ public class ProjectServiceImpl implements ProjectService {
 
                 List<UUID> projectIds = projectsPage.getContent().stream().map(Project::getId).toList();
 
+                List<ProjectMember> allMembers = projectIds.isEmpty() ? List.of()
+                                : projectMemberRepository.findAllByProject_IdIn(projectIds);
+
                 Map<UUID, Long> memberCountByProject = projectIds.isEmpty() ? Map.of()
-                                : projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
+                                : allMembers.stream()
                                                 .collect(Collectors.groupingBy(m -> m.getProject().getId(),
                                                                 Collectors.counting()));
 
@@ -135,7 +138,7 @@ public class ProjectServiceImpl implements ProjectService {
                                                 .collect(Collectors.toMap(IProjectFinancials::getProjectId, f -> f));
 
                 Map<UUID, ProjectRole> currentUserRoleByProject = projectIds.isEmpty() ? Map.of()
-                                : projectMemberRepository.findAllByProject_IdIn(projectIds).stream()
+                                : allMembers.stream()
                                                 .filter(m -> m.getUser().getId().equals(user.getId()))
                                                 .collect(Collectors.toMap(m -> m.getProject().getId(),
                                                                 ProjectMember::getRole));

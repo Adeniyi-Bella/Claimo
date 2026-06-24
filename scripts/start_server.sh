@@ -21,7 +21,8 @@ export RESEND_FROM_EMAIL=$(aws ssm get-parameter --name /claimo/backend/RESEND_F
 export APP_NAME=$(aws ssm get-parameter --name /claimo/backend/APP_NAME --with-decryption --query Parameter.Value --output text --region eu-central-1)
 export ACTIVE_PROFILE=$(aws ssm get-parameter --name /claimo/backend/ACTIVE_PROFILE --with-decryption --query Parameter.Value --output text --region eu-central-1)
 export ALLOWED_ORIGINS=$(aws ssm get-parameter --name /claimo/backend/ALLOWED_ORIGINS --with-decryption --query Parameter.Value --output text --region eu-central-1)
+export LOG_FILE_PATH=/var/log/claimo/claimo.log
 
 # Start the application
 cd /home/ec2-user/app
-nohup /usr/bin/java -jar api-0.0.1-SNAPSHOT.jar > /home/ec2-user/app/app.log 2>&1 &
+nohup /usr/bin/java -jar api-0.0.1-SNAPSHOT.jar >/dev/null 2>&1 &

@@ -10,6 +10,8 @@ import java.util.UUID;
 
 import com.claimo.api.config.properties.ResendWelcomeEmailProperties;
 import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.MDC;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -35,8 +37,13 @@ public class WelcomeEmailServiceImpl implements WelcomeEmailService {
 
     @Override
     @Async
-    public void sendWelcomeEmail(UUID userId, String email, String firstName, String lastName) {
-        sendWelcomeEmailWithRetry(userId, email, firstName, lastName);
+    public void sendWelcomeEmail(UUID userId, String email, String firstName, String lastName, String requestId) {
+        MDC.put("requestId", requestId != null ? requestId : "");
+        try {
+            sendWelcomeEmailWithRetry(userId, email, firstName, lastName);
+        } finally {
+            MDC.clear();
+        }
     }
 
     void sendWelcomeEmailWithRetry(UUID userId, String email, String firstName, String lastName) {

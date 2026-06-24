@@ -10,6 +10,8 @@ import com.claimo.api.user.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,8 +46,8 @@ public class ClerkUserWebhookService {
         String fullName = (firstName + " " + lastName).trim();
 
         User user = createUserAndCompany(data, clerkUserId, email, firstName, lastName, fullName);
-
-        welcomeEmailService.sendWelcomeEmail(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
+        String requestId = MDC.get("requestId");
+        welcomeEmailService.sendWelcomeEmail(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), requestId);
 
         log.info("Created company and user for clerkUserId={}", clerkUserId);
     }

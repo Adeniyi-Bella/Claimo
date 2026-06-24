@@ -13,6 +13,7 @@ import { Textarea } from "@/components/common/textarea";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/common/button";
 import type { CreateProjectDialogProps } from "@/types";
+import { createProjectSchema, type CreateProjectFormValues } from "@/utils";
 
 export default function CreateProjectDialog({
   open,
@@ -26,27 +27,65 @@ export default function CreateProjectDialog({
   const [startDate, setStartDate] = useState(
     new Date().toISOString().slice(0, 10),
   );
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof CreateProjectFormValues, string>>
+  >({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const reset = () => {
+    setName("");
+    setDescription("");
+    setLocation("");
+    setStartDate(new Date().toISOString().slice(0, 10));
+    setFieldErrors({});
+    setErrorMessage(null);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    setFieldErrors({});
     setErrorMessage(null);
 
+    const result = createProjectSchema.safeParse({
+      name,
+      description,
+      location,
+      startDate,
+    });
+
+    if (!result.success) {
+      const errors: Partial<Record<keyof CreateProjectFormValues, string>> = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof CreateProjectFormValues;
+        if (!errors[field]) {
+          errors[field] = issue.message;
+        }
+      }
+      setFieldErrors(errors);
+      return;
+    }
+
     try {
-      await onCreate({ name, description, location, startDate });
-      setName("");
-      setDescription("");
-      setLocation("");
-      setStartDate(new Date().toISOString().slice(0, 10));
+      await onCreate(result.data);
+      reset();
       onOpenChange(false);
-    } catch {
-      setErrorMessage("Could not create the project.");
+    } catch(error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not create the project.",
+      );
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) reset();
+        onOpenChange(v);
+      }}
+    >
       <DialogContent>
         <form onSubmit={submit}>
           <DialogHeader>
@@ -57,14 +96,18 @@ export default function CreateProjectDialog({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <Label htmlFor="proj-name">Project name</Label>
+              <Label htmlFor="proj-name">
+                Project name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="proj-name"
-                required
                 placeholder="e.g. Harbor Tower — Phase II"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+              {fieldErrors.name ? (
+                <p className="text-sm text-destructive">{fieldErrors.name}</p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="proj-desc">Description</Label>
@@ -75,6 +118,11 @@ export default function CreateProjectDialog({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
+              {fieldErrors.description ? (
+                <p className="text-sm text-destructive">
+                  {fieldErrors.description}
+                </p>
+              ) : null}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -85,15 +133,27 @@ export default function CreateProjectDialog({
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 />
+                {fieldErrors.location ? (
+                  <p className="text-sm text-destructive">
+                    {fieldErrors.location}
+                  </p>
+                ) : null}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="proj-date">Start date</Label>
+                <Label htmlFor="proj-date">
+                  Start date <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="proj-date"
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
+                {fieldErrors.startDate ? (
+                  <p className="text-sm text-destructive">
+                    {fieldErrors.startDate}
+                  </p>
+                ) : null}
               </div>
             </div>
             {errorMessage ? (
@@ -105,12 +165,15 @@ export default function CreateProjectDialog({
               type="button"
               variant="outline"
               disabled={isSubmitting}
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                reset();
+                onOpenChange(false);
+              }}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              <Plus className="h-4 w-4" />{" "}
+              <Plus className="h-4 w-4" />
               {isSubmitting ? "Creating..." : "Create project"}
             </Button>
           </DialogFooter>

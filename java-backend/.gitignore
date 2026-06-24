@@ -23,5 +23,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
+*.gz
 
 META-INF/

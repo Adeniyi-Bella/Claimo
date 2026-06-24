@@ -5,6 +5,7 @@ import com.claimo.api.projects.dto.requests.ProjectRequests;
 import com.claimo.api.projects.dto.response.CreateUpdateProjectResponse;
 import com.claimo.api.projects.dto.response.DashboardResponse;
 import com.claimo.api.projects.dto.response.GetProjectsResponse;
+import com.claimo.api.projects.dto.response.PagedResponse;
 import com.claimo.api.projects.dto.response.ProjectResponses;
 import com.claimo.api.projects.service.ProjectService;
 
@@ -53,14 +54,14 @@ public class ProjectController {
                         @ApiResponse(responseCode = "200", description = "Projects returned successfully"),
                         @ApiResponse(responseCode = "401", description = "Unauthorized")
         })
-        public ResponseEntity<CustomApiResponse<Page<GetProjectsResponse>>> getProjects(
+        public ResponseEntity<CustomApiResponse<PagedResponse<GetProjectsResponse>>> getProjects(
                         @AuthenticationPrincipal Jwt jwt,
                         @RequestParam(required = false) String q,
                         @RequestParam(required = false) String status,
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int pageSize) {
                 Page<GetProjectsResponse> response = projectService.getProjects(jwt, q, status, page, pageSize);
-                return ResponseEntity.ok(CustomApiResponse.success(response));
+                return ResponseEntity.ok(CustomApiResponse.success(PagedResponse.from(response)));
         }
 
         @GetMapping("/{projectId}")
